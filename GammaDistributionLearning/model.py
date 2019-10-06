@@ -18,12 +18,12 @@ class MarsagliaTsampler(nn.Module):
     def __init__(self, size):
         super().__init__()
         self.alpha = nn.Parameter(3*torch.ones(size))
-
+        self.size = size
     def forward(self, batch_size):
         d = self.alpha - 1/3
         c = 1. / torch.sqrt(9. * d)
-        Z = Normal(0, 1).sample([batch_size])
-        U = Uniform(0, 1).sample([batch_size])
+        Z = Normal(0, 1).sample([batch_size, self.size])
+        U = Uniform(0, 1).sample([batch_size, self.size])
         V = (1+c*Z)**3
 
         condition = get_condition(Z, U, c, V, d).type(torch.float)
@@ -39,7 +39,7 @@ def CE_Gamma(samples, target_distribution):
 
 def main():
     # TODO 1: add plot output
-    epoch = 10000
+    epoch = 4001
     sampler = MarsagliaTsampler(size=1)
     optimizer = optim.SGD(sampler.parameters(), lr=0.001, momentum=0.9)
 
@@ -61,7 +61,7 @@ def main():
         optimizer.step()
 
         # print intermediet results
-        if i % 1000 == 0:
+        if i % 500 == 0:
             print('loss {}'.format(loss))
             plt.plot(np.linspace(0.001, 25, 1000),
                      target_distribution.log_prob(torch.linspace(0.001, 25, 1000)).exp().tolist(),
