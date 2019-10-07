@@ -4,7 +4,6 @@ from torch import optim
 from torch.distributions import Normal, Uniform, Gamma, Bernoulli
 import matplotlib.pyplot as plt
 import numpy as np
-import MarsagliaTsampler
 
 
 def nlp_pdf(x, phi, tau=0.358):
@@ -49,7 +48,7 @@ class MarsagliaTsampler(nn.Module):
         detached_gamma_alpha = self.alpha.detach()
         return out, detached_gamma_alpha
 
-class SpikeAndSlabSampler(nn.module):
+class SpikeAndSlabSampler(nn.Module):
     def __init__(self, p, alternative_sampler=MarsagliaTsampler):
         self.p = p
         self.logalpha = nn.Parameter(torch.ones(p))
@@ -75,7 +74,7 @@ class SpikeAndSlabSampler(nn.module):
         return z, theta, detached_gamma_alpha
 
 
-class LinearModel(nn.module):
+class LinearModel(nn.Module):
     def __init__(self, p):
         self.sampler = SpikeAndSlabSampler(size=p, alternative_sampler=MarsagliaTsampler)
         self.z, self.theta, self.detached_gamma_alpha = self.sampler(batch_size=32)
