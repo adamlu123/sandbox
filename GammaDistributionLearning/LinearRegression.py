@@ -34,11 +34,12 @@ def get_condition(Z, U, c, V, d):
 class MarsagliaTsampler(nn.Module):
     def __init__(self, size):
         super().__init__()
-        self.log_gamma_alpha = nn.Parameter(-1.*torch.ones(size))  # TODO: see alpha init matters or not
+        # self.log_gamma_alpha = nn.Parameter(-1.*torch.ones(size))  # TODO: see alpha init matters or not
+        self.gamma_alpha = nn.Parameter(2.*torch.ones(size))
 
         self.size = size
     def forward(self, batch_size):
-        self.alpha = self.log_gamma_alpha.exp() + 1  # right now only for alpha > 1
+        self.alpha = torch.relu(self.gamma_alpha) + 1  # right now only for alpha > 1
         d = self.alpha - 1/3
         c = 1. / torch.sqrt(9. * d)
         Z = Normal(0, 1).sample([batch_size, self.size])
@@ -63,10 +64,12 @@ class SpikeAndSlabSampler(nn.Module):
         self.zeta = 1.1
         self.gamma = -0.1
         self.beta = 2 / 3
+        self.gamma_zeta_logratio = -self.gamma / self.zeta
 
     def forward(self, batch_size):
         # sample theta
         theta, detached_gamma_alpha = self.alternative_sampler(batch_size=batch_size) # shape=[batch_size, p]
+        z_mean = torch.sigmoid(self.logalpha - self.beta * self.gamma_zeta_logratio)
 
         # sample z
         u = Uniform(0, 1).sample([10, self.p])  # TODO: 10 is the number of effective samples
@@ -76,7 +79,7 @@ class SpikeAndSlabSampler(nn.Module):
         if not self.training:
             z = torch.clamp(torch.sigmoid(self.logalpha) * (self.zeta - self.gamma) + self.gamma, 0, 1)
 
-        return z, theta, detached_gamma_alpha
+        return z, z_mean, theta, detached_gamma_alpha
 
 
 class LinearModel(nn.Module):
@@ -87,8 +90,8 @@ class LinearModel(nn.Module):
 
 
     def forward(self, x):
-        x = torch.tensor(x, dtype=torch.float)
-        self.z, self.theta, self.detached_gamma_alpha = self.sampler(batch_size=64)
+
+        self.z, self.z_mean, self.theta, self.detached_gamma_alpha = self.sampler(batch_size=64)
         sign = 2 * Bernoulli(0.5).sample(self.theta.size()) - 1
         self.signed_theta = sign * self.theta
         self.Theta = self.z * self.signed_theta
@@ -97,19 +100,25 @@ class LinearModel(nn.Module):
         return out
 
     def kl(self, phi):
+        qz = self.z_mean.expand_as(self.theta)
         qlogp = torch.log(nlp_pdf(self.signed_theta, phi, tau=0.358)+1e-4)
         gamma = Gamma(concentration=self.detached_gamma_alpha, rate=1.)
         qlogq = np.log(0.5) + gamma.log_prob(self.theta)  # use unsigned self.theta to compute qlogq
-        return (qlogq - qlogp).sum(dim=1).mean()
+        kl_beta = qlogq - qlogp
+        kl_z = qz*torch.log(qz/0.1) + (1-qz)*torch.log((1-qz)/0.9)
+        kl = (kl_z + qz*kl_beta).sum(dim=1).mean()
+
+        return kl  #(qlogq - qlogp).sum(dim=1).mean()
 
 
 def loglike(y_hat, y):
     # std = y.std()
-    ll = np.log(1/(np.sqrt(2*np.pi)*1)) - (y_hat-y)**2/(2*1**2)
+    ll = - (y_hat-y)**2/(2*1**2)  # + np.log(1/(np.sqrt(2*np.pi)*1))
     return ll.sum()
 
 def train(Y, X, truetheta, phi, epoch=10000):
     Y = torch.tensor(Y, dtype=torch.float)
+    X = torch.tensor(X, dtype=torch.float)
     linear = LinearModel(p=X.shape[0])
     optimizer = optim.SGD(linear.parameters(), lr=0.001, momentum=0.9)
 
@@ -132,6 +141,8 @@ def train(Y, X, truetheta, phi, epoch=10000):
             print(y_hat[:5].tolist(), Y[:5].tolist(), Y.std())
             print('epoch {}, z min: {}, z mean: {}, non-zero: {}'.format(i, linear.z.min(), linear.z.mean(), linear.z.nonzero().shape))
             print('p={}, phi={}, loss: {}, nll:{}, kl:{}. SSE: {}'.format(X.shape[0], phi, nll, loss, kl, sse))
+
+
 
 
 

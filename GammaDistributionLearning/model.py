@@ -14,6 +14,8 @@ def get_condition(Z, U, c, V, d):
 
 
 
+
+
 class MarsagliaTsampler(nn.Module):
     def __init__(self, size):
         super().__init__()
