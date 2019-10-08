@@ -53,6 +53,7 @@ class MarsagliaTsampler(nn.Module):
         detached_gamma_alpha = self.alpha #.detach()
         return processed_out, detached_gamma_alpha
 
+
 class SpikeAndSlabSampler(nn.Module):
     def __init__(self, p, alternative_sampler=MarsagliaTsampler):
         super(SpikeAndSlabSampler, self).__init__()
@@ -86,15 +87,22 @@ class LinearModel(nn.Module):
     def __init__(self, p):
         super(LinearModel, self).__init__()
         self.sampler = SpikeAndSlabSampler(p=p, alternative_sampler=MarsagliaTsampler)
+        self.mixweight_logalpha = nn.Parameter(torch.ones(p))
 
 
 
     def forward(self, x):
 
         self.z, self.z_mean, self.theta, self.detached_gamma_alpha = self.sampler(batch_size=64)
-        sign = 2 * Bernoulli(0.5).sample(self.theta.size()) - 1
-        self.signed_theta = sign * self.theta
-        self.Theta = self.z * self.signed_theta
+
+        # sample mixture weight using concrete
+        u = Uniform(0, 1).sample(self.theta.size())
+        weight = torch.sigmoid((torch.log(u / (1 - u)) + self.mixweight_logalpha.expand_as(u)) / (2/3))
+
+
+        # sign = 2 * Bernoulli(0.5).sample(self.theta.size()) - 1
+        self.signed_theta = weight * self.theta + (1-weight) * (-self.theta)
+        self.Theta = self.signed_theta * self.z
 
         out = x.matmul(self.Theta.mean(dim=0))  # TODO: defer taking mean to the output
         return out
@@ -121,7 +129,7 @@ def train(Y, X, truetheta, phi, epoch=10000):
     X = torch.tensor(X, dtype=torch.float)
     linear = LinearModel(p=X.shape[0])
     optimizer = optim.SGD(linear.parameters(), lr=0.001, momentum=0.9)
-
+    sse_list = []
     for i in range(epoch):
         optimizer.zero_grad()
         # forward pass and compute loss
@@ -135,15 +143,17 @@ def train(Y, X, truetheta, phi, epoch=10000):
         loss.backward()
         optimizer.step()
 
+        sse = ((y_hat - Y) ** 2).mean().detach().numpy()
+        sse_list.append(sse)
         # print intermediet results
         if i % 500 == 0:
-            sse = ((y_hat - Y) ** 2).mean().detach().numpy()
-            print(y_hat[:5].tolist(), Y[:5].tolist(), Y.std())
+
+            print('\n', y_hat[-5:].round().tolist(), Y[-5:].round().tolist())
+            print('est.thetas', linear.theta[:,-5:].mean(dim=0).tolist())
             print('epoch {}, z min: {}, z mean: {}, non-zero: {}'.format(i, linear.z.min(), linear.z.mean(), linear.z.nonzero().shape))
             print('p={}, phi={}, loss: {}, nll:{}, kl:{}. SSE: {}'.format(X.shape[0], phi, nll, loss, kl, sse))
-
-
-
+    plt.plot(sse_list)
+    plt.savefig('/extra/yadongl10/git_project/GammaLearningResult/sse.png', dpi=200)
 
 
 
