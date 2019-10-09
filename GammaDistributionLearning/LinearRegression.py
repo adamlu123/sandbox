@@ -11,18 +11,18 @@ def nlp_pdf(x, phi, tau=0.358):
 
 def generate_data(n, p, phi, rho, seed):
     np.random.seed(seed)
-    noise = np.random.normal(loc=0, scale=phi, size=[n])  # noise, with std phi
+    noise = np.random.normal(loc=0, scale=np.sqrt(phi), size=[n])  # noise, with std phi
 
     sigma = rho * np.ones((p, p))
     np.fill_diagonal(sigma, 1)
     X = np.random.multivariate_normal(mean=np.zeros(p), cov=sigma, size=n)  # X, with correlation rho
 
     truetheta = np.asarray([0.6, 1.2, 1.8, 2.4, 3])
-    beta = np.zeros(p)
-    beta[-5:] = truetheta  # beta
+    theta = np.zeros(p)
+    theta[-5:] = truetheta  # beta
 
-    Y = np.matmul(X, beta) + noise
-    return Y, X, truetheta
+    Y = np.matmul(X, theta) + noise
+    return Y, X, theta
 
 
 def get_condition(Z, U, c, V, d):
@@ -84,7 +84,8 @@ class SpikeAndSlabSampler(nn.Module):
         z = torch.clamp((self.zeta - self.gamma) * s + self.gamma, 0, 1)
 
         if not self.training:
-            z = torch.clamp(torch.sigmoid(self.logalpha) * (self.zeta - self.gamma) + self.gamma, 0, 1).expand_as(theta)
+            z = torch.clamp(torch.sigmoid(self.logalpha) * (self.zeta - self.gamma) + self.gamma, 0, 1).expand_as(u)
+            theta = detached_gamma_alpha.expand_as(u)
 
         return z, z_mean, theta, detached_gamma_alpha, self.logalpha
 
@@ -99,12 +100,13 @@ class LinearModel(nn.Module):
         self.mixweight_logalpha = nn.Parameter(torch.ones(p))
 
     def forward(self, x):
-        self.z, self.z_mean, self.theta, self.detached_gamma_alpha = self.sampler(batch_size=64)
+        self.z, self.z_mean, self.theta, self.detached_gamma_alpha, self.logalpha = self.sampler(batch_size=64)
 
         # sample mixture weight using concrete
         u = Uniform(0, 1).sample(self.theta.size())
         weight = torch.sigmoid((torch.log(u / (1 - u)) + self.mixweight_logalpha.expand_as(u)) / (0.9))
-
+        if not self.training:
+            weight = torch.exp(self.mixweight_logalpha.expand_as(u)) / (1 + torch.exp(self.mixweight_logalpha.expand_as(u)))
 
         # sign = 2 * Bernoulli(0.5).sample(self.theta.size()) - 1
         self.signed_theta = weight * self.theta + (1-weight) * (-self.theta)
@@ -115,11 +117,12 @@ class LinearModel(nn.Module):
 
     def kl(self, phi):
         qz = self.z_mean.expand_as(self.theta)
-        qlogp = torch.log(nlp_pdf(self.signed_theta, phi, tau=0.358)+1e-4)
+        qlogp = torch.log(nlp_pdf(self.signed_theta, phi, tau=0.358)+1e-8)
         gamma = Gamma(concentration=self.detached_gamma_alpha, rate=1.)
         qlogq = np.log(0.5) + gamma.log_prob(self.theta)  # use unsigned self.theta to compute qlogq
         kl_beta = qlogq - qlogp
-        kl_z = qz*torch.log(qz/0.1) + (1-qz)*torch.log((1-qz)/0.9)
+        p = 5e-2
+        kl_z = qz*torch.log(qz/p) + (1-qz)*torch.log((1-qz)/(1-p))
         kl = (kl_z + qz*kl_beta).sum(dim=1).mean()
 
         return kl
@@ -150,7 +153,7 @@ class LinearDiracDelta(nn.Module):
         self.z_mean = torch.sigmoid(self.logalpha - self.beta * self.gamma_zeta_logratio)
 
         if not self.training:
-            self.z = torch.clamp(torch.sigmoid(self.logalpha) * (self.zeta - self.gamma) + self.gamma, 0, 1).expand_as(self.theta)
+            self.z = torch.clamp(torch.sigmoid(self.logalpha) * (self.zeta - self.gamma) + self.gamma, 0, 1).expand_as(u)
 
         self.Theta = self.theta * self.z.mean(dim=0)  # TODO: defer taking mean to the output
         out = x.matmul(self.Theta)
@@ -158,15 +161,12 @@ class LinearDiracDelta(nn.Module):
 
     def kl(self, phi):
         qz = self.z_mean.expand_as(self.theta)
-        qlogp = torch.log(nlp_pdf(self.theta, phi, tau=0.358)+1e-4)
+        qlogp = torch.log(nlp_pdf(self.theta, phi, tau=0.358)+1e-8)
         qlogq = 0
         kl_beta = qlogq - qlogp
-        kl_z = qz*torch.log(qz/0.1) + (1-qz)*torch.log((1-qz)/0.9)
-        kl = (kl_z + qz*kl_beta).sum(dim=0)#.mean()
+        kl_z = qz*torch.log(qz/0.05) + (1-qz)*torch.log((1-qz)/0.95)
+        kl = (kl_z + qz*kl_beta).sum(dim=0)
         return kl
-
-
-
 
 
 
@@ -179,9 +179,10 @@ def loglike(y_hat, y):
 def train(Y, X, truetheta, phi, epoch=10000):
     Y = torch.tensor(Y, dtype=torch.float)
     X = torch.tensor(X, dtype=torch.float)
-    linear = LinearDiracDelta(p=X.shape[0])
-    optimizer = optim.SGD(linear.parameters(), lr=0.001, momentum=0.9)
+    linear = LinearModel(p=X.shape[1])
+    optimizer = optim.SGD(linear.parameters(), lr=0.0001, momentum=0.9)
     sse_list = []
+    sse_theta_list = []
     for i in range(epoch):
         linear.train()
         optimizer.zero_grad()
@@ -199,17 +200,23 @@ def train(Y, X, truetheta, phi, epoch=10000):
         sse = ((y_hat - Y) ** 2).mean().detach().numpy()
         sse_list.append(sse)
 
+        with torch.no_grad():
+            linear.eval()
+            y_hat = linear(X)
+            z = linear.z  # [0, :]
+            sse_theta = ((linear.Theta.mean(dim=0) - torch.tensor(truetheta, dtype=torch.float)) ** 2).sum()
+            sse_test = ((y_hat - Y) ** 2).mean().detach().numpy()
+            sse_theta_list.append(((linear.Theta.mean(dim=0) - torch.tensor(truetheta, dtype=torch.float)) ** 2).sum())
+
         # print intermediet results
-        if i % 500 == 0:
+        if i % 250 == 0:
+            # print('est.z train mode',linear.z.mean(dim=0).detach().numpy().round(2))
             # z = torch.clamp(torch.sigmoid(linear.logalpha) * (1.2) - 0.1, 0, 1)
-            with torch.no_grad():
-                linear.eval()
-                y_hat = linear(X)
-                z = linear.z#[0, :]
-                sse_test = ((y_hat - Y) ** 2).mean().detach().numpy()
+
 
             print('\n', y_hat[-5:].round().tolist(), Y[-5:].round().tolist())
-            print('est.thetas: {}, est z:{}'.format(linear.theta[-5:].tolist(), z.detach().numpy().round(2)))
+            print('sse_theta:{}, min_sse_theta:{}'.format(sse_theta, np.asarray(sse_theta_list).min() ))
+            print('est.Thetas: {}, est z:{}'.format(linear.Theta.mean(dim=0)[-5:].tolist(), z.mean(dim=0).detach().numpy().round(2)))
             print('epoch {}, z min: {}, z mean: {}, non-zero: {}'.format(i, linear.z.min(), linear.z.mean(), linear.z.nonzero().shape))
             print('p={}, phi={}, loss: {}, nll:{}, kl:{}. SSE: {}, sse_test: {}'.format(X.shape[0], phi, nll, loss, kl, sse, sse_test))
     plt.plot(sse_list)
@@ -235,7 +242,7 @@ def main():
     for p in [100, 500, 1000]:
         for phi in [1, 4, 8]:
             Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=1234)
-            linear = train(Y, X, truetheta, phi, epoch=5000)
+            linear = train(Y, X, truetheta, phi, epoch=10000)
             test(Y, X, linear)
 
 
