@@ -32,6 +32,9 @@ def get_condition(Z, U, c, V, d):
     return condition
 
 class MarsagliaTsampler(nn.Module):
+    """
+    Implement Marsaglia and Tsang’s method as a Gamma variable sampler: https://www.hongliangjie.com/2012/12/19/how-to-generate-gamma-random-variables/
+    """
     def __init__(self, size):
         super().__init__()
         # self.log_gamma_alpha = nn.Parameter(-1.*torch.ones(size))  # TODO: see alpha init matters or not
@@ -55,6 +58,9 @@ class MarsagliaTsampler(nn.Module):
 
 
 class SpikeAndSlabSampler(nn.Module):
+    """
+    Add spike and slab to MarsagliaTsampler
+    """
     def __init__(self, p, alternative_sampler=MarsagliaTsampler):
         super(SpikeAndSlabSampler, self).__init__()
         self.p = p
@@ -78,26 +84,26 @@ class SpikeAndSlabSampler(nn.Module):
         z = torch.clamp((self.zeta - self.gamma) * s + self.gamma, 0, 1)
 
         if not self.training:
-            z = torch.clamp(torch.sigmoid(self.logalpha) * (self.zeta - self.gamma) + self.gamma, 0, 1)
+            z = torch.clamp(torch.sigmoid(self.logalpha) * (self.zeta - self.gamma) + self.gamma, 0, 1).expand_as(theta)
 
-        return z, z_mean, theta, detached_gamma_alpha
+        return z, z_mean, theta, detached_gamma_alpha, self.logalpha
 
 
 class LinearModel(nn.Module):
+    """
+    Wrap around SpikeAndSlabSampler for a linear regression model, use Gamma distribution as variational distribution
+    """
     def __init__(self, p):
         super(LinearModel, self).__init__()
         self.sampler = SpikeAndSlabSampler(p=p, alternative_sampler=MarsagliaTsampler)
         self.mixweight_logalpha = nn.Parameter(torch.ones(p))
 
-
-
     def forward(self, x):
-
         self.z, self.z_mean, self.theta, self.detached_gamma_alpha = self.sampler(batch_size=64)
 
         # sample mixture weight using concrete
         u = Uniform(0, 1).sample(self.theta.size())
-        weight = torch.sigmoid((torch.log(u / (1 - u)) + self.mixweight_logalpha.expand_as(u)) / (2/3))
+        weight = torch.sigmoid((torch.log(u / (1 - u)) + self.mixweight_logalpha.expand_as(u)) / (0.9))
 
 
         # sign = 2 * Bernoulli(0.5).sample(self.theta.size()) - 1
@@ -116,7 +122,53 @@ class LinearModel(nn.Module):
         kl_z = qz*torch.log(qz/0.1) + (1-qz)*torch.log((1-qz)/0.9)
         kl = (kl_z + qz*kl_beta).sum(dim=1).mean()
 
-        return kl  #(qlogq - qlogp).sum(dim=1).mean()
+        return kl
+
+
+
+class LinearDiracDelta(nn.Module):
+    """
+    Wrap around SpikeAndSlabSampler for a linear regression model, use Dirac delta mass as variational distribution
+    """
+    def __init__(self, p):
+        super(LinearDiracDelta, self).__init__()
+        self.p = p
+        self.theta = nn.Parameter(torch.ones(p))
+        self.logalpha = nn.Parameter(torch.ones(p))
+
+        # L0 related parameters
+        self.zeta = 1.1
+        self.gamma = -0.1
+        self.beta = 2 / 3
+        self.gamma_zeta_logratio = -self.gamma / self.zeta
+
+    def forward(self, x):
+        # sample z
+        u = Uniform(0, 1).sample([10, self.p])  # TODO: 10 is the number of effective samples
+        s = torch.sigmoid((torch.log(u / (1 - u)) + self.logalpha) / self.beta)
+        self.z = torch.clamp((self.zeta - self.gamma) * s + self.gamma, 0, 1)
+        self.z_mean = torch.sigmoid(self.logalpha - self.beta * self.gamma_zeta_logratio)
+
+        if not self.training:
+            self.z = torch.clamp(torch.sigmoid(self.logalpha) * (self.zeta - self.gamma) + self.gamma, 0, 1).expand_as(self.theta)
+
+        self.Theta = self.theta * self.z.mean(dim=0)  # TODO: defer taking mean to the output
+        out = x.matmul(self.Theta)
+        return out
+
+    def kl(self, phi):
+        qz = self.z_mean.expand_as(self.theta)
+        qlogp = torch.log(nlp_pdf(self.theta, phi, tau=0.358)+1e-4)
+        qlogq = 0
+        kl_beta = qlogq - qlogp
+        kl_z = qz*torch.log(qz/0.1) + (1-qz)*torch.log((1-qz)/0.9)
+        kl = (kl_z + qz*kl_beta).sum(dim=0)#.mean()
+        return kl
+
+
+
+
+
 
 
 def loglike(y_hat, y):
@@ -127,10 +179,11 @@ def loglike(y_hat, y):
 def train(Y, X, truetheta, phi, epoch=10000):
     Y = torch.tensor(Y, dtype=torch.float)
     X = torch.tensor(X, dtype=torch.float)
-    linear = LinearModel(p=X.shape[0])
+    linear = LinearDiracDelta(p=X.shape[0])
     optimizer = optim.SGD(linear.parameters(), lr=0.001, momentum=0.9)
     sse_list = []
     for i in range(epoch):
+        linear.train()
         optimizer.zero_grad()
         # forward pass and compute loss
         y_hat = linear(X)
@@ -145,15 +198,35 @@ def train(Y, X, truetheta, phi, epoch=10000):
 
         sse = ((y_hat - Y) ** 2).mean().detach().numpy()
         sse_list.append(sse)
+
         # print intermediet results
         if i % 500 == 0:
+            # z = torch.clamp(torch.sigmoid(linear.logalpha) * (1.2) - 0.1, 0, 1)
+            with torch.no_grad():
+                linear.eval()
+                y_hat = linear(X)
+                z = linear.z#[0, :]
+                sse_test = ((y_hat - Y) ** 2).mean().detach().numpy()
 
             print('\n', y_hat[-5:].round().tolist(), Y[-5:].round().tolist())
-            print('est.thetas', linear.theta[:,-5:].mean(dim=0).tolist())
+            print('est.thetas: {}, est z:{}'.format(linear.theta[-5:].tolist(), z.detach().numpy().round(2)))
             print('epoch {}, z min: {}, z mean: {}, non-zero: {}'.format(i, linear.z.min(), linear.z.mean(), linear.z.nonzero().shape))
-            print('p={}, phi={}, loss: {}, nll:{}, kl:{}. SSE: {}'.format(X.shape[0], phi, nll, loss, kl, sse))
+            print('p={}, phi={}, loss: {}, nll:{}, kl:{}. SSE: {}, sse_test: {}'.format(X.shape[0], phi, nll, loss, kl, sse, sse_test))
     plt.plot(sse_list)
-    plt.savefig('/extra/yadongl10/git_project/GammaLearningResult/sse.png', dpi=200)
+    plt.savefig('/extra/yadongl10/git_project/GammaLearningResult/sse.png', dpi=100)
+    return linear
+
+
+def test(Y, X, model):
+    model.eval()
+    y_hat = model(X)
+    sse = ((y_hat - Y) ** 2).mean().detach().numpy()
+
+    print('test SSE:{}'.format(sse))
+    if model.z.nonzero().shape[0] < 10:
+        print(model.z.nonzero(), model.z[-5:].tolist())
+
+
 
 
 
@@ -162,7 +235,8 @@ def main():
     for p in [100, 500, 1000]:
         for phi in [1, 4, 8]:
             Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=1234)
-            train(Y, X, truetheta, phi, epoch=10000)
+            linear = train(Y, X, truetheta, phi, epoch=5000)
+            test(Y, X, linear)
 
 
 
