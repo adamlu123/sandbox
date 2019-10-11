@@ -160,7 +160,7 @@ class LinearDiracDelta(nn.Module):
         qlogp = torch.log(nlp_pdf(self.theta, phi, tau=0.358)+1e-8)
         qlogq = 0
         kl_beta = qlogq - qlogp
-        p = 1e-6
+        p = 1e-5
         kl_z = qz*torch.log(qz/p) + (1-qz)*torch.log((1-qz)/(1-p))
         kl = (kl_z + qz*kl_beta).sum(dim=0)
         return kl
@@ -204,7 +204,7 @@ def train(Y, X, truetheta, phi, epoch=15000):
             with torch.no_grad():
                 linear.eval()
                 y_hat = linear(X)
-                z = linear.z#[0, :]
+                z = linear.z #[0, :]
                 mse_theta = ((linear.theta*z.mean(dim=0) - torch.tensor(truetheta, dtype=torch.float))**2).sum()
                 sse_test = ((y_hat - Y) ** 2).mean().detach().numpy()
 
@@ -233,7 +233,7 @@ def test(Y, X, model):
 
 def main():
     n = 100
-    for p in [1000]:
+    for p in [500, 1000]:
         for phi in [1, 4, 8]:
             Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=1234)
             linear = train(Y, X, truetheta, phi, epoch=15000)

@@ -121,7 +121,7 @@ class LinearModel(nn.Module):
         gamma = Gamma(concentration=self.detached_gamma_alpha, rate=1.)
         qlogq = np.log(0.5) + gamma.log_prob(self.theta)  # use unsigned self.theta to compute qlogq
         kl_beta = qlogq - qlogp
-        p = 5e-2
+        p = 1e-2
         kl_z = qz*torch.log(qz/p) + (1-qz)*torch.log((1-qz)/(1-p))
         kl = (kl_z + qz*kl_beta).sum(dim=1).mean()
 
@@ -215,7 +215,7 @@ def train(Y, X, truetheta, phi, epoch=10000):
 
 
             print('\n', y_hat[-5:].round().tolist(), Y[-5:].round().tolist())
-            print('sse_theta:{}, min_sse_theta:{}'.format(sse_theta, np.asarray(sse_theta_list).min() ))
+            print('sse_theta:{}, min_sse_theta:{}'.format(sse_theta, np.asarray(sse_theta_list).min()))
             print('est.Thetas: {}, est z:{}'.format(linear.Theta.mean(dim=0)[-5:].tolist(), z.mean(dim=0).detach().numpy().round(2)))
             print('epoch {}, z min: {}, z mean: {}, non-zero: {}'.format(i, linear.z.min(), linear.z.mean(), linear.z.nonzero().shape))
             print('p={}, phi={}, loss: {}, nll:{}, kl:{}. SSE: {}, sse_test: {}'.format(X.shape[0], phi, nll, loss, kl, sse, sse_test))
@@ -239,7 +239,7 @@ def test(Y, X, model):
 
 def main():
     n = 100
-    for p in [100, 500, 1000]:
+    for p in [500, 1000]:
         for phi in [1, 4, 8]:
             Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=1234)
             linear = train(Y, X, truetheta, phi, epoch=10000)
