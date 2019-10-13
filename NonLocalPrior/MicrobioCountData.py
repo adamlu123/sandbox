@@ -1,18 +1,22 @@
 import torch
 import torch.nn as nn
 from torch import optim
-from torch.distributions import Normal, Uniform, Gamma, Bernoulli
+from torch.distributions import Normal, Uniform, Gamma, Bernoulli, uniform
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
+import pickle as pkl
 
 
 def nlp_pdf(x, phi, tau=0.358):
     return x**2*1/tau*(1/np.sqrt(2*np.pi*tau*phi))*torch.exp(-x**2/(2*tau*phi))
 
 
-
+def save_result(valpha, theta):
+    with open('/extra/yadongl10/git_project/sandbox/NonLocalPrior/results/DDM_valpha.pkl', 'wb') as file:
+        pkl.dump(valpha, file)
+    with open('/extra/yadongl10/git_project/sandbox/NonLocalPrior/results/DDM_theta.pkl', 'wb') as file:
+        pkl.dump(theta, file)
 
 class LinearDiracDelta(nn.Module):
     """
@@ -22,7 +26,8 @@ class LinearDiracDelta(nn.Module):
         super(LinearDiracDelta, self).__init__()
         self.p = p
         self.q = q
-        self.theta = nn.Parameter(0.1*torch.ones(p, q))
+        init_theta = uniform.Uniform(-1, 1).sample([p, q]) #-1.*torch.ones(p, q)
+        self.theta = nn.Parameter(init_theta)
         self.bias = nn.Parameter(torch.ones(q))
         self.logalpha = nn.Parameter(torch.ones(p, q))
 
@@ -54,9 +59,9 @@ class LinearDiracDelta(nn.Module):
         qlogq = 0
         kl_beta = qlogq - qlogp
         p = 1e-1
-        kl_z = qz*torch.log(qz/p) + (1-qz)*torch.log((1-qz)/(1-p))
+        kl_z = qz*torch.log(qz/p+1e-8) + (1-qz)*torch.log((1-qz)/(1-p)+1e-8)
         kl = (kl_z + qz*kl_beta).sum()
-        return kl
+        return kl, kl_z.sum(), kl_beta.sum()
 
 
 def get_nll(y_pred, labels):
@@ -81,7 +86,7 @@ def train(Y, X, phi, epoch=15000):
         y_hat = linear(X)
 
         nll = get_nll(y_hat, Y)
-        kl = linear.kl(phi)
+        kl, kl_z, kl_beta = linear.kl(phi)
         loss = nll + 1/117*kl
 
         # compute gradient and do SGD step
@@ -100,13 +105,15 @@ def train(Y, X, phi, epoch=15000):
                 z = linear.z #[0, :]
                 sse_test = ((y_hat - Y) ** 2).mean().detach().numpy()
 
-            print('\n', y_hat[-1,:5].exp().round().tolist(), Y[-1,:5].round().tolist())
+            print('\n', y_hat[-1, :5].exp().round().tolist(), Y[-1,:5].round().tolist())
             # print('est.Thetas: {}, est z:{}'.format(linear.Theta[-5:].tolist(), z.mean(dim=0).detach().numpy().round(2)))
             print('Bacteriods: {}'.format(z.mean(dim=0)[:, 0].max().tolist()))
             print('bias: {}'.format(linear.bias.tolist()))
             print('epoch {}, z min: {}, z mean: {}, z max: {} non-zero: {}'.format(i, z.min(), z.mean(), z.max(), z.nonzero().shape))
-            print('p={}, phi={}, loss: {}, nll:{}, kl:{}. SSE: {}, sse_test: {}'.format(X.shape[0], phi, nll, loss, kl, sse, sse_test))
+            print('theta min: {}, theta mean: {}, theta max: {}'.format(linear.theta.min(), linear.theta.mean(), linear.theta.max()))
+            print('p={}, phi={}, loss: {}, nll:{}, kl:{}. kl_z:{}, kl_beta:{}, SSE: {}, sse_test: {}'.format(X.shape[0], phi, nll, loss, kl, kl_z, kl_beta, sse, sse_test))
 
+    save_result(linear.logalpha, linear.theta)
     plt.plot(sse_list)
     plt.savefig('/extra/yadongl10/git_project/GammaLearningResult/sse.png', dpi=100)
     return linear
