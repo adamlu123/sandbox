@@ -26,7 +26,7 @@ class LinearDiracDelta(nn.Module):
         super(LinearDiracDelta, self).__init__()
         self.p = p
         self.q = q
-        init_theta = uniform.Uniform(-1, 1).sample([p, q]) #-1.*torch.ones(p, q)
+        init_theta = uniform.Uniform(-1, 1).sample([p, q])  #.1.*torch.ones(p, q)
         self.theta = nn.Parameter(init_theta)
         self.bias = nn.Parameter(torch.ones(q))
         self.logalpha = nn.Parameter(torch.ones(p, q))
@@ -55,11 +55,11 @@ class LinearDiracDelta(nn.Module):
 
     def kl(self, phi):
         qz = self.z_mean.expand_as(self.theta)  # TODO: is this line necessary?
-        qlogp = torch.log(nlp_pdf(self.theta, phi, tau=0.358))
+        qlogp = torch.log(nlp_pdf(self.theta, phi, tau=0.358)+1e-8)
         qlogq = 0
         kl_beta = qlogq - qlogp
         p = 1e-1
-        kl_z = qz*torch.log(qz/p+1e-8) + (1-qz)*torch.log((1-qz)/(1-p)+1e-8)
+        kl_z = qz*torch.log(qz/p) + (1-qz)*torch.log((1-qz)/(1-p))
         kl = (kl_z + qz*kl_beta).sum()
         return kl, kl_z.sum(), kl_beta.sum()
 
@@ -77,7 +77,7 @@ def train(Y, X, phi, epoch=15000):
     Y = torch.tensor(Y, dtype=torch.float)
     X = torch.tensor(X, dtype=torch.float)
     linear = LinearDiracDelta(p=X.shape[1], q=Y.shape[1])
-    optimizer = optim.SGD(linear.parameters(), lr=0.005, momentum=0.9)
+    optimizer = optim.SGD(linear.parameters(), lr=0.001, momentum=0.9)
     sse_list = []
     for i in range(epoch):
         linear.train()
@@ -102,7 +102,7 @@ def train(Y, X, phi, epoch=15000):
             with torch.no_grad():
                 linear.eval()
                 y_hat = linear(X)
-                z = linear.z #[0, :]
+                z = linear.z  #[0, :]
                 sse_test = ((y_hat - Y) ** 2).mean().detach().numpy()
 
             print('\n', y_hat[-1, :5].exp().round().tolist(), Y[-1,:5].round().tolist())

@@ -53,7 +53,7 @@ class MarsagliaTsampler(nn.Module):
         out = condition * d*V
         processed_out = torch.stack([out[:,p][out[:,p]>0][:10] for p in range(self.size)], dim=0).t()
         # out = out[out>0]
-        detached_gamma_alpha = self.alpha #.detach()
+        detached_gamma_alpha = self.alpha  #.detach()
         return processed_out, detached_gamma_alpha
 
 
