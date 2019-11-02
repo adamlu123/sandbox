@@ -1,3 +1,5 @@
+from LinearRegression import LinearModel
+
 import torch
 import torch.nn as nn
 from torch import optim
@@ -76,7 +78,7 @@ def get_nll(y_pred, labels):
 def train(Y, X, phi, epoch=15000):
     Y = torch.tensor(Y, dtype=torch.float)
     X = torch.tensor(X, dtype=torch.float)
-    linear = LinearDiracDelta(p=X.shape[1], q=Y.shape[1])
+    linear = LinearModel(p=X.shape[1], q=Y.shape[1])
     optimizer = optim.SGD(linear.parameters(), lr=0.001, momentum=0.9)
     sse_list = []
     for i in range(epoch):
