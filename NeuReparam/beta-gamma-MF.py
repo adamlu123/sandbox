@@ -17,6 +17,16 @@ hp = {
 }
 
 
+def log_prob_beta(theta, eta, value):
+    return (theta-1)*torch.log(value) + (eta-1)*torch.log(1-value) + \
+           torch.lgamma(theta+eta) - torch.lgamma(theta) -torch.lgamma(eta)
+
+
+# def log_prob_gamma(alpha, beta, value):
+#     return (self.concentration * torch.log(self.rate) +
+#                 (self.concentration - 1) * torch.log(value) -
+#                 self.rate * value - torch.lgamma(self.concentration))
+
 class StochasticGammaLayer(Function):
     def __init__(self):
         super(StochasticGammaLayer, self).__init__()
@@ -30,7 +40,9 @@ class StochasticGammaLayer(Function):
     @staticmethod
     def backward(ctx, output_grad):
         w, alpha, beta = ctx.saved_tensors
-        updated_w = w + output_grad * 1
+        log_w = w.log()
+        log_w = log_w + output_grad*w * 1  # do the update on the log scale and transform it back
+        updated_w = log_w.exp()
         updated_w = updated_w.detach()
         ll = Gamma(concentration=alpha, rate=beta).log_prob(updated_w)
         ll.backward()
@@ -52,9 +64,12 @@ class StochasticBetaLayer(Function):
         import pydevd
         pydevd.settrace(suspend=False, trace_only_current_thread=True)
         z, theta, eta = ctx.saved_tensors
-        updated_z = z + output_grad * 1
+        logit_z = torch.log(z / (1 - z))
+        logit_z = logit_z + logit_z_grad * 1  # do gradient update on logit scale, then transform it back.
+        updated_z = torch.sigmoid(logit_z)
         updated_z = updated_z.detach()
-        ll = Beta(concentration0=theta, concentration1=eta).log_prob(updated_z)
+        ll = log_prob_beta(theta, eta, updated_z)  # TODO: check why require_grad becomes False?!
+        test = theta + eta
         ll.backward()
         return theta.grad, eta.grad
 
