@@ -11,7 +11,7 @@ import numpy as np
 hp = {
     'data_folder': '/extra/yadongl10/data/MNIST/',
     'device': 'cuda',
-    'epochs': 10000
+    'epochs': 100000
 }
 
 
@@ -49,12 +49,12 @@ def log_prob_gamma(alpha, beta, value):
 class BetaGammaSampler(nn.Module):
     def __init__(self):
         super(BetaGammaSampler, self).__init__()
-        self.logalpha = nn.Parameter(torch.ones(100, 784))
-        self.logbeta = nn.Parameter(torch.ones(100, 784))
-        self.logtheta = nn.Parameter(torch.ones(5000, 100))
-        self.logeta = nn.Parameter(torch.ones(5000, 100))
+        self.logalpha = nn.Parameter(np.log(1)*torch.ones(100, 784))
+        self.logbeta = nn.Parameter(np.log(15)*torch.ones(100, 784))
+        self.logtheta = nn.Parameter(2*torch.ones(5000, 100))
+        self.logeta = nn.Parameter(2*torch.ones(5000, 100))
 
-    def forward(self):
+    def sample(self):
         z = Beta(concentration0=self.logtheta.exp().detach(), concentration1=self.logeta.exp().detach()).sample()
         logit_z = torch.log(z / (1 - z))
         w = Gamma(concentration=self.logalpha.exp().detach(), rate=self.logbeta.exp().detach()).sample()
@@ -62,18 +62,19 @@ class BetaGammaSampler(nn.Module):
         return logit_z, log_w
 
     def get_kl(self):
-        gamma_q = Gamma(concentration=self.logalpha.exp().detach(), rate=self.logbeta.exp().detach())
+        gamma_q = Gamma(concentration=self.logalpha.exp(), rate=self.logbeta.exp())
         gamma_p = Gamma(0.1 * torch.ones_like(self.logalpha), 0.3 * torch.ones_like(self.logalpha))
-        beta_q = Beta(self.logtheta.exp().detach(), self.logeta.exp().detach())
+        beta_q = Beta(self.logtheta.exp(), self.logeta.exp())
         beta_p = Beta(torch.ones_like(self.logtheta), torch.ones_like(self.logtheta))
         kl = kl_divergence(beta_q, beta_p).sum() + kl_divergence(gamma_q, gamma_p).sum()
         return kl
 
-    def elbo(self, logit_z_updated, log_w_updated):
+    def forward(self, logit_z_updated, log_w_updated):
         z_updated = torch.sigmoid(logit_z_updated)
         ll_gamma = log_prob_gamma(self.logalpha.exp(), self.logbeta.exp(), log_w_updated.exp())
         ll_beta = log_prob_beta(self.logtheta.exp(), self.logeta.exp(), z_updated)
-        return ll_gamma.sum() + ll_beta.sum() - self.get_kl()
+        kl = self.get_kl()
+        return ll_gamma.sum() + ll_beta.sum() - kl, kl.detach()
 
 
 class BetaGammaMF(nn.Module):
@@ -85,8 +86,8 @@ class BetaGammaMF(nn.Module):
         out = torch.sigmoid(logit_z.matmul(w))
         return out
 
-    def get_ll(self, out, data):
-        return data * out.log() + (1 - data) * (1 - out + 1e-10).log()
+def get_ll(out, data):
+    return data * (out + 1e-10).log() + (1 - data) * (1 - out + 1e-10).log()
 
 
 def train(model, sampler, optimizer, train_loader):
@@ -95,23 +96,24 @@ def train(model, sampler, optimizer, train_loader):
         data = data[0]
         optimizer.zero_grad()
 
-        logit_z, log_w = sampler()
+        logit_z, log_w = sampler.sample()
         out = model(logit_z.requires_grad_(), log_w.requires_grad_())
-        ll = model.get_ll(out, data).sum()
+        ll = get_ll(out, data).sum()
 
         ll.backward()
         logit_z_updated, log_w_updated = update_samples(logit_z, log_w)
         logit_z.grad.zero_()
         log_w.grad.zero_()
+        ll = ll.detach()
 
-        elbo_biased = sampler.elbo(logit_z_updated, log_w_updated)  # used for compute gradients
+        elbo_biased, kl = sampler(logit_z_updated, log_w_updated)  # used for compute gradients
 
         loss = - elbo_biased
         loss.backward()
         optimizer.step()
 
-        elbo = ll - sampler.get_kl()  # true elbo
-        return elbo
+        elbo = ll - kl  # true elbo
+        return elbo, kl, ll
 
 
 def main(hp):
@@ -132,11 +134,15 @@ def main(hp):
     # training
     print('start training')
     elbo_list = []
+    kl_list = []
+    ll_list = []
     for epoch in range(hp['epochs']):
-        elbo = train(model, sampler, optimizer_sampler, train_loader)
+        elbo, kl, ll = train(model, sampler, optimizer_sampler, train_loader)
         elbo_list.append(elbo)
+        kl_list.append(kl)
+        ll_list.append(ll)
         if epoch % 50 == 0:
-            print('epoch: {}, elbo: {}'.format(epoch, elbo.tolist()))
+            print('epoch: {}, elbo: {}, kl:{}'.format(epoch, elbo.tolist(), kl.tolist(), kl.tolist()))
         # test(model, test_loader)
 
 
