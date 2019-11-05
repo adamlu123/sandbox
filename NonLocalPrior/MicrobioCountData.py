@@ -1,5 +1,4 @@
 from LinearRegression import LinearModel
-
 import torch
 import torch.nn as nn
 from torch import optim
@@ -22,7 +21,7 @@ def save_result(valpha, theta):
 
 class LinearDiracDelta(nn.Module):
     """
-    Wrap around SpikeAndSlabSampler for a linear regression model, use Dirac delta mass as variational distribution
+    use Dirac delta mass as variational distribution
     """
     def __init__(self, p, q):
         super(LinearDiracDelta, self).__init__()
@@ -66,6 +65,10 @@ class LinearDiracDelta(nn.Module):
         return kl, kl_z.sum(), kl_beta.sum()
 
 
+
+
+
+
 def get_nll(y_pred, labels):
     delta = torch.exp(y_pred).clamp(min=1e-2, max=1e2)
     ll = torch.lgamma(labels + delta) - torch.lgamma(delta)  # shape(n,q)
@@ -78,8 +81,10 @@ def get_nll(y_pred, labels):
 def train(Y, X, phi, epoch=15000):
     Y = torch.tensor(Y, dtype=torch.float)
     X = torch.tensor(X, dtype=torch.float)
-    linear = LinearModel(p=X.shape[1], q=Y.shape[1])
-    optimizer = optim.SGD(linear.parameters(), lr=0.001, momentum=0.9)
+    # linear = LinearDiracDelta(p=X.shape[1], q=Y.shape[1])
+    linear = LinearModel(p=(X.shape[1], Y.shape[1]), bias=True)
+
+    optimizer = optim.SGD(linear.parameters(), lr=0.01, momentum=0.9)
     sse_list = []
     for i in range(epoch):
         linear.train()
@@ -89,7 +94,7 @@ def train(Y, X, phi, epoch=15000):
 
         nll = get_nll(y_hat, Y)
         kl, kl_z, kl_beta = linear.kl(phi)
-        loss = nll + 1/117*kl
+        loss = nll + 1/10*kl
 
         # compute gradient and do SGD step
         loss.backward()
@@ -99,7 +104,7 @@ def train(Y, X, phi, epoch=15000):
         sse_list.append(sse)
 
         # print intermediet results
-        if i % 500 == 0:
+        if i % 5 == 0:
             torch.manual_seed(10)
             with torch.no_grad():
                 linear.eval()
@@ -109,11 +114,11 @@ def train(Y, X, phi, epoch=15000):
 
             print('\n', y_hat[-1, :5].exp().round().tolist(), Y[-1,:5].round().tolist())
             # print('est.Thetas: {}, est z:{}'.format(linear.Theta[-5:].tolist(), z.mean(dim=0).detach().numpy().round(2)))
-            print('Bacteriods: {}'.format(z.mean(dim=0)[:, 0].max().tolist()))
+            print('Bacteriods: {}'.format(z.mean(dim=0).reshape(117, 30)[:, 0].max().tolist()))
             print('bias: {}'.format(linear.bias.tolist()))
             print('epoch {}, z min: {}, z mean: {}, z max: {} non-zero: {}'.format(i, z.min(), z.mean(), z.max(), z.nonzero().shape))
             print('theta min: {}, theta mean: {}, theta max: {}'.format(linear.theta.min(), linear.theta.mean(), linear.theta.max()))
-            print('p={}, phi={}, loss: {}, nll:{}, kl:{}. kl_z:{}, kl_beta:{}, SSE: {}, sse_test: {}'.format(X.shape[0], phi, nll, loss, kl, kl_z, kl_beta, sse, sse_test))
+            print('p={}, phi={}, loss: {}, nll:{}, kl:{}. kl_z:{}, kl_beta:{}, SSE: {}, sse_test: {}'.format(X.shape[0], phi, loss, nll, kl, kl_z, kl_beta, sse, sse_test))
 
     save_result(linear.logalpha, linear.theta)
     plt.plot(sse_list)

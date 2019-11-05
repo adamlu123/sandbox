@@ -37,7 +37,7 @@ class MarsagliaTsampler(nn.Module):
     def __init__(self, size):
         super().__init__()
         # self.log_gamma_alpha = nn.Parameter(-1.*torch.ones(size))  # TODO: see alpha init matters or not
-        self.gamma_alpha = nn.Parameter(2.*torch.ones(size))
+        self.gamma_alpha = nn.Parameter(.2*torch.ones(size))
         self.size = size
 
     def forward(self, batch_size):
@@ -50,7 +50,7 @@ class MarsagliaTsampler(nn.Module):
 
         condition = get_condition(Z, U, c, V, d).type(torch.float)
         out = condition * d*V
-        processed_out = torch.stack([out[:,p][out[:,p]>0][:10] for p in range(self.size)], dim=0).t()
+        processed_out = torch.stack([out[:,p][out[:,p]>0][:1] for p in range(self.size)], dim=0).t()  # batchsize choose 5
         # out = out[out>0]
         detached_gamma_alpha = self.alpha  #.detach()
         return processed_out, detached_gamma_alpha
@@ -78,7 +78,7 @@ class SpikeAndSlabSampler(nn.Module):
         z_mean = torch.sigmoid(self.logalpha - self.beta * self.gamma_zeta_logratio)
 
         # sample z
-        u = Uniform(0, 1).sample([10, self.p])  # TODO: 10 is the number of effective samples
+        u = Uniform(0, 1).sample([theta.shape[0], self.p])  # TODO: 5 is the number of effective samples
         s = torch.sigmoid((torch.log(u / (1 - u)) + self.logalpha) / self.beta)
         z = torch.clamp((self.zeta - self.gamma) * s + self.gamma, 0, 1)
 
@@ -95,13 +95,19 @@ class LinearModel(nn.Module):
 
     compare with: https://www.tandfonline.com/doi/pdf/10.1080/01621459.2015.1130634?needAccess=true
     """
-    def __init__(self, p):
+    def __init__(self, p, bias=False):
         super(LinearModel, self).__init__()
+        if bias:
+            self.bias = nn.Parameter(torch.ones(p[1]))
+
+        if isinstance(p, tuple):
+            p = p[0] * p[1]
         self.sampler = SpikeAndSlabSampler(p=p, alternative_sampler=MarsagliaTsampler)
         self.mixweight_logalpha = nn.Parameter(torch.ones(p))  # weight parameter for mixture of 2-component gamma
 
     def forward(self, x):
-        self.z, self.z_mean, self.theta, self.detached_gamma_alpha, self.logalpha = self.sampler(batch_size=64)  # 64 choose 10
+        # sample spike density and one component theta
+        self.z, self.z_mean, self.theta, self.detached_gamma_alpha, self.logalpha = self.sampler(batch_size=50)  # 64 choose 10
 
         # sample mixture weight using concrete
         u = Uniform(0, 1).sample(self.theta.size())
@@ -109,10 +115,10 @@ class LinearModel(nn.Module):
         if not self.training:
             weight = torch.exp(self.mixweight_logalpha.expand_as(u)) / (1 + torch.exp(self.mixweight_logalpha.expand_as(u)))
 
-        # sign = 2 * Bernoulli(0.5).sample(self.theta.size()) - 1
         self.signed_theta = weight * self.theta + (1-weight) * (-self.theta)
         self.Theta = self.signed_theta * self.z
-        out = x.matmul(self.Theta.mean(dim=0))  # TODO: defer taking mean to the output
+        out = x.matmul(self.Theta.mean(dim=0).view(x.shape[1],-1)) + self.bias  # TODO: defer taking mean to the output
+
         return out
 
     def kl(self, phi):
@@ -125,7 +131,7 @@ class LinearModel(nn.Module):
         kl_z = qz*torch.log(qz/p) + (1-qz)*torch.log((1-qz)/(1-p))
         kl = (kl_z + qz*kl_beta).sum(dim=1).mean()
 
-        return kl
+        return kl, kl_z, kl_beta
 
 
 
@@ -190,7 +196,7 @@ def train(Y, X, truetheta, phi, epoch=10000):
         y_hat = linear(X)
 
         nll = -loglike(y_hat, Y)
-        kl = linear.kl(phi)
+        kl, kl_z, kl_beta = linear.kl(phi)
         loss = nll + kl
 
         # compute gradient and do SGD step
@@ -212,7 +218,6 @@ def train(Y, X, truetheta, phi, epoch=10000):
         if i % 50 == 0:
             # print('est.z train mode',linear.z.mean(dim=0).detach().numpy().round(2))
             # z = torch.clamp(torch.sigmoid(linear.logalpha) * (1.2) - 0.1, 0, 1)
-
 
             print('\n', 'last 5 responses:', y_hat[-5:].round().tolist(), Y[-5:].round().tolist())
             print('sse_theta:{}, min_sse_theta:{}'.format(sse_theta, np.asarray(sse_theta_list).min()))
