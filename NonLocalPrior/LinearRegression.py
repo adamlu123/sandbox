@@ -107,7 +107,7 @@ class LinearModel(nn.Module):
 
     def forward(self, x):
         # sample spike density and one component theta
-        self.z, self.z_mean, self.theta, self.detached_gamma_alpha, self.logalpha = self.sampler(batch_size=50)  # 64 choose 10
+        self.z, self.z_mean, self.theta, self.detached_gamma_alpha, self.logalpha = self.sampler(batch_size=60)  # 64 choose 10
 
         # sample mixture weight using concrete
         u = Uniform(0, 1).sample(self.theta.size())
