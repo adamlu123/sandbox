@@ -67,8 +67,6 @@ class LinearDiracDelta(nn.Module):
 
 
 
-
-
 def get_nll(y_pred, labels):
     delta = torch.exp(y_pred).clamp(min=1e-2, max=1e2)
     ll = torch.lgamma(labels + delta) - torch.lgamma(delta)  # shape(n,q)
