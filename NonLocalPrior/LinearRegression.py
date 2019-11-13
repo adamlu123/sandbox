@@ -23,6 +23,8 @@ def generate_data(n, p, phi, rho, seed):
     Y = np.matmul(X, theta) + noise
     return Y, X, theta
 
+def
+
 
 def get_condition(Z, U, c, V, d):
     condition1 = Z>-1/c
@@ -35,7 +37,7 @@ class MarsagliaTsampler(nn.Module):
     Implement Marsaglia and Tsang’s method as a Gamma variable sampler: https://www.hongliangjie.com/2012/12/19/how-to-generate-gamma-random-variables/
     """
     def __init__(self, size):
-        super().__init__()
+        super(MarsagliaTsampler, self).__init__()
         # self.log_gamma_alpha = nn.Parameter(-1.*torch.ones(size))  # TODO: see alpha init matters or not
         self.gamma_alpha = nn.Parameter(.2*torch.ones(size))
         self.size = size
@@ -56,6 +58,18 @@ class MarsagliaTsampler(nn.Module):
         return processed_out, detached_gamma_alpha
 
 
+class LogNormalSampler(nn.Module):
+    def __init__(self, size):
+        super(LogNormalSampler, self).__init__()
+        self.mu = nn.Parameter(.2*torch.ones(size))
+        self.logstd = nn.Parameter(.2*torch.ones(size))
+        self.size = size
+
+    def forward(self, batch_size):
+        epsilon = Normal(0, 1).sample([batch_size, self.size])
+        return (self.logstd.exp() * epsilon + mu).exp()
+
+
 class SpikeAndSlabSampler(nn.Module):
     """
     Add spike and slab to MarsagliaTsampler
@@ -73,11 +87,16 @@ class SpikeAndSlabSampler(nn.Module):
         self.gamma_zeta_logratio = -self.gamma / self.zeta
 
     def forward(self, batch_size):
-        # sample theta
-        theta, detached_gamma_alpha = self.alternative_sampler(batch_size=batch_size)  # shape=[batch_size, p]
-        z_mean = torch.sigmoid(self.logalpha - self.beta * self.gamma_zeta_logratio)
+        # sample theta: one component
+        if isinstance(self.alternative_sampler, MarsagliaTsampler):
+            theta, detached_gamma_alpha = self.alternative_sampler(batch_size=batch_size)  # shape=[batch_size, p]
+
+        elif isinstance(self.alternative_sampler, LogNormalSampler):
+            theta, mean_lognormal = self.alternative_sampler(batch_size=batch_size)
+            detached_gamma_alpha = mean_lognormal
 
         # sample z
+        z_mean = torch.sigmoid(self.logalpha - self.beta * self.gamma_zeta_logratio)
         u = Uniform(0, 1).sample([theta.shape[0], self.p])  # TODO: 5 is the number of effective samples
         s = torch.sigmoid((torch.log(u / (1 - u)) + self.logalpha) / self.beta)
         z = torch.clamp((self.zeta - self.gamma) * s + self.gamma, 0, 1)
@@ -95,44 +114,55 @@ class LinearModel(nn.Module):
 
     compare with: https://www.tandfonline.com/doi/pdf/10.1080/01621459.2015.1130634?needAccess=true
     """
-    def __init__(self, p, bias=False):
+    def __init__(self, p, bias=False, alternative_sampler=MarsagliaTsampler):
         super(LinearModel, self).__init__()
         if bias:
             self.bias = nn.Parameter(torch.ones(p[1]))
 
         if isinstance(p, tuple):
             p = p[0] * p[1]
-        self.sampler = SpikeAndSlabSampler(p=p, alternative_sampler=MarsagliaTsampler)
+        self.alternative_sampler = alternative_sampler
+        self.sampler = SpikeAndSlabSampler(p=p, alternative_sampler=alternative_sampler)
         self.mixweight_logalpha = nn.Parameter(torch.ones(p))  # weight parameter for mixture of 2-component gamma
 
     def forward(self, x):
         # sample spike density and one component theta
         self.z, self.z_mean, self.theta, self.detached_gamma_alpha, self.logalpha = self.sampler(batch_size=60)  # 64 choose 10
 
-        # sample mixture weight using concrete
+        # sample mixture weight of variational distribution using concrete
         u = Uniform(0, 1).sample(self.theta.size())
-        weight = torch.sigmoid((torch.log(u / (1 - u)) + self.mixweight_logalpha.expand_as(u)) / (0.9))
+        self.weight = torch.sigmoid((torch.log(u / (1 - u)) + self.mixweight_logalpha.expand_as(u)) / (0.9))
         if not self.training:
-            weight = torch.exp(self.mixweight_logalpha.expand_as(u)) / (1 + torch.exp(self.mixweight_logalpha.expand_as(u)))
+            self.weight = torch.exp(self.mixweight_logalpha.expand_as(u)) / (1 + torch.exp(self.mixweight_logalpha.expand_as(u)))
 
-        self.signed_theta = weight * self.theta + (1-weight) * (-self.theta)
+        self.signed_theta = self.weight * self.theta + (1-self.weight) * (-self.theta)
         self.Theta = self.signed_theta * self.z
         out = x.matmul(self.Theta.mean(dim=0).view(x.shape[1],-1)) + self.bias  # TODO: defer taking mean to the output
 
         return out
 
     def kl(self, phi):
-        qz = self.z_mean.expand_as(self.theta)
-        qlogp = torch.log(nlp_pdf(self.signed_theta, phi, tau=0.358)+1e-8)
-        gamma = Gamma(concentration=self.detached_gamma_alpha, rate=1.)
-        qlogq = np.log(0.5) + gamma.log_prob(self.theta)  # use unsigned self.theta to compute qlogq
-        kl_beta = qlogq - qlogp
         p = 5e-3
-        kl_z = qz*torch.log(qz/p) + (1-qz)*torch.log((1-qz)/(1-p))
-        kl = (kl_z + qz*kl_beta).sum(dim=1).mean()
+        qz = self.z_mean.expand_as(self.theta)
+        kl_z = qz * torch.log(qz / p) + (1 - qz) * torch.log((1 - qz) / (1 - p))
+        qlogp = torch.log(nlp_pdf(self.signed_theta, phi, tau=0.358)+1e-8)
 
+        if isinstance(self.alternative_sampler, MarsagliaTsampler):
+            gamma = Gamma(concentration=self.detached_gamma_alpha, rate=1.)
+            qlogq = np.log(0.5) + gamma.log_prob(self.theta)  # use unsigned self.theta to compute qlogq
+        elif isinstance(self.alternative_sampler, LogNormalSampler):
+            qlogq = self.log_prob_alternative(self.signed_theta)
+
+        kl_beta = qlogq - qlogp
+        kl = (kl_z + qz*kl_beta).sum(dim=1).mean()
         return kl, kl_z, kl_beta
 
+    def log_prob_alternative(self, theta):
+        """
+        neg entropy of the variational distribution: qlogq, 1/S*logprob(samples)
+        :param theta: 
+        :return:
+        """
 
 
 # class LinearDiracDelta(nn.Module):

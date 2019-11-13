@@ -80,7 +80,9 @@ def train(Y, X, phi, epoch=15000):
     Y = torch.tensor(Y, dtype=torch.float)
     X = torch.tensor(X, dtype=torch.float)
     # linear = LinearDiracDelta(p=X.shape[1], q=Y.shape[1])
-    linear = LinearModel(p=(X.shape[1], Y.shape[1]), bias=True)
+    linear = LinearModel(p=(X.shape[1], Y.shape[1]),
+                         bias=True,
+                         alternative_sampler=LogNormalSampler)
 
     optimizer = optim.SGD(linear.parameters(), lr=0.01, momentum=0.9)
     sse_list = []
