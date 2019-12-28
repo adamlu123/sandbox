@@ -23,8 +23,6 @@ def generate_data(n, p, phi, rho, seed):
     Y = np.matmul(X, theta) + noise
     return Y, X, theta
 
-def
-
 
 def get_condition(Z, U, c, V, d):
     condition1 = Z>-1/c
@@ -160,7 +158,7 @@ class LinearModel(nn.Module):
     def log_prob_alternative(self, theta):
         """
         neg entropy of the variational distribution: qlogq, 1/S*logprob(samples)
-        :param theta: 
+        :param theta:
         :return:
         """
 
