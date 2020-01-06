@@ -5,8 +5,14 @@ from torch.distributions import Normal, Uniform, Gamma, Bernoulli
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def nlp_pdf(x, phi, tau=0.358):
     return x**2*1/tau*(1/np.sqrt(2*np.pi*tau*phi))*torch.exp(-x**2/(2*tau*phi))
+
+
+def nlp_log_pdf(x, phi, tau=0.358):
+    return (x**2).clamp(min=1e-2).log() - np.log(tau) - np.log(np.sqrt(2*np.pi*tau*phi)) - x**2/(2*tau*phi)
+
 
 def generate_data(n, p, phi, rho, seed):
     np.random.seed(seed)
@@ -42,16 +48,22 @@ def get_qlogq(theta, mu, logstd, weight):
     return qlogq
 
 
+def get_qlogq_robust(theta, epsilon, mu, logstd, weight):
+    std = logstd.exp()
+    value = - (torch.tensor(2 * np.pi)).sqrt().log() - epsilon**2/2 - logstd - (mu + std * epsilon)
+    return torch.where(theta > 0, weight * value, (1 - weight) * value)
+
+
 class LogNormalSampler(nn.Module):
     def __init__(self, p):
         super(LogNormalSampler, self).__init__()
         self.mu = nn.Parameter(.2*torch.ones(p))
-        self.logstd = nn.Parameter(1*torch.ones(p))
+        self.logstd = nn.Parameter(.01*torch.ones(p))
         self.p = p
 
     def forward(self, repeat):
         epsilon = Normal(0, 1).sample([repeat, self.p])
-        return (self.logstd.exp() * epsilon + self.mu).exp(), self.mu, self.logstd
+        return (self.logstd.exp() * epsilon + self.mu).exp(), epsilon, self.mu, self.logstd
 
 
 class HardConcreteSampler(nn.Module):
@@ -94,6 +106,7 @@ class ConcreteSampler(nn.Module):
         return s
 
 
+
 class SpikeAndSlabSampler(nn.Module):
     """
     Add spike and slab to LogNormalSampler
@@ -106,12 +119,14 @@ class SpikeAndSlabSampler(nn.Module):
         self.mixture_weight_sampler = ConcreteSampler(p)
 
     def forward(self, repeat):
-        theta, mu, logstd = self.alternative_sampler(repeat)
+        theta, epsilon, mu, logstd = self.alternative_sampler(repeat)
+        logstd = logstd.clamp(min=np.log(1e-2), max=np.log(1e2))
         weight = self.mixture_weight_sampler(repeat)
         z, qz = self.z_sampler(repeat)
         signed_theta = weight * theta + (1 - weight) * (-theta)
         out = z * signed_theta
-        return out, signed_theta, mu, logstd, weight, z, qz
+        return out, signed_theta, epsilon, mu, logstd, weight, z, qz
+
 
 
 class LinearModel(nn.Module):
@@ -130,32 +145,34 @@ class LinearModel(nn.Module):
         self.sampler = SpikeAndSlabSampler(p=p, alternative_sampler=alternative_sampler)
 
     def forward(self, x):
-        self.Theta, self.signed_theta, self.mu, self.logstd, self.weight, self.z, self.qz = self.sampler(repeat=100)
+        self.Theta, self.signed_theta, self.epsilon, self.mu, self.logstd, self.weight, self.z, self.qz = self.sampler(repeat=100)
         out = x.matmul(self.Theta.mean(dim=0).view(x.shape[1], -1))  # TODO: defer taking mean to the output
         return out.squeeze()
 
     def kl(self, phi):
-        p = 5e-3
+        p = 1e-3
         qz = self.qz.expand_as(self.Theta)
         kl_z = qz * torch.log(qz / p) + (1 - qz) * torch.log((1 - qz) / (1 - p))
-        qlogp = torch.log(nlp_pdf(self.signed_theta, phi, tau=0.358)+1e-8)   # shape=(60, p)
-        qlogq = get_qlogq(self.signed_theta, self.mu, self.logstd, self.weight)
+        # qlogp = torch.log(nlp_pdf(self.signed_theta, phi, tau=0.358)+1e-5)   # shape=(60, p)
+        qlogp = nlp_log_pdf(self.signed_theta, phi, tau=0.358).clamp(min=np.log(1e-10))
+        qlogq = get_qlogq_robust(self.signed_theta, self.epsilon, self.mu, self.logstd, self.weight)
 
         kl_beta = qlogq - qlogp
         kl = (kl_z + qz*kl_beta).sum(dim=1).mean()
         return kl, qlogp.mean(), qlogq.mean()
 
 
-
 def loglike(y_hat, y):
     ll = - (y_hat-y)**2/(2*1**2)
     return ll.sum()
+
 
 def train(Y, X, truetheta, phi, epoch=10000):
     Y = torch.tensor(Y, dtype=torch.float)
     X = torch.tensor(X, dtype=torch.float)
     linear = LinearModel(p=X.shape[1])
-    optimizer = optim.SGD(linear.parameters(), lr=0.0001, momentum=0.9)
+    # optimizer = optim.SGD(linear.parameters(), lr=0.0001, momentum=0.9)
+    optimizer = optim.Adam(linear.parameters(), lr=0.01, weight_decay=0)
     sse_list = []
     sse_theta_list = []
     for i in range(epoch):
@@ -185,12 +202,13 @@ def train(Y, X, truetheta, phi, epoch=10000):
             sse_theta_list.append(((linear.Theta.mean(dim=0) - torch.tensor(truetheta, dtype=torch.float)) ** 2).sum())
 
         # print intermediet results
-        if i % 200 == 0:
+        if i % 100 == 0:
             z = linear.z
             print('\n', 'last 5 responses:', y_hat[-5:].round().tolist(), Y[-5:].round().tolist())
             print('sse_theta:{}, min_sse_theta:{}'.format(sse_theta, np.asarray(sse_theta_list).min()))
-            print('est.Thetas: {}, est z:{}'.format(linear.Theta.mean(dim=0)[-5:].tolist(), z.mean(dim=0).detach().numpy()))
+            print('est.Thetas: {}, est z:{}'.format(linear.Theta.mean(dim=0)[-5:].tolist(), z.mean(dim=0)[-5:].detach().numpy()))
             print('epoch {}, z min: {}, z mean: {}, non-zero: {}'.format(i, z.min(), z.mean(), z.nonzero().shape))
+            print('nll, kl', nll.tolist(), kl.tolist())
             # print('p={}, phi={}, loss: {}, nll:{}, kl:{}. SSE: {}, sse_test: {}'.format(X.shape[0], phi, nll, loss, kl, sse, sse_test))
     plt.plot(sse_list)
     # plt.savefig('/extra/yadongl10/git_project/GammaLearningResult/sse.png', dpi=100)
@@ -215,7 +233,7 @@ config = {
 
 def main(config):
     n = 100
-    for p in [10]:
+    for p in [500]:
         for phi in [1, 4, 8]:
             Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=1234)
             linear = train(Y, X, truetheta, phi, epoch=10000)
