@@ -238,3 +238,43 @@ sum_from_one = lambda x: sum_from_one(sum1(x)) if len(x.size()) > 2 else sum1(x)
 class Sigmoid(Module):
     def forward(self, x):
         return sigmoid(x)
+
+
+def oper(array, oper, axis=-1, keepdims=False):
+    a_oper = oper(array)
+    if keepdims:
+        shape = []
+        for j,s in enumerate(array.size()):
+            shape.append(s)
+        shape[axis] = -1
+        a_oper = a_oper.view(*shape)
+    return a_oper
+
+
+def log_sum_exp(A, axis=-1, sum_op=torch.sum):
+    maximum = lambda x: x.max(axis)[0]
+    A_max = oper(A,maximum,axis,True)
+    summation = lambda x: sum_op(torch.exp(x-A_max), axis)
+    B = torch.log(oper(A,summation,axis,True)) + A_max
+    return B
+
+
+import seaborn as sns
+
+
+def plot(x, savefig=True):
+    mean = np.asarray([0.6, 1.2, 1.8, 2.4, 3])
+    f, axes = plt.subplots(2, 3, figsize=(18, 10), sharex=True)
+    for i in range(2):
+        for j in range(3):
+            if i == 1 and j == 2:
+                continue
+            theta = x[:, -(i * 3 + j + 1)]
+            sns.distplot(theta, bins=50, ax=axes[i, j])
+            axes[i, j].set_title('theta {}'.format((i * 3 + j + 1)), fontsize=16)
+            axes[i, j].axvline(x=mean[-(i * 3 + j + 1)], color='red', linestyle='--')
+    for ax in axes.flat:
+        ax.set_xlabel('values', fontsize=15)
+        ax.set_ylabel('density', fontsize=15)
+    if savefig:
+        plt.savefig('est_theta_density.png')
