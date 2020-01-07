@@ -278,3 +278,30 @@ def plot(x, savefig=True):
         ax.set_ylabel('density', fontsize=15)
     if savefig:
         plt.savefig('est_theta_density.png')
+
+
+def search_threshold(s, fdr):
+    """
+    Args:
+        s: predicted probability
+        fdr: controlled false discovery rate level
+
+    Returns:
+        largest threshold such that the fdr is less than the controlled level: fdr
+    """
+    for threshold in np.linspace(0, 1, 101):
+        if compute_implied_fdr(threshold, s) < fdr:
+            break
+    return threshold
+
+def compute_implied_fdr(threshold, s):
+    """
+    Args:
+        s: predicted probability
+        threshold: level greater than threshold are selected
+
+    Returns:
+        fdr corresponding to the threshold
+    """
+    indicator = np.asarray([s > threshold])
+    return np.sum((1 - s) * indicator) / np.sum(indicator)

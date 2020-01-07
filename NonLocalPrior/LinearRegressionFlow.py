@@ -49,7 +49,7 @@ class HardConcreteSampler(nn.Module):
         self.zeta, self.gamma, self.beta = 1.1, -0.1, 2/3
         self.gamma_zeta_logratio = -self.gamma / self.zeta
         self.logalpha = nn.Parameter(torch.ones(p))
-        self.logalpha.data.uniform_(np.log(0.2), np.log(10))
+        # self.logalpha.data.uniform_(np.log(0.2), np.log(10))
 
     def forward(self, repeat):
         qz = torch.sigmoid(self.logalpha - self.beta * self.gamma_zeta_logratio)
@@ -223,7 +223,7 @@ class LinearModel(nn.Module):
         self.sampler = SpikeAndSlabSampler(p=p, alternative_sampler=alternative_sampler)
 
     def forward(self, x):
-        self.Theta, self.theta, self.logdet, self.z, self.qz = self.sampler(repeat=16)
+        self.Theta, self.theta, self.logdet, self.z, self.qz = self.sampler(repeat=32)
         out = x.matmul(self.Theta.mean(dim=0).view(x.shape[1], -1))  # TODO: defer taking mean to the output
         return out.squeeze()
 
@@ -281,12 +281,15 @@ def train(Y, X, truetheta, phi, epoch=10000):
 
         # print intermediet results
         if i % 50 == 0:
-            z = linear.z
+            z = linear.z.mean(dim=0).cpu().numpy()
             print('\n', i, 'last 5 responses:', y_hat[-5:].round().tolist(), Y[-5:].round().tolist())
             print('sse_theta:{}, min_sse_theta:{}'.format(sse_theta, np.asarray(sse_theta_list).min()))
-            print('est.thetas: {}, est z:{}'.format(linear.Theta.mean(dim=0)[-5:].tolist(), z.mean(dim=0)[-5:].detach().numpy()))
-            print('epoch {}, z min: {}, z mean: {}, non-zero: {}'.format(i, z.min(), z.mean(), z.nonzero().shape))
+            print('est.thetas: {}, est z:{}'.format(linear.Theta.mean(dim=0)[-5:].tolist(), z[-5:]))
+            print('epoch {}, z min: {}, z mean: {}, non-zero: {}'.format(i, z.min(), z.mean(), z.nonzero()[0].shape))
             print('nll, kl', nll.tolist(), kl.tolist())
+            threshold = utils.search_threshold(z, 0.05)
+            print('threshold', threshold)
+            print('number of cov above threshold', np.sum(z>threshold))
             # print('p={}, phi={}, loss: {}, nll:{}, kl:{}. SSE: {}, sse_test: {}'.format(X.shape[0], phi, nll, loss, kl, sse, sse_test))
         if i % 100 == 0:
             utils.plot(linear.Theta, savefig=True)
@@ -317,7 +320,7 @@ def main(config):
     for p in [100]:
         for phi in [1, 4, 8]:
             Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=1234)
-            linear = train(Y, X, truetheta, phi, epoch=1000)  # 10000
+            linear = train(Y, X, truetheta, phi, epoch=900)  # 10000
             test(Y, X, linear)
 
             # if config['save_model']:
