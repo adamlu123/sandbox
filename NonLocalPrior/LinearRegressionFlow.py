@@ -232,7 +232,7 @@ class LinearModel(nn.Module):
         qz = self.qz.expand_as(self.Theta)
         kl_z = qz * torch.log(qz / p) + (1 - qz) * torch.log((1 - qz) / (1 - p))
         qlogp = nlp_log_pdf(self.theta, phi, tau=0.358).clamp(min=np.log(1e-10))
-        qlogq = self.logdet
+        qlogq = -self.logdet
 
         kl_beta = qlogq - qlogp
         kl = (kl_z + qz*kl_beta).sum(dim=1).mean()
@@ -250,7 +250,7 @@ def train(Y, X, truetheta, phi, epoch=10000):
     X = torch.tensor(X, dtype=torch.float)
     linear = LinearModel(p=X.shape[1])
     # optimizer = optim.SGD(linear.parameters(), lr=0.0001, momentum=0.9)
-    optimizer = optim.Adam(linear.parameters(), lr=0.005, weight_decay=0)
+    optimizer = optim.Adam(linear.parameters(), lr=0.01, weight_decay=0)
     sse_list = []
     sse_theta_list = []
     for i in range(epoch):
@@ -317,10 +317,10 @@ config = {
 
 def main(config):
     n = 100
-    for p in [100]:
+    for p in [500]:
         for phi in [1, 4, 8]:
             Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=1234)
-            linear = train(Y, X, truetheta, phi, epoch=900)  # 10000
+            linear = train(Y, X, truetheta, phi, epoch=10000)  # 10000
             test(Y, X, linear)
 
             # if config['save_model']:
