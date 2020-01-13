@@ -1,4 +1,5 @@
-from LinearRegression import LinearModel
+# from LinearRegression import LinearModel
+from LinearRegressionFlow import LinearModel, FlowAlternative
 import torch
 import torch.nn as nn
 from torch import optim
@@ -7,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pickle as pkl
+import utils
 
 
 def nlp_pdf(x, phi, tau=0.358):
@@ -82,7 +84,7 @@ def train(Y, X, phi, epoch=15000):
     # linear = LinearDiracDelta(p=X.shape[1], q=Y.shape[1])
     linear = LinearModel(p=(X.shape[1], Y.shape[1]),
                          bias=True,
-                         alternative_sampler=LogNormalSampler)
+                         alternative_sampler=FlowAlternative)
 
     optimizer = optim.SGD(linear.parameters(), lr=0.01, momentum=0.9)
     sse_list = []
@@ -109,17 +111,19 @@ def train(Y, X, phi, epoch=15000):
             with torch.no_grad():
                 linear.eval()
                 y_hat = linear(X)
-                z = linear.z  #[0, :]
+                z = linear.z.mean(dim=0).cpu().numpy()
                 sse_test = ((y_hat - Y) ** 2).mean().detach().numpy()
 
             print('\n', y_hat[-1, :5].exp().round().tolist(), Y[-1,:5].round().tolist())
             # print('est.Thetas: {}, est z:{}'.format(linear.Theta[-5:].tolist(), z.mean(dim=0).detach().numpy().round(2)))
-            print('Bacteriods: {}'.format(z.mean(dim=0).reshape(117, 30)[:, 0].max().tolist()))
+            print('Bacteriods: {}'.format(z.reshape(117, 30)[:, 0].max()))
             print('bias: {}'.format(linear.bias.tolist()))
-            print('epoch {}, z min: {}, z mean: {}, z max: {} non-zero: {}'.format(i, z.min(), z.mean(), z.max(), z.nonzero().shape))
+            print('epoch {}, z min: {}, z mean: {}, z max: {} non-zero: {}'.format(i, z.min(), z.mean(), z.max(), None))
             print('theta min: {}, theta mean: {}, theta max: {}'.format(linear.theta.min(), linear.theta.mean(), linear.theta.max()))
             print('p={}, phi={}, loss: {}, nll:{}, kl:{}. kl_z:{}, kl_beta:{}, SSE: {}, sse_test: {}'.format(X.shape[0], phi, loss, nll, kl, kl_z, kl_beta, sse, sse_test))
-
+            threshold = utils.search_threshold(z, 0.05)
+            print('threshold', threshold)
+            print('number of cov above threshold', np.sum(z > threshold))
     save_result(linear.logalpha, linear.theta)
     plt.plot(sse_list)
     plt.savefig('/extra/yadongl10/git_project/GammaLearningResult/sse.png', dpi=100)

@@ -1,3 +1,4 @@
+import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -214,8 +215,10 @@ class LinearModel(nn.Module):
     """
     def __init__(self, p, bias=False, alternative_sampler=FlowAlternative):
         super(LinearModel, self).__init__()
-        if bias:
+        self.add_bias = bias
+        if self.add_bias:
             self.bias = nn.Parameter(torch.ones(p[1]))
+            self.bias.data.uniform_(-0.1, 0.1)
 
         if isinstance(p, tuple):
             p = p[0] * p[1]
@@ -224,7 +227,10 @@ class LinearModel(nn.Module):
 
     def forward(self, x):
         self.Theta, self.theta, self.logdet, self.z, self.qz = self.sampler(repeat=32)
-        out = x.matmul(self.Theta.mean(dim=0).view(x.shape[1], -1))  # TODO: defer taking mean to the output
+        if self.add_bias:
+            out = x.matmul(self.Theta.mean(dim=0).view(x.shape[1], -1)) + self.bias
+        else:
+            out = x.matmul(self.Theta.mean(dim=0).view(x.shape[1], -1))  # TODO: defer taking mean to the output
         return out.squeeze()
 
     def kl(self, phi):
@@ -261,7 +267,7 @@ def train(Y, X, truetheta, phi, epoch=10000):
         y_hat = linear(X)
         nll = -loglike(y_hat, Y)
         kl, qlogp, qlogq = linear.kl(phi)
-        loss = nll + kl
+        loss = nll + 0.1 * kl
         # print('qlogp, qlogq', qlogp.data, qlogq.data)
 
         # compute gradient and do SGD step
@@ -317,7 +323,7 @@ config = {
 
 def main(config):
     n = 100
-    for p in [500]:
+    for p in [1000]:
         for phi in [1, 4, 8]:
             Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=1234)
             linear = train(Y, X, truetheta, phi, epoch=10000)  # 10000
@@ -328,4 +334,10 @@ def main(config):
 
 
 if __name__=='__main__':
+    parser = argparse.ArgumentParser(description='Flow spike and slab')
+    parser.add_argument(
+        '--p',
+        type=int,
+        default=100,
+        help='number of covariates (default: 100)')
     main(config)
