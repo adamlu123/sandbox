@@ -121,7 +121,7 @@ def train(Y, X, phi, epoch=15000):
             print('epoch {}, z min: {}, z mean: {}, z max: {} non-zero: {}'.format(i, z.min(), z.mean(), z.max(), None))
             print('theta min: {}, theta mean: {}, theta max: {}'.format(linear.theta.min(), linear.theta.mean(), linear.theta.max()))
             print('p={}, phi={}, loss: {}, nll:{}, kl:{}. kl_z:{}, kl_beta:{}, SSE: {}, sse_test: {}'.format(X.shape[0], phi, loss, nll, kl, kl_z, kl_beta, sse, sse_test))
-            threshold = utils.search_threshold(z, 0.05)
+            threshold = utils.search_threshold(z, 0.3)
             print('threshold', threshold)
             print('number of cov above threshold', np.sum(z > threshold))
     save_result(linear.logalpha, linear.theta)
