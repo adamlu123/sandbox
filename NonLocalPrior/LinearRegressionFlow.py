@@ -91,11 +91,9 @@ class BaseFlow(nn.Module):
 
 
 class SigmoidFlow(BaseFlow):
-
     def __init__(self, num_ds_dim=4):
         super(SigmoidFlow, self).__init__()
         self.num_ds_dim = num_ds_dim
-
         self.act_a = lambda x: utils.softplus(x)
         self.act_b = lambda x: x
         self.act_w = lambda x: utils.softmax(x, dim=2)

@@ -61,3 +61,26 @@ def get_accuracy(pred, label):
     :return:
     """
     return (pred==label).sum() / label.shape[0]
+
+
+def nlp_log_pdf(x, phi, tau=0.358):
+    return (x**2).clamp(min=1e-2).log() - np.log(tau) - np.log(np.sqrt(2*np.pi*tau*phi)) - x**2/(2*tau*phi)
+
+
+def normal_log_pdf(x, mu, logvar):
+    return -0.5 * logvar - 0.5 * np.log(2*np.pi) - (x - mu)**2/(2*logvar.exp())
+
+
+import torch
+import torch.nn as nn
+
+delta = 1e-6
+softplus_ = nn.Softplus()
+softplus = lambda x: softplus_(x) + delta
+sigmoid_ = nn.Sigmoid()
+sigmoid = lambda x: sigmoid_(x) * (1 - delta) + 0.5 * delta
+sigmoid2 = lambda x: sigmoid(x) * 2.0
+logsigmoid = lambda x: -softplus(-x)
+logit = lambda x: torch.log
+log = lambda x: torch.log(x * 1e2) - np.log(1e2)
+logit = lambda x: log(x) - log(1 - x)

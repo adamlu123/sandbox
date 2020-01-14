@@ -4,16 +4,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import utils
-import h5py
+from utils import log
 
 from __future__ import print_function
 import argparse
 import torch.utils.data
 from torch import nn, optim
 from torch.nn import functional as F
+from torch.distributions import Uniform, Normal
 from torchvision import datasets, transforms
-from torchvision.utils import save_image
 import pickle as pkl
+from torch.autograd import Variable
 
 
 parser = argparse.ArgumentParser(description='VAE MNIST Example')
@@ -31,91 +32,209 @@ args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
 torch.manual_seed(args.seed)
-
 device = 'cuda' # torch.device("cuda" if args.cuda else "cpu")
-
 kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
 
+
+class HardConcreteSampler(nn.Module):
+    """
+    Sampler for Hard concrete random variable used for L0 gate
+    """
+    def __init__(self, p):
+        super(HardConcreteSampler, self).__init__()
+        self.p = p
+        self.zeta, self.gamma, self.beta = 1.1, -0.1, 2/3
+        self.gamma_zeta_logratio = -self.gamma / self.zeta
+        # self.logalpha.data.uniform_(np.log(0.2), np.log(10))
+
+    def forward(self, repeat, logalpha):
+        qz = torch.sigmoid(logalpha - self.beta * self.gamma_zeta_logratio)
+        u = Uniform(0, 1).sample([repeat, self.p])
+        s = torch.sigmoid((torch.log(u / (1 - u)) + logalpha) / self.beta)
+        if self.training:
+            z = torch.clamp((self.zeta - self.gamma) * s + self.gamma, 0, 1)
+        else:
+            z = torch.clamp(torch.sigmoid(logalpha) * (self.zeta - self.gamma) + self.gamma, 0, 1).expand_as(u)
+        return z, qz
+
+
+class BaseFlow(nn.Module):
+    def sample(self, n=1, context=None, **kwargs):
+        dim = self.p
+        if isinstance(self.p, int):
+            dim = [dim, ]
+
+        spl = Variable(torch.FloatTensor(n, *dim).normal_())
+        std = torch.exp(0.5 * logvar)
+        spl = mu + std * spl
+        lgd = torch.zeros(n, *dim)
+
+        if hasattr(self, 'gpu'):
+            if self.gpu:
+                spl = spl.cuda()
+                lgd = lgd.cuda()
+                context = context.gpu()
+
+        return self.forward((spl, lgd, context))
+
+    def cuda(self):
+        self.gpu = True
+        return super(BaseFlow, self).cuda()
+
+
+class SigmoidFlow(BaseFlow):
+    def __init__(self, num_ds_dim=4):
+        super(SigmoidFlow, self).__init__()
+        self.num_ds_dim = num_ds_dim
+        self.act_a = lambda x: utils.softplus(x)
+        self.act_b = lambda x: x
+        self.act_w = lambda x: utils.softmax(x, dim=2)
+
+    def forward(self, x, logdet, dsparams, mollify=0.0, delta=utils.delta):
+        ndim = self.num_ds_dim
+        a_ = self.act_a(dsparams[:, :, 0 * ndim:1 * ndim])
+        b_ = self.act_b(dsparams[:, :, 1 * ndim:2 * ndim])
+        w = self.act_w(dsparams[:, :, 2 * ndim:3 * ndim])
+
+        a = a_ * (1 - mollify) + 1.0 * mollify
+        b = b_ * (1 - mollify) + 0.0 * mollify
+
+        pre_sigm = a * x[:, :, None] + b
+        sigm = torch.sigmoid(pre_sigm)
+        x_pre = torch.sum(w * sigm, dim=2)
+        x_pre_clipped = x_pre * (1 - delta) + delta * 0.5
+        x_ = log(x_pre_clipped) - log(1 - x_pre_clipped)
+        xnew = x_
+
+        logj = F.log_softmax(dsparams[:, :, 2 * ndim:3 * ndim], dim=2) + \
+               utils.logsigmoid(pre_sigm) + \
+               utils.logsigmoid(-pre_sigm) + log(a)
+
+        logj = utils.log_sum_exp(logj, 2).sum(2)
+        logdet_ = logj + np.log(1 - delta) - (log(x_pre_clipped) + log(-x_pre_clipped + 1))
+        logdet = logdet_ + logdet
+        return xnew, logdet
+
+
+class FlowAlternative(BaseFlow):
+    """
+    Independent component-wise flow using SigmoidFlow
+    """
+    def __init__(self, p, num_ds_dim=4, num_ds_layers=2):
+        super(FlowAlternative, self).__init__()
+        self.p = p
+        self.num_ds_dim = num_ds_dim
+        self.num_ds_layers = num_ds_layers
+        self.nparams = self.num_ds_dim * 3
+        self.dsparams = nn.Parameter(torch.ones((p, num_ds_layers * self.nparams)))
+        self.dsparams.data.uniform_(-0.001, 0.001)  # TODO check whether it init correctly
+        self.sf = SigmoidFlow(num_ds_dim)
+
+    def forward(self, inputs):
+        x, logdet, context = inputs
+        repeat = x.shape[0]
+
+        h = x  # x.view(x.size(0), -1)   # TODO: ?
+        for i in range(self.num_ds_layers):
+            params = self.dsparams[:, i * self.nparams:(i + 1) * self.nparams]   # shape=(p, nparams)
+            params = params.unsqueeze(0).repeat(repeat, 1, 1)  # shape=(repeat, p, nparams)
+            h, logdet = self.sf(h, logdet, params, mollify=0.0)
+
+        return h, logdet, x
+
+
+class SpikeAndSlabSampler(nn.Module):
+    """
+    Spike and slab sampler with Dirac spike and FlowAlternative slab.
+    """
+    def __init__(self, p, alternative_sampler=FlowAlternative):
+        super(SpikeAndSlabSampler, self).__init__()
+        self.p = p
+        self.alternative_sampler = alternative_sampler(p)
+        self.z_sampler = HardConcreteSampler(p)
+
+    def forward(self, repeat, mu, logvar, logalpha):
+        theta, logdet, gaussians = self.alternative_sampler.sample(n=repeat, mu=mu, logvar=logvar)
+        logq = utils.normal_log_pdf(mu, logvar)
+        z, qz = self.z_sampler(gaussians, repeat, logalpha)
+        out = z * theta
+        return out, theta, logq, logdet, z, qz
 
 
 class Encoder(nn.Module):
     def __init__(self):
         super(Encoder, self).__init__()
 
-        self.fc1 = nn.Linear(784, 400)
-        self.fc21 = nn.Linear(400, 20)
-        self.fc22 = nn.Linear(400, 20)
+        self.fc1 = nn.Linear(784, 1200)
+        self.fc2 = nn.Linear(1200, 600)
+        self.fc3 = nn.Linear(600, 300)
+        self.fc4 = nn.Linear(300, 150)
+        self.fc_output = nn.Linear(150, 32*3)
 
     def forward(self, x):
         x = x.view(-1, 784)
-        h1 = F.relu(self.fc1(x))
-        return self.fc21(h1), self.fc22(h1)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
+        x = F.relu(self.fc4(x))
+        out = self.fc_output(x)
+        return out[:, :32], out[:, 32:64], out[:, 64:96]
 
 
 class Decoder(nn.Module):
     def __init__(self):
         super(Decoder, self).__init__()
 
-        self.fc3 = nn.Linear(20, 400)
-        self.fc4 = nn.Linear(400, 784)
+        self.fc3 = nn.Linear(32, 500)
+        self.fc4 = nn.Linear(500, 500)
+        self.fc5 = nn.Linear(500, 784)
 
     def forward(self, z):
-        h3 = F.relu(self.fc3(z))
-        return torch.sigmoid(self.fc4(h3))
+        z = F.relu(self.fc3(z))
+        z = F.relu(self.fc4(z))
+        return torch.sigmoid(self.fc5(z))
 
 
-def reparameterize(mu, logvar):
-    std = torch.exp(0.5*logvar)
-    eps = torch.randn_like(std)
-    return mu + eps*std
+class NonLocalVAE(nn.Module):
+    def __init__(self):
+        super(NonLocalVAE, self).__init__()
+        self.encoder = Encoder()
+        self.decoder = Decoder()
+        self.latent_sampler = SpikeAndSlabSampler()
+
+    def forward(self, data):
+        mu, logvar, logalpha = self.model_enc(data)
+        latent, self.theta, self.logq, self.logdet, self.z, self.qz = self.latent_sampler(mu, logvar, logalpha)
+        recon_batch = self.decoder(latent)
+        return recon_batch
+
+    def kl(self, phi=1):
+        p = 1e-2
+        qz = self.qz.expand_as(self.theta)
+        kl_z = qz * torch.log(qz / p) + (1 - qz) * torch.log((1 - qz) / (1 - p))
+        qlogp = utils.nlp_log_pdf(self.theta, phi, tau=0.358).clamp(min=np.log(1e-10))
+        qlogq = self.logq - self.logdet
+
+        kl_beta = qlogq - qlogp
+        kl = (kl_z + qz*kl_beta).sum(dim=1).mean()
+        return kl, qlogp.mean(), qlogq.mean()
 
 
 
-# Reconstruction + KL divergence losses summed over all elements and batch
-def loss_function(recon_x, x, mu, logvar):
-    BCE = F.binary_cross_entropy(recon_x, x.view(-1, 784), reduction='sum')
-
-    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-
-    return BCE + KLD
-
-def loss_function_encoder(update_z, mu, logvar):
-    nll = - 0.5 * logvar - (update_z - mu) ** 2 / (2 * logvar.exp())
-    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-    return nll.sum() + KLD, KLD
-
-
-def train(epoch, train_loader):
-    model_enc.train()
-    model_dec.train()
-
+def train(epoch, model, train_loader):
     train_loss = 0
     train_loss_list = []
     for batch_idx, (data, _) in enumerate(train_loader):
         data = data.to(device)
-        optim_enc.zero_grad()
-        optim_dec.zero_grad()
+        optimizer.zero_grad()
 
         # forward pass
-        mu, logvar = model_enc(data)
-        z = reparameterize(mu, logvar)
-        z = z.data.requires_grad_()
-        recon_batch = model_dec(z)
-
-        # update decoder and get update_z
-        BCE = F.binary_cross_entropy(recon_batch, data.view(-1, 784), reduction='sum')
-        BCE.backward()
-        update_z = z + 1e-3 * z.grad
-        optim_dec.step()
-        z.grad.zero_()
-
-        # update encoder
-        loss_enc, KLD = loss_function_encoder(update_z, mu, logvar)
-        loss_enc.backward()
-        optim_enc.step()
+        recon_batch = model(data)
 
         # compute elbo loss and print intermediate results
-        loss = BCE + KLD
+        nll = F.binary_cross_entropy(recon_batch, data.view(-1, 784), reduction='sum')
+        loss = nll + model.kl()
+        loss.backward()
         train_loss += loss.item()
 
         if batch_idx % args.log_interval == 0:
@@ -130,10 +249,10 @@ def train(epoch, train_loader):
     return train_loss_list
 
 
-def test(encoder, k, num_each_class):
-    encoder.eval()  # TODO: notice there is a difference in L0 gate
+def test(model, k, num_each_class):
+    model.eval()  # TODO: notice there is a difference in L0 gate
     data = utils.get_test_data(num_each_class=num_each_class)
-    latent = encoder(data)
+    latent = model.encoder(data)
 
     knn = utils.kNNClassifer(data)
     pred = knn(latent, k=k)
@@ -143,25 +262,16 @@ def test(encoder, k, num_each_class):
 
 
 if __name__ == "__main__":
-    model_enc = Encoder().to(device)
-    model_dec = Decoder().to(device)
-
-    # model = VAE().to(device)
-    optim_enc = optim.Adam(model_enc.parameters(), lr=1e-3)
-    optim_dec = optim.Adam(model_dec.parameters(), lr=1e-3)
+    model = NonLocalVAE().to(device)
+    optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
     train_loss_list = []
     for i in range(10):
         train_loader = utils.get_train_loader(subset=i, batch_size=128)
         for epoch in range(1, args.epochs + 1):
-            train_loss_list += train(epoch, train_loader)
+            train_loss_list += train(epoch, model, train_loader)
 
-        test(model_enc, k=10, num_each_class=1000)
-        # with torch.no_grad():
-        #     sample = torch.randn(64, 20).to(device)
-        #     sample = model.decode(sample).cpu()
-        #     save_image(sample.view(64, 1, 28, 28),
-        #                'results/sample_' + str(epoch) + '.png')
+        test(model, k=10, num_each_class=1000)
     with open('vae_bayes_loss.pkl'.format(epoch), 'wb') as f:
         pkl.dump(train_loss_list, f)
 
