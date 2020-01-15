@@ -32,7 +32,7 @@ def get_train_loader(subset=0, batch_size=128):
 
 
 def get_test_data(num_each_class = 1000):
-    test_data = np.zeros(10*num_each_class, 784)
+    test_data = np.zeros([10*num_each_class, 784])
     for j in range(10):
         with h5py.File('MNSIT_by_class.h5', 'r') as f:
             test_data[j*num_each_class, :] = np.asarray(f[str(j)+'_data'][:num_each_class]).reshape(-1, 784)
@@ -84,3 +84,33 @@ logsigmoid = lambda x: -softplus(-x)
 logit = lambda x: torch.log
 log = lambda x: torch.log(x * 1e2) - np.log(1e2)
 logit = lambda x: log(x) - log(1 - x)
+
+
+def softmax(x, dim=-1):
+    e_x = torch.exp(x - x.max(dim=dim, keepdim=True)[0])
+    out = e_x / e_x.sum(dim=dim, keepdim=True)
+    return out
+
+
+class Sigmoid(nn.Module):
+    def forward(self, x):
+        return sigmoid(x)
+
+
+def oper(array, oper, axis=-1, keepdims=False):
+    a_oper = oper(array)
+    if keepdims:
+        shape = []
+        for j,s in enumerate(array.size()):
+            shape.append(s)
+        shape[axis] = -1
+        a_oper = a_oper.view(*shape)
+    return a_oper
+
+
+def log_sum_exp(A, axis=-1, sum_op=torch.sum):
+    maximum = lambda x: x.max(axis)[0]
+    A_max = oper(A,maximum,axis,True)
+    summation = lambda x: sum_op(torch.exp(x-A_max), axis)
+    B = torch.log(oper(A,summation,axis,True)) + A_max
+    return B

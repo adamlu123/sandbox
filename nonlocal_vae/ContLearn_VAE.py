@@ -6,7 +6,6 @@ import numpy as np
 import utils
 from utils import log
 
-from __future__ import print_function
 import argparse
 import torch.utils.data
 from torch import nn, optim
@@ -48,8 +47,9 @@ class HardConcreteSampler(nn.Module):
         # self.logalpha.data.uniform_(np.log(0.2), np.log(10))
 
     def forward(self, repeat, logalpha):
+        batch_size = logalpha.shape[0]
         qz = torch.sigmoid(logalpha - self.beta * self.gamma_zeta_logratio)
-        u = Uniform(0, 1).sample([repeat, self.p])
+        u = Uniform(0, 1).sample([repeat, batch_size, self.p]).cuda()
         s = torch.sigmoid((torch.log(u / (1 - u)) + logalpha) / self.beta)
         if self.training:
             z = torch.clamp((self.zeta - self.gamma) * s + self.gamma, 0, 1)
@@ -60,14 +60,17 @@ class HardConcreteSampler(nn.Module):
 
 class BaseFlow(nn.Module):
     def sample(self, n=1, context=None, **kwargs):
+        mu = kwargs['mu']
+        logvar = kwargs['logvar']
         dim = self.p
         if isinstance(self.p, int):
             dim = [dim, ]
 
-        spl = Variable(torch.FloatTensor(n, *dim).normal_())
+        batch_size = mu.shape[0]
+        spl = Variable(torch.FloatTensor(n, batch_size, *dim).normal_()).cuda()
         std = torch.exp(0.5 * logvar)
         spl = mu + std * spl
-        lgd = torch.zeros(n, *dim)
+        lgd = torch.zeros(n, batch_size, *dim).cuda()
 
         if hasattr(self, 'gpu'):
             if self.gpu:
@@ -98,10 +101,9 @@ class SigmoidFlow(BaseFlow):
 
         a = a_ * (1 - mollify) + 1.0 * mollify
         b = b_ * (1 - mollify) + 0.0 * mollify
-
-        pre_sigm = a * x[:, :, None] + b
+        pre_sigm = a * x[:, :, :, None] + b   # a.shape=(16, 32, 4)
         sigm = torch.sigmoid(pre_sigm)
-        x_pre = torch.sum(w * sigm, dim=2)
+        x_pre = torch.sum(w * sigm, dim=3)
         x_pre_clipped = x_pre * (1 - delta) + delta * 0.5
         x_ = log(x_pre_clipped) - log(1 - x_pre_clipped)
         xnew = x_
@@ -110,9 +112,9 @@ class SigmoidFlow(BaseFlow):
                utils.logsigmoid(pre_sigm) + \
                utils.logsigmoid(-pre_sigm) + log(a)
 
-        logj = utils.log_sum_exp(logj, 2).sum(2)
+        logj = utils.log_sum_exp(logj, 3).sum(3)
         logdet_ = logj + np.log(1 - delta) - (log(x_pre_clipped) + log(-x_pre_clipped + 1))
-        logdet = logdet_ + logdet
+        logdet = logdet_.permute([1,0,2]) + logdet
         return xnew, logdet
 
 
@@ -134,7 +136,7 @@ class FlowAlternative(BaseFlow):
         x, logdet, context = inputs
         repeat = x.shape[0]
 
-        h = x  # x.view(x.size(0), -1)   # TODO: ?
+        h = x.permute([1,0,2])  # x.shape=(16, 128, 32) -> (128, 16, 32) # x.view(x.size(0), -1)   # TODO: ?
         for i in range(self.num_ds_layers):
             params = self.dsparams[:, i * self.nparams:(i + 1) * self.nparams]   # shape=(p, nparams)
             params = params.unsqueeze(0).repeat(repeat, 1, 1)  # shape=(repeat, p, nparams)
@@ -155,8 +157,9 @@ class SpikeAndSlabSampler(nn.Module):
 
     def forward(self, repeat, mu, logvar, logalpha):
         theta, logdet, gaussians = self.alternative_sampler.sample(n=repeat, mu=mu, logvar=logvar)
-        logq = utils.normal_log_pdf(mu, logvar)
-        z, qz = self.z_sampler(gaussians, repeat, logalpha)
+        logq = utils.normal_log_pdf(gaussians, mu, logvar)
+        z, qz = self.z_sampler(repeat, logalpha)  # z.shape = (repeat, batch, p)  qz.shape=(p)
+        theta = theta.permute([1, 0, 2])  # -> (16, 128, 32)
         out = z * theta
         return out, theta, logq, logdet, z, qz
 
@@ -200,11 +203,11 @@ class NonLocalVAE(nn.Module):
         super(NonLocalVAE, self).__init__()
         self.encoder = Encoder()
         self.decoder = Decoder()
-        self.latent_sampler = SpikeAndSlabSampler()
+        self.latent_sampler = SpikeAndSlabSampler(p=32)
 
     def forward(self, data):
-        mu, logvar, logalpha = self.model_enc(data)
-        latent, self.theta, self.logq, self.logdet, self.z, self.qz = self.latent_sampler(mu, logvar, logalpha)
+        mu, logvar, logalpha = self.encoder(data)
+        latent, self.theta, self.logq, self.logdet, self.z, self.qz = self.latent_sampler(16, mu, logvar, logalpha)
         recon_batch = self.decoder(latent)
         return recon_batch
 
@@ -215,33 +218,38 @@ class NonLocalVAE(nn.Module):
         qlogp = utils.nlp_log_pdf(self.theta, phi, tau=0.358).clamp(min=np.log(1e-10))
         qlogq = self.logq - self.logdet
 
-        kl_beta = qlogq - qlogp
-        kl = (kl_z + qz*kl_beta).sum(dim=1).mean()
+        kl_beta = qlogq - qlogp  # (16, 128, 32)
+        kl = (kl_z + qz*kl_beta).sum(dim=2).mean(dim=0)  # (128)
         return kl, qlogp.mean(), qlogq.mean()
 
 
 
-def train(epoch, model, train_loader):
+def train(epoch, model, optimizer, train_loader):
     train_loss = 0
     train_loss_list = []
-    for batch_idx, (data, _) in enumerate(train_loader):
+    for batch_idx, data in enumerate(train_loader):
+        model.train()
         data = data.to(device)
         optimizer.zero_grad()
 
         # forward pass
-        recon_batch = model(data)
+        recon_batch = model(data).mean(dim=0)   # (16, 128, 784) -> (128, 784)
 
         # compute elbo loss and print intermediate results
-        nll = F.binary_cross_entropy(recon_batch, data.view(-1, 784), reduction='sum')
-        loss = nll + model.kl()
+        nll = F.binary_cross_entropy(recon_batch, data.view(-1, 784), reduction='none')     # (128, 784)
+        nll = nll.sum(1)    # (128)
+        kl, qlogp, qlogq = model.kl()
+        loss = nll + kl
+        loss = loss.mean()
         loss.backward()
-        train_loss += loss.item()
+        optimizer.step()
 
+        train_loss += loss.item()
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader),
-                loss.item() / len(data)))
+                loss.item()/data.shape[0] ))
         train_loss_list.append(loss.item())
 
     print('====> Epoch: {} Average loss: {:.4f}'.format(
@@ -264,12 +272,14 @@ def test(model, k, num_each_class):
 if __name__ == "__main__":
     model = NonLocalVAE().to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
+    print(model.parameters)
 
     train_loss_list = []
     for i in range(10):
+        print('training on class {}'.format(i))
         train_loader = utils.get_train_loader(subset=i, batch_size=128)
         for epoch in range(1, args.epochs + 1):
-            train_loss_list += train(epoch, model, train_loader)
+            train_loss_list += train(epoch, model, optimizer, train_loader)
 
         test(model, k=10, num_each_class=1000)
     with open('vae_bayes_loss.pkl'.format(epoch), 'wb') as f:
