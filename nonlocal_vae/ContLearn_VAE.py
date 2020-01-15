@@ -19,7 +19,7 @@ from torch.autograd import Variable
 parser = argparse.ArgumentParser(description='VAE MNIST Example')
 parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                     help='input batch size for training (default: 128)')
-parser.add_argument('--epochs', type=int, default=10, metavar='N',
+parser.add_argument('--epochs', type=int, default=20, metavar='N',
                     help='number of epochs to train (default: 10)')
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='enables CUDA training')
@@ -211,8 +211,8 @@ class NonLocalVAE(nn.Module):
         recon_batch = self.decoder(latent)
         return recon_batch
 
-    def kl(self, phi=1):
-        p = 1e-2
+    def kl(self, phi=1, classes=0):
+        p = 1e-1 * (classes + 1)
         qz = self.qz.expand_as(self.theta)
         kl_z = qz * torch.log(qz / p) + (1 - qz) * torch.log((1 - qz) / (1 - p))
         qlogp = utils.nlp_log_pdf(self.theta, phi, tau=0.358).clamp(min=np.log(1e-10))
@@ -224,7 +224,7 @@ class NonLocalVAE(nn.Module):
 
 
 
-def train(epoch, model, optimizer, train_loader):
+def train(epoch, model, optimizer, train_loader, classes):
     train_loss = 0
     train_loss_list = []
     for batch_idx, data in enumerate(train_loader):
@@ -238,7 +238,7 @@ def train(epoch, model, optimizer, train_loader):
         # compute elbo loss and print intermediate results
         nll = F.binary_cross_entropy(recon_batch, data.view(-1, 784), reduction='none')     # (128, 784)
         nll = nll.sum(1)    # (128)
-        kl, qlogp, qlogq = model.kl()
+        kl, qlogp, qlogq = model.kl(phi=1, classes=classes)
         loss = nll + kl
         loss = loss.mean()
         loss.backward()
@@ -257,16 +257,33 @@ def train(epoch, model, optimizer, train_loader):
     return train_loss_list
 
 
+
+def kNNClassifer(latent_train, latent_test, k):
+    num_each_class = latent_train.shape[0]/10
+    latent_test = latent_test.unsqueeze(1).repeat(1, latent_train.shape[0], 1)
+    distance = ((latent_test - latent_train) ** 2).sum(dim=2)  # shape=(num_sample, num_base_sample)
+    _, index = torch.topk(distance, k, dim=1)  # index shape=(num_sample, k)
+    index = index // num_each_class
+    pred, _ = torch.mode(index, dim=1)
+    return pred
+
+
+def get_latent(data):
+    mu, logvar, logalpha = model.encoder(data.float())
+    latent, _, _, _, _, _ = model.latent_sampler(1, mu, logvar, logalpha)
+    return latent.squeeze()
+
+
 def test(model, k, num_each_class):
     model.eval()  # TODO: notice there is a difference in L0 gate
-    data = utils.get_test_data(num_each_class=num_each_class)
-    latent = model.encoder(data)
+    base, test, label = utils.get_test_data(num_each_class=num_each_class)
+    latent_test = get_latent(test)
+    latent_base = get_latent(base)
 
-    knn = utils.kNNClassifer(data)
-    pred = knn(latent, k=k)
-    label = torch.arange(10).unsqueeze(1).repeat(1, num_each_class).view(-1)
+    pred = kNNClassifer(latent_base, latent_test, k)
+
     acc = utils.get_accuracy(pred, label).tolist()
-    print('test acc of {}-NN is:'.format(k, acc))
+    print('test acc of {}-NN is {}:'.format(k, acc))
 
 
 if __name__ == "__main__":
@@ -279,9 +296,9 @@ if __name__ == "__main__":
         print('training on class {}'.format(i))
         train_loader = utils.get_train_loader(subset=i, batch_size=128)
         for epoch in range(1, args.epochs + 1):
-            train_loss_list += train(epoch, model, optimizer, train_loader)
+            train_loss_list += train(epoch, model, optimizer, train_loader, classes=i)
 
-        test(model, k=10, num_each_class=1000)
+        test(model, k=10, num_each_class=100)
     with open('vae_bayes_loss.pkl'.format(epoch), 'wb') as f:
         pkl.dump(train_loss_list, f)
 

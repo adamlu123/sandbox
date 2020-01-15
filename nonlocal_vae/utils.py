@@ -4,6 +4,7 @@ from torch.distributions import Normal, Uniform, Gamma, Bernoulli
 import matplotlib.pyplot as plt
 import numpy as np
 import h5py
+from torchvision import datasets, transforms
 
 
 def get_train_loader(subset=0, batch_size=128):
@@ -32,11 +33,16 @@ def get_train_loader(subset=0, batch_size=128):
 
 
 def get_test_data(num_each_class = 1000):
-    test_data = np.zeros([10*num_each_class, 784])
+    test = datasets.MNIST('/extra/yadongl10/data', train=False, download=False, transform=transforms.ToTensor())
+    test_data = test.data.reshape(-1, 784).cuda()
+    label = test.targets.cuda()
+
+    base_data = np.zeros([10 * num_each_class, 784])
     for j in range(10):
         with h5py.File('MNSIT_by_class.h5', 'r') as f:
-            test_data[j*num_each_class, :] = np.asarray(f[str(j)+'_data'][:num_each_class]).reshape(-1, 784)
-    return test_data
+            base_data[j*num_each_class:(j+1)*num_each_class, :] = np.asarray(f[str(j)+'_data'][:num_each_class]).reshape(-1, 784)
+    base_data = torch.tensor(base_data, dtype=torch.float).cuda()
+    return base_data, test_data, label
 
 
 class kNNClassifer(nn.Module):
@@ -60,7 +66,7 @@ def get_accuracy(pred, label):
     :param label: 1-D tensor
     :return:
     """
-    return (pred==label).sum() / label.shape[0]
+    return (pred==label).sum().float() / label.shape[0]
 
 
 def nlp_log_pdf(x, phi, tau=0.358):
