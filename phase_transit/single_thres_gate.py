@@ -112,7 +112,7 @@ if __name__=='__main__':
     q = 1/(2*args.C * np.log(args.C))
 
     results = []
-    for prob in [0.5*q, q, 5*q, 10*q]:
+    for prob in [0.5*q, q, 2*q, 5*q, 10*q]:
         results.append(main(args.epochs, prob, K, args.n, args.m, epsilon=1e-5))
     out = np.asarray(results)
 
