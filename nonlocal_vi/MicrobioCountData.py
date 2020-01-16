@@ -16,9 +16,9 @@ def nlp_pdf(x, phi, tau=0.358):
 
 
 def save_result(valpha, theta):
-    with open('/extra/yadongl10/git_project/sandbox/NonLocalPrior/results/DDM_valpha.pkl', 'wb') as file:
+    with open('/extra/yadongl10/git_project/sandbox/nonlocal_vi/results/DDM_valpha.pkl', 'wb') as file:
         pkl.dump(valpha, file)
-    with open('/extra/yadongl10/git_project/sandbox/NonLocalPrior/results/DDM_theta.pkl', 'wb') as file:
+    with open('/extra/yadongl10/git_project/sandbox/nonlocal_vi/results/DDM_theta.pkl', 'wb') as file:
         pkl.dump(theta, file)
 
 class LinearDiracDelta(nn.Module):

@@ -1,6 +1,5 @@
 import argparse
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import utils
@@ -9,7 +8,6 @@ from utils import log
 import argparse
 import torch.utils.data
 from torch import nn, optim
-from torch.nn import functional as F
 from torch.distributions import Uniform, Normal
 from torchvision import datasets, transforms
 import pickle as pkl
