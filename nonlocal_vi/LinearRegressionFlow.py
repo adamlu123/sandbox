@@ -265,7 +265,7 @@ def train(Y, X, truetheta, phi, epoch=10000):
         y_hat = linear(X)
         nll = -loglike(y_hat, Y)
         kl, qlogp, qlogq = linear.kl(phi)
-        loss = nll + 0.1 * kl
+        loss = nll + 1 * kl
         # print('qlogp, qlogq', qlogp.data, qlogq.data)
 
         # compute gradient and do SGD step
@@ -321,7 +321,7 @@ config = {
 
 def main(config):
     n = 100
-    for p in [1000]:
+    for p in [100]:
         for phi in [1, 4, 8]:
             Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=1234)
             linear = train(Y, X, truetheta, phi, epoch=10000)  # 10000
