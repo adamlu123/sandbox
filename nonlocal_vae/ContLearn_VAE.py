@@ -17,7 +17,7 @@ from torch.autograd import Variable
 parser = argparse.ArgumentParser(description='VAE MNIST Example')
 parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                     help='input batch size for training (default: 128)')
-parser.add_argument('--epochs', type=int, default=20, metavar='N',
+parser.add_argument('--epochs', type=int, default=2, metavar='N',
                     help='number of epochs to train (default: 10)')
 parser.add_argument('--no-cuda', action='store_true', default=False,
                     help='enables CUDA training')
@@ -163,32 +163,32 @@ class SpikeAndSlabSampler(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self):
+    def __init__(self, input_dim, latent_dim):
         super(Encoder, self).__init__()
-
-        self.fc1 = nn.Linear(784, 1200)
+        self.input_dim = input_dim
+        self.fc1 = nn.Linear(input_dim, 1200)
         self.fc2 = nn.Linear(1200, 600)
         self.fc3 = nn.Linear(600, 300)
         self.fc4 = nn.Linear(300, 150)
-        self.fc_output = nn.Linear(150, 32*3)
+        self.fc_output = nn.Linear(150, latent_dim*3)
 
     def forward(self, x):
-        x = x.view(-1, 784)
+        x = x.view(-1, self.input_dim)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
         x = F.relu(self.fc4(x))
         out = self.fc_output(x)
-        return out[:, :32], out[:, 32:64], out[:, 64:96]
+        return out.chunk(3, 1)
+        # return out[:, :32], out[:, 32:64], out[:, 64:96]
 
 
 class Decoder(nn.Module):
-    def __init__(self):
+    def __init__(self, input_dim, output_dim):
         super(Decoder, self).__init__()
-
-        self.fc3 = nn.Linear(32, 500)
+        self.fc3 = nn.Linear(input_dim, 500)
         self.fc4 = nn.Linear(500, 500)
-        self.fc5 = nn.Linear(500, 784)
+        self.fc5 = nn.Linear(500, output_dim)
 
     def forward(self, z):
         z = F.relu(self.fc3(z))
@@ -197,11 +197,11 @@ class Decoder(nn.Module):
 
 
 class NonLocalVAE(nn.Module):
-    def __init__(self):
+    def __init__(self, input_dim=784, latent_dim=32):
         super(NonLocalVAE, self).__init__()
-        self.encoder = Encoder()
-        self.decoder = Decoder()
-        self.latent_sampler = SpikeAndSlabSampler(p=32)
+        self.encoder = Encoder(input_dim, latent_dim)
+        self.decoder = Decoder(latent_dim, input_dim)
+        self.latent_sampler = SpikeAndSlabSampler(p=latent_dim)
 
     def forward(self, data):
         mu, logvar, logalpha = self.encoder(data)

@@ -49,7 +49,7 @@ class HardConcreteSampler(nn.Module):
         self.p = p
         self.zeta, self.gamma, self.beta = 1.1, -0.1, 2/3
         self.gamma_zeta_logratio = -self.gamma / self.zeta
-        self.logalpha = nn.Parameter(torch.ones(p))
+        self.logalpha = nn.Parameter(2 * torch.ones(p))
         # self.logalpha.data.uniform_(np.log(0.2), np.log(10))
 
     def forward(self, repeat):
@@ -232,7 +232,7 @@ class LinearModel(nn.Module):
         return out.squeeze()
 
     def kl(self, phi):
-        p = 1e-2
+        p = 5e-2
         qz = self.qz.expand_as(self.Theta)
         kl_z = qz * torch.log(qz / p) + (1 - qz) * torch.log((1 - qz) / (1 - p))
         qlogp = nlp_log_pdf(self.theta, phi, tau=0.358).clamp(min=np.log(1e-10))
@@ -250,8 +250,6 @@ def loglike(y_hat, y):
 
 
 def train(Y, X, truetheta, phi, epoch=10000):
-    Y = torch.tensor(Y, dtype=torch.float)
-    X = torch.tensor(X, dtype=torch.float)
     linear = LinearModel(p=X.shape[1])
     # optimizer = optim.SGD(linear.parameters(), lr=0.0001, momentum=0.9)
     optimizer = optim.Adam(linear.parameters(), lr=0.01, weight_decay=0)
@@ -324,6 +322,7 @@ def main(config):
     for p in [100]:
         for phi in [1, 4, 8]:
             Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=1234)
+            Y, X = torch.tensor(Y, dtype=torch.float), torch.tensor(X, dtype=torch.float)
             linear = train(Y, X, truetheta, phi, epoch=10000)  # 10000
             test(Y, X, linear)
 

@@ -6,14 +6,14 @@ import numpy as np
 import h5py
 from torchvision import datasets, transforms
 
-
 def get_train_loader(subset=0, batch_size=128):
     """
     :param subset:
     :param batch_size:
     :return: train_loader
     """
-    with h5py.File('MNSIT_by_class.h5', 'r') as f:
+    data_dir = '/extra/yadongl10/data/MNIST'
+    with h5py.File(data_dir + '/MNSIT_by_class.h5', 'r') as f:
         data = np.asarray(f[str(subset)+'_data'])
     train_loader = torch.utils.data.DataLoader(data, batch_size=batch_size, shuffle=True)
     return train_loader
@@ -38,8 +38,9 @@ def get_test_data(num_each_class = 1000):
     label = test.targets.cuda()
 
     base_data = np.zeros([10 * num_each_class, 784])
+    data_dir = '/extra/yadongl10/data/MNIST'
     for j in range(10):
-        with h5py.File('MNSIT_by_class.h5', 'r') as f:
+        with h5py.File(data_dir + '/MNSIT_by_class.h5', 'r') as f:
             base_data[j*num_each_class:(j+1)*num_each_class, :] = np.asarray(f[str(j)+'_data'][:num_each_class]).reshape(-1, 784)
     base_data = torch.tensor(base_data, dtype=torch.float).cuda()
     return base_data, test_data, label

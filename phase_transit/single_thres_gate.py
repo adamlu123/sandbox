@@ -7,8 +7,8 @@ import pickle as pkl
 from tqdm import tqdm
 import torch.utils.data
 import os
-# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-# os.environ["CUDA_VISIBLE_DEVICES"]="1"
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 device = 'cuda'
 
@@ -109,7 +109,8 @@ def main(epochs, q, K, n, m=1, epsilon=1e-5, batch_size=100):
                 break
             acc.append(epoch_acc)
             if epoch % (epochs//10) == 0:
-                print('acc at epoch {} is :{:5f}'.format(epoch, epoch_acc.item()))
+                with open(args.result_dir + '/log.txt', 'a') as f:
+                    print('acc at epoch {} is :{:5f}'.format(epoch, epoch_acc.item()), file=f)
             # print('acc at end of epoch {}: {:.5f}'.format(epoch, acc[-1]))
         acc = torch.tensor(acc).numpy().max()
         print('acc at of repeat {}: {:.5f}'.format(i, acc))
@@ -140,6 +141,8 @@ if __name__=='__main__':
     results = []
     for prob in [0.1*q, 0.2*q, 0.25*q, 0.5*q, q, 1.5*q, 2*q, 2.5*q, 5*q, 10*q, 15*q]:  # [0.5*q, q, 2*q, 5*q]
         print('CONFIG: n:{}; C: {}; transitq = {}; prob: {} * q'.format(args.n, args.C, q, prob/q))
+        with open(args.result_dir + '/log.txt', 'a') as f:
+            print('CONFIG: n:{}; C: {}; transitq = {}; prob: {} * q'.format(args.n, args.C, q, prob/q), file=f)
         results.append(main(args.epochs, prob, K, args.n, args.m, epsilon=1e-5, batch_size=K//10))
     out = np.asarray(results)
 
