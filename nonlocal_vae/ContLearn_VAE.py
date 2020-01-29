@@ -196,21 +196,50 @@ class Decoder(nn.Module):
         return torch.sigmoid(self.fc5(z))
 
 
+class Encoder_rat(nn.Module):
+    def __init__(self, input_dim, latent_dim):
+        super(Encoder_rat, self).__init__()
+        self.input_dim = input_dim
+        self.fc1 = nn.Linear(input_dim, 40)
+        self.fc2 = nn.Linear(40, 20)
+        self.fc_output = nn.Linear(20, latent_dim*3)
+
+    def forward(self, x):
+        x = x.view(-1, self.input_dim)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        out = self.fc_output(x)
+        return out.chunk(3, 1)
+
+
+class Decoder_rat(nn.Module):
+    def __init__(self, input_dim, output_dim):
+        super(Decoder_rat, self).__init__()
+        self.fc3 = nn.Linear(input_dim, 20)
+        self.fc4 = nn.Linear(20, 40)
+        self.fc5 = nn.Linear(40, output_dim)
+
+    def forward(self, z):
+        z = F.relu(self.fc3(z))
+        z = F.relu(self.fc4(z))
+        return torch.sigmoid(self.fc5(z))
+
+
 class NonLocalVAE(nn.Module):
     def __init__(self, input_dim=784, latent_dim=32):
         super(NonLocalVAE, self).__init__()
-        self.encoder = Encoder(input_dim, latent_dim)
-        self.decoder = Decoder(latent_dim, input_dim)
+        self.encoder = Encoder_rat(input_dim, latent_dim)
+        self.decoder = Decoder_rat(latent_dim, input_dim)
         self.latent_sampler = SpikeAndSlabSampler(p=latent_dim)
 
     def forward(self, data):
         mu, logvar, logalpha = self.encoder(data)
-        latent, self.theta, self.logq, self.logdet, self.z, self.qz = self.latent_sampler(16, mu, logvar, logalpha)
+        latent, self.theta, self.logq, self.logdet, self.z, self.qz = self.latent_sampler(64, mu, logvar, logalpha)
         recon_batch = self.decoder(latent)
         return recon_batch
 
     def kl(self, phi=1, classes=0):
-        p = 2e-1 * (classes + 1)
+        p = 0.5 # 1e-1 * (classes + 1)
         qz = self.qz.expand_as(self.theta)
         kl_z = qz * torch.log(qz / p) + (1 - qz) * torch.log((1 - qz) / (1 - p))
         qlogp = utils.nlp_log_pdf(self.theta, phi, tau=0.358).clamp(min=np.log(1e-10))

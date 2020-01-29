@@ -24,19 +24,28 @@ def nlp_log_pdf(x, phi, tau=0.358):
     return (x**2).clamp(min=1e-2).log() - np.log(tau) - np.log(np.sqrt(2*np.pi*tau*phi)) - x**2/(2*tau*phi)
 
 
-def generate_data(n, p, phi, rho, seed):
-    np.random.seed(seed)
-    noise = np.random.normal(loc=0, scale=np.sqrt(phi), size=[n])  # noise, with std phi
+def normal_log_prob(x, var=10):
+    return np.log(1/np.sqrt(2*np.pi)) - 0.5 * np.log(var) - x**2/(2*var)
 
-    sigma = rho * np.ones((p, p))
-    np.fill_diagonal(sigma, 1)
-    X = np.random.multivariate_normal(mean=np.zeros(p), cov=sigma, size=n)  # X, with correlation rho
 
+def generate_data(n, p, phi, rho, seed, load_data=True):
     truetheta = np.asarray([0.6, 1.2, 1.8, 2.4, 3])
-    theta = np.zeros(p)
-    theta[-5:] = truetheta  # beta
-
-    Y = np.matmul(X, theta) + noise
+    if load_data:
+        truetheta = np.asarray([0.6, 1.2, 1.8, 2.4, 3]*2)
+        theta = np.zeros(p)
+        theta[-truetheta.shape[0]:] = truetheta  # beta
+        data_dir = '/extra/yadongl10/data/non_local_simulation/sim_data_theta_5'
+        Y = np.loadtxt(data_dir + '/y_p{}_n{}_rho{}_phi{}.txt'.format(p, n, rho, phi), skiprows=1, usecols=1)
+        X = np.loadtxt(data_dir + '/x_p{}_n{}_rho{}_phi{}.txt'.format(p, n, rho, phi), skiprows=1, usecols=np.arange(1, p+1))
+    else:
+        np.random.seed(seed)
+        noise = np.random.normal(loc=0, scale=np.sqrt(phi), size=[n])  # noise, with std phi
+        sigma = rho * np.ones((p, p))
+        np.fill_diagonal(sigma, 1)
+        X = np.random.multivariate_normal(mean=np.zeros(p), cov=sigma, size=n)  # X, with correlation rho
+        theta = np.zeros(p)
+        theta[-5:] = truetheta  # beta
+        Y = np.matmul(X, theta) + noise
     return Y, X, theta
 
 
@@ -152,48 +161,30 @@ class FlowAlternative(BaseFlow):
         return h, logdet
 
 
-# class LocalLinear(nn.Module):
-#     def __init__(self,in_features,local_features,kernel_size,padding=0,stride=1,bias=True,softmax_weight=False):
-#         super(LocalLinear, self).__init__()
-#         self.kernel_size = kernel_size
-#         self.stride = stride
-#         self.padding = padding
-#
-#         fold_num = (in_features+2*padding-self.kernel_size)//self.stride+1
-#         self.weight = nn.Parameter(torch.randn(fold_num,kernel_size,local_features))
-#         if softmax_weight:
-#             self.weight = F.softmax(self.weight)   # TODO: check which dim should apply softmax
-#         self.bias = nn.Parameter(torch.randn(fold_num,local_features)) if bias else None
-#
-#     def forward(self, x):
-#         x = F.pad(x,[self.padding]*2,value=0)
-#         x = x.unfold(-1,size=self.kernel_size,step=self.stride)
-#         x = torch.matmul(x.unsqueeze(2),self.weight).squeeze(2)+self.bias
-#         return x
-#
-#
-# class FlowAlternative(nn.Module):
-#     """
-#     Independent component-wise flow
-#     """
-#     def __init__(self, p):
-#         super(FlowAlternative, self).__init__()
-#         self.p = p
-#         self.LocalLinear_in = LocalLinear(p, local_features=5, kernel_size=1)
-#         self.LocalLinear_out = LocalLinear(p, local_features=1, kernel_size=1)
-#
-#     def forward(self, repeat):
-#         epsilon = Normal(0, 1).sample([repeat, self.p])
-#         x = torch.sigmoid(self.LocalLinear_in(epsilon))  # shape=(d,p)
-#         out = logit(self.LocalLinear_out(x))
-#         return out
+class GaussianAlternative(nn.Module):
+    """
+    Independent Gaussian alternative distribution
+    """
+    def __init__(self, p):
+        super(GaussianAlternative, self).__init__()
+        self.p = p
+        self.mean = nn.Parameter(torch.rand(p))
+        self.logvar = nn.Parameter(torch.rand(p))
 
+    def forward(self, inputs):
+        return inputs * (0.5 * self.logvar).exp() + self.mean
+
+    def sample(self, n):
+        noise = torch.rand(n, self.p)
+        x = self.forward(noise)
+        qlogq = - 0.5*self.logvar - (x - self.mean) ** 2 / (2 * self.logvar.exp())
+        return x, -qlogq
 
 class SpikeAndSlabSampler(nn.Module):
     """
     Spike and slab sampler with Dirac spike and FlowAlternative slab.
     """
-    def __init__(self, p, alternative_sampler=FlowAlternative):
+    def __init__(self, p, alternative_sampler):
         super(SpikeAndSlabSampler, self).__init__()
         self.p = p
         self.alternative_sampler = alternative_sampler(p)
@@ -211,7 +202,7 @@ class LinearModel(nn.Module):
     Wrap around SpikeAndSlabSampler for a linear regression model.
     compare with: https://www.tandfonline.com/doi/pdf/10.1080/01621459.2015.1130634?needAccess=true
     """
-    def __init__(self, p, bias=False, alternative_sampler=FlowAlternative):
+    def __init__(self, p, bias=False, alternative_sampler=FlowAlternative):  # FlowAlternative or GaussianAlternative
         super(LinearModel, self).__init__()
         self.add_bias = bias
         if self.add_bias:
@@ -231,13 +222,16 @@ class LinearModel(nn.Module):
             out = x.matmul(self.Theta.mean(dim=0).view(x.shape[1], -1))  # TODO: defer taking mean to the output
         return out.squeeze()
 
-    def kl(self, phi):
-        p = 5e-2
+    def kl(self, phi, alter_prior='nonlocal'):
+        p = 0.05
         qz = self.qz.expand_as(self.Theta)
         kl_z = qz * torch.log(qz / p) + (1 - qz) * torch.log((1 - qz) / (1 - p))
-        qlogp = nlp_log_pdf(self.theta, phi, tau=0.358).clamp(min=np.log(1e-10))
         qlogq = -self.logdet
 
+        if alter_prior == 'nonlocal':
+            qlogp = nlp_log_pdf(self.theta, phi, tau=0.358).clamp(min=np.log(1e-10))
+        elif alter_prior == 'Gaussian':
+            qlogp = normal_log_prob(self.theta, var = 10.)
         kl_beta = qlogq - qlogp
         kl = (kl_z + qz*kl_beta).sum(dim=1).mean()
         return kl, qlogp.mean(), qlogq.mean()
@@ -252,7 +246,7 @@ def loglike(y_hat, y):
 def train(Y, X, truetheta, phi, epoch=10000):
     linear = LinearModel(p=X.shape[1])
     # optimizer = optim.SGD(linear.parameters(), lr=0.0001, momentum=0.9)
-    optimizer = optim.Adam(linear.parameters(), lr=0.01, weight_decay=0)
+    optimizer = optim.Adam(linear.parameters(), lr=0.1, weight_decay=0)
     sse_list = []
     sse_theta_list = []
     for i in range(epoch):
@@ -284,9 +278,10 @@ def train(Y, X, truetheta, phi, epoch=10000):
         # print intermediet results
         if i % 50 == 0:
             z = linear.z.mean(dim=0).cpu().numpy()
+            # p = X.shape[0]
             print('\n', i, 'last 5 responses:', y_hat[-5:].round().tolist(), Y[-5:].round().tolist())
             print('sse_theta:{}, min_sse_theta:{}'.format(sse_theta, np.asarray(sse_theta_list).min()))
-            print('est.thetas: {}, est z:{}'.format(linear.Theta.mean(dim=0)[-5:].tolist(), z[-5:]))
+            print('est.thetas: {}, est z:{}'.format(linear.Theta.mean(dim=0)[-5:].cpu().numpy(), z[-5:]))
             print('epoch {}, z min: {}, z mean: {}, non-zero: {}'.format(i, z.min(), z.mean(), z.nonzero()[0].shape))
             print('nll, kl', nll.tolist(), kl.tolist())
             threshold = utils.search_threshold(z, 0.05)
@@ -319,9 +314,10 @@ config = {
 
 def main(config):
     n = 100
-    for p in [100]:
+    for p in [100, 500, 1000]:
         for phi in [1, 4, 8]:
-            Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=1234)
+            print('CONFIG: n {}, p {}, phi {}'.format(n, p, phi))
+            Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=1234, load_data=False)
             Y, X = torch.tensor(Y, dtype=torch.float), torch.tensor(X, dtype=torch.float)
             linear = train(Y, X, truetheta, phi, epoch=10000)  # 10000
             test(Y, X, linear)
