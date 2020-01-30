@@ -239,10 +239,10 @@ class NonLocalVAE(nn.Module):
         return recon_batch
 
     def kl(self, phi=1, classes=0):
-        p = 0.5 # 1e-1 * (classes + 1)
+        p = 0.5  # 1e-1 * (classes + 1)
         qz = self.qz.expand_as(self.theta)
         kl_z = qz * torch.log(qz / p) + (1 - qz) * torch.log((1 - qz) / (1 - p))
-        qlogp = utils.nlp_log_pdf(self.theta, phi, tau=0.358).clamp(min=np.log(1e-10))
+        qlogp = utils.nlp_log_pdf(self.theta, phi, tau=10)  # .clamp(min=np.log(1e-10))  .358
         qlogq = self.logq - self.logdet
 
         kl_beta = qlogq - qlogp  # (16, 128, 32)

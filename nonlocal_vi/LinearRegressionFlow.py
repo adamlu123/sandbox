@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from torch.autograd import Variable
 import utils
-torch.manual_seed(1234)
+torch.manual_seed(123)
 
 
 def logit(x):
@@ -20,8 +20,16 @@ def nlp_pdf(x, phi, tau=0.358):
     return x**2*1/tau*(1/np.sqrt(2*np.pi*tau*phi))*torch.exp(-x**2/(2*tau*phi))
 
 
-def nlp_log_pdf(x, phi, tau=0.358):
-    return (x**2).clamp(min=1e-2).log() - np.log(tau) - np.log(np.sqrt(2*np.pi*tau*phi)) - x**2/(2*tau*phi)
+def mom_log_pdf(x, phi, tau=0.358):  # 0.358
+    return (x**2).log() - np.log(tau) - np.log(np.sqrt(2*np.pi*tau*phi)) - x**2/(2*tau*phi)
+
+
+def imom_log_pdf(x, phi=1, tau=0.133):
+    return 0.5*np.log(tau*phi/np.pi) - (x**2).clamp(min=1e-2).log() - (tau*phi) / (x**2).clamp(min=1e-3)
+
+
+def pemom_log_pdf(x, phi=1, tau=0.358):
+    return (np.sqrt(2) - (tau*phi) / x**2) - np.log(np.sqrt(2*np.pi*tau*phi)) - x**2/(2*tau*phi)
 
 
 def normal_log_prob(x, var=10):
@@ -56,13 +64,13 @@ class HardConcreteSampler(nn.Module):
     def __init__(self, p):
         super(HardConcreteSampler, self).__init__()
         self.p = p
-        self.zeta, self.gamma, self.beta = 1.1, -0.1, 2/3
-        self.gamma_zeta_logratio = -self.gamma / self.zeta
+        self.zeta, self.gamma, self.beta = 1.1, -0.1, 9/10  #2/3
+        self.gamma_zeta_logratio = np.log(-self.gamma / self.zeta)
         self.logalpha = nn.Parameter(2 * torch.ones(p))
         # self.logalpha.data.uniform_(np.log(0.2), np.log(10))
 
     def forward(self, repeat):
-        qz = torch.sigmoid(self.logalpha - self.beta * self.gamma_zeta_logratio)
+        qz = torch.sigmoid(self.logalpha - self.beta * self.gamma_zeta_logratio)   # qz = p(z>0)
         u = Uniform(0, 1).sample([repeat, self.p])
         s = torch.sigmoid((torch.log(u / (1 - u)) + self.logalpha) / self.beta)
         if self.training:
@@ -180,6 +188,7 @@ class GaussianAlternative(nn.Module):
         qlogq = - 0.5*self.logvar - (x - self.mean) ** 2 / (2 * self.logvar.exp())
         return x, -qlogq
 
+
 class SpikeAndSlabSampler(nn.Module):
     """
     Spike and slab sampler with Dirac spike and FlowAlternative slab.
@@ -222,16 +231,20 @@ class LinearModel(nn.Module):
             out = x.matmul(self.Theta.mean(dim=0).view(x.shape[1], -1))  # TODO: defer taking mean to the output
         return out.squeeze()
 
-    def kl(self, phi, alter_prior='nonlocal'):
-        p = 0.05
+    def kl(self, phi, alter_prior='imom'):
+        p = 0.5
         qz = self.qz.expand_as(self.Theta)
         kl_z = qz * torch.log(qz / p) + (1 - qz) * torch.log((1 - qz) / (1 - p))
         qlogq = -self.logdet
 
-        if alter_prior == 'nonlocal':
-            qlogp = nlp_log_pdf(self.theta, phi, tau=0.358).clamp(min=np.log(1e-10))
+        if alter_prior == 'mom':
+            qlogp = mom_log_pdf(self.theta, phi, tau=3)  # .clamp(min=np.log(1e-10))  # tau = 0.358
+        elif alter_prior == 'imom':
+            qlogp = imom_log_pdf(self.theta).clamp(min=np.log(1e-10))
+        elif alter_prior == 'pemom':
+            qlogp = pemom_log_pdf(self.theta).clamp(min=np.log(1e-10))
         elif alter_prior == 'Gaussian':
-            qlogp = normal_log_prob(self.theta, var = 10.)
+            qlogp = normal_log_prob(self.theta, var=5.)  #.clamp(min=np.log(1e-10))
         kl_beta = qlogq - qlogp
         kl = (kl_z + qz*kl_beta).sum(dim=1).mean()
         return kl, qlogp.mean(), qlogq.mean()
@@ -243,10 +256,14 @@ def loglike(y_hat, y):
     return ll.sum()
 
 
-def train(Y, X, truetheta, phi, epoch=10000):
+
+def train(Y, X, truetheta, phi, epoch=1000):
     linear = LinearModel(p=X.shape[1])
     # optimizer = optim.SGD(linear.parameters(), lr=0.0001, momentum=0.9)
     optimizer = optim.Adam(linear.parameters(), lr=0.1, weight_decay=0)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[200, 400], gamma=0.99,
+                                                     last_epoch=-1)  # 10, 20, 30
+
     sse_list = []
     sse_theta_list = []
     for i in range(epoch):
@@ -263,33 +280,44 @@ def train(Y, X, truetheta, phi, epoch=10000):
         # compute gradient and do SGD step
         loss.backward()
         optimizer.step()
+        scheduler.step()
 
+        # get sse
         sse = ((y_hat - Y) ** 2).mean().detach().numpy()
         sse_list.append(sse)
 
         with torch.no_grad():
             linear.eval()
             y_hat = linear(X)
-            z = linear.z
-            sse_theta = ((linear.Theta.mean(dim=0) - torch.tensor(truetheta, dtype=torch.float)) ** 2).sum()
-            sse_test = ((y_hat - Y) ** 2).mean().detach().numpy()
-            sse_theta_list.append(((linear.Theta.mean(dim=0) - torch.tensor(truetheta, dtype=torch.float)) ** 2).sum())
+            p = X.shape[1]
+            square_error = ((linear.Theta.mean(dim=0) - torch.tensor(truetheta, dtype=torch.float)) ** 2)
+            sse_theta = square_error.sum().item()
+            sse_zero = square_error[:(p-5)].sum().item()
+            sse_nonzero = square_error[(p-5):].sum().item()
+
+
+            sse_theta_list.append(sse_theta)
+            if sse_theta <= np.asarray(sse_theta_list).min():
+                sse_zero_best = sse_zero
+                sse_nonzero_best = sse_nonzero
+            # sse_test = ((y_hat - Y) ** 2).mean().detach().numpy()
 
         # print intermediet results
         if i % 50 == 0:
             z = linear.z.mean(dim=0).cpu().numpy()
-            # p = X.shape[0]
             print('\n', i, 'last 5 responses:', y_hat[-5:].round().tolist(), Y[-5:].round().tolist())
-            print('sse_theta:{}, min_sse_theta:{}'.format(sse_theta, np.asarray(sse_theta_list).min()))
-            print('est.thetas: {}, est z:{}'.format(linear.Theta.mean(dim=0)[-5:].cpu().numpy(), z[-5:]))
+            print('sse_theta:{:3f}, min_sse_theta:{:3f}'.format(sse_theta, np.asarray(sse_theta_list).min()))
+            print('sse_nonzero:{:3f}, best: {}'.format(sse_nonzero, sse_nonzero_best))
+            print('sse_zero:{:3f}, best:{}'.format(sse_zero, sse_zero_best))
+            print('est.thetas: {}, \n est z:{}'.format(linear.Theta.mean(dim=0)[-10:].cpu().numpy(), z[-50:]))
             print('epoch {}, z min: {}, z mean: {}, non-zero: {}'.format(i, z.min(), z.mean(), z.nonzero()[0].shape))
             print('nll, kl', nll.tolist(), kl.tolist())
             threshold = utils.search_threshold(z, 0.05)
             print('threshold', threshold)
             print('number of cov above threshold', np.sum(z>threshold))
             # print('p={}, phi={}, loss: {}, nll:{}, kl:{}. SSE: {}, sse_test: {}'.format(X.shape[0], phi, nll, loss, kl, sse, sse_test))
-        if i % 100 == 0:
-            utils.plot(linear.Theta, savefig=True)
+        # if i % 100 == 0:
+        #     utils.plot(linear.Theta, savefig=True)
 
     plt.plot(sse_list)
     # plt.savefig('/extra/yadongl10/git_project/GammaLearningResult/sse.png', dpi=100)
@@ -319,7 +347,7 @@ def main(config):
             print('CONFIG: n {}, p {}, phi {}'.format(n, p, phi))
             Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=1234, load_data=False)
             Y, X = torch.tensor(Y, dtype=torch.float), torch.tensor(X, dtype=torch.float)
-            linear = train(Y, X, truetheta, phi, epoch=10000)  # 10000
+            linear = train(Y, X, truetheta, phi=1, epoch=1100)  # 10000
             test(Y, X, linear)
 
             # if config['save_model']:
