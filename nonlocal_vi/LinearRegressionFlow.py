@@ -9,11 +9,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 from torch.autograd import Variable
 import utils
+import pickle as pkl
+
 torch.manual_seed(123)
 
 
 def logit(x):
     return torch.log(x/(1-x))
+
+
+def normal_log_pdf(x, mu, logvar):
+    return -0.5 * logvar - 0.5 * np.log(2*np.pi) - (x - mu)**2/(2*logvar.exp())
 
 
 def nlp_pdf(x, phi, tau=0.358):
@@ -24,8 +30,8 @@ def mom_log_pdf(x, phi, tau=0.358):  # 0.358
     return (x**2).log() - np.log(tau) - np.log(np.sqrt(2*np.pi*tau*phi)) - x**2/(2*tau*phi)
 
 
-def imom_log_pdf(x, phi=1, tau=0.133):
-    return 0.5*np.log(tau*phi/np.pi) - (x**2).clamp(min=1e-2).log() - (tau*phi) / (x**2).clamp(min=1e-3)
+def imom_log_pdf(x, phi=1, tau=3):  #0.133
+    return 0.5*np.log(tau*phi/np.pi) - (x**2).log() - (tau*phi) / (x**2)
 
 
 def pemom_log_pdf(x, phi=1, tau=0.358):
@@ -37,7 +43,7 @@ def normal_log_prob(x, var=10):
 
 
 def generate_data(n, p, phi, rho, seed, load_data=True):
-    truetheta = np.asarray([0.6, 1.2, 1.8, 2.4, 3])
+    truetheta = np.asarray([1, 2, 3, 4, 5])  # [0.6, 1.2, 1.8, 2.4, 3], [6, 7, 8, 9, 10]
     if load_data:
         truetheta = np.asarray([0.6, 1.2, 1.8, 2.4, 3]*2)
         theta = np.zeros(p)
@@ -64,9 +70,9 @@ class HardConcreteSampler(nn.Module):
     def __init__(self, p):
         super(HardConcreteSampler, self).__init__()
         self.p = p
-        self.zeta, self.gamma, self.beta = 1.1, -0.1, 9/10  #2/3
+        self.zeta, self.gamma, self.beta = 1.5, -0.05, 9/10  #2/3
         self.gamma_zeta_logratio = np.log(-self.gamma / self.zeta)
-        self.logalpha = nn.Parameter(2 * torch.ones(p))
+        self.logalpha = nn.Parameter(np.log(0.1/0.9) * torch.ones(p)) # np.log(0.1/0.9)
         # self.logalpha.data.uniform_(np.log(0.2), np.log(10))
 
     def forward(self, repeat):
@@ -166,7 +172,7 @@ class FlowAlternative(BaseFlow):
             params = params.unsqueeze(0).repeat(repeat, 1, 1)  # shape=(repeat, p, nparams)
             h, logdet = self.sf(h, logdet, params, mollify=0.0)
 
-        return h, logdet
+        return h, logdet, x
 
 
 class GaussianAlternative(nn.Module):
@@ -200,10 +206,11 @@ class SpikeAndSlabSampler(nn.Module):
         self.z_sampler = HardConcreteSampler(p)
 
     def forward(self, repeat):
-        theta, logdet = self.alternative_sampler.sample(n=repeat)
+        theta, logdet, gaussians = self.alternative_sampler.sample(n=repeat)
         z, qz = self.z_sampler(repeat)
         out = z * theta
-        return out, theta, logdet, z, qz
+        logq = normal_log_pdf(gaussians, torch.zeros(self.p), torch.zeros(self.p))
+        return out, theta, logq, logdet, z, qz
 
 
 class LinearModel(nn.Module):
@@ -224,27 +231,27 @@ class LinearModel(nn.Module):
         self.sampler = SpikeAndSlabSampler(p=p, alternative_sampler=alternative_sampler)
 
     def forward(self, x):
-        self.Theta, self.theta, self.logdet, self.z, self.qz = self.sampler(repeat=32)
+        self.Theta, self.theta, self.logq, self.logdet, self.z, self.qz = self.sampler(repeat=16)
         if self.add_bias:
             out = x.matmul(self.Theta.mean(dim=0).view(x.shape[1], -1)) + self.bias
         else:
             out = x.matmul(self.Theta.mean(dim=0).view(x.shape[1], -1))  # TODO: defer taking mean to the output
         return out.squeeze()
 
-    def kl(self, phi, alter_prior='imom'):
+    def kl(self, phi, alter_prior='mom'):
         p = 0.5
         qz = self.qz.expand_as(self.Theta)
         kl_z = qz * torch.log(qz / p) + (1 - qz) * torch.log((1 - qz) / (1 - p))
-        qlogq = -self.logdet
+        qlogq = self.logq - self.logdet
 
         if alter_prior == 'mom':
             qlogp = mom_log_pdf(self.theta, phi, tau=3)  # .clamp(min=np.log(1e-10))  # tau = 0.358
         elif alter_prior == 'imom':
-            qlogp = imom_log_pdf(self.theta).clamp(min=np.log(1e-10))
+            qlogp = imom_log_pdf(self.theta, tau=3)#.clamp(min=np.log(1e-100)) # 0.133
         elif alter_prior == 'pemom':
-            qlogp = pemom_log_pdf(self.theta).clamp(min=np.log(1e-10))
+            qlogp = pemom_log_pdf(self.theta)#.clamp(min=np.log(1e-10))
         elif alter_prior == 'Gaussian':
-            qlogp = normal_log_prob(self.theta, var=5.)  #.clamp(min=np.log(1e-10))
+            qlogp = normal_log_prob(self.theta, var=10.)  #.clamp(min=np.log(1e-10))
         kl_beta = qlogq - qlogp
         kl = (kl_z + qz*kl_beta).sum(dim=1).mean()
         return kl, qlogp.mean(), qlogq.mean()
@@ -257,15 +264,17 @@ def loglike(y_hat, y):
 
 
 
-def train(Y, X, truetheta, phi, epoch=1000):
+def train(Y, X, truetheta, phi, epoch=10000):
     linear = LinearModel(p=X.shape[1])
     # optimizer = optim.SGD(linear.parameters(), lr=0.0001, momentum=0.9)
     optimizer = optim.Adam(linear.parameters(), lr=0.1, weight_decay=0)
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[200, 400], gamma=0.99,
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[1000, 2000], gamma=0.9,
                                                      last_epoch=-1)  # 10, 20, 30
+    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.9, last_epoch=-1)
 
     sse_list = []
     sse_theta_list = []
+    sse_list_train = []
     for i in range(epoch):
         linear.train()
         optimizer.zero_grad()
@@ -282,31 +291,37 @@ def train(Y, X, truetheta, phi, epoch=1000):
         optimizer.step()
         scheduler.step()
 
-        # get sse
-        sse = ((y_hat - Y) ** 2).mean().detach().numpy()
-        sse_list.append(sse)
+        sse_train = ((y_hat - Y) ** 2).mean().detach().numpy()
+        sse_list_train.append(sse_train)
+
 
         with torch.no_grad():
             linear.eval()
             y_hat = linear(X)
+            # get sse
+            sse = ((y_hat - Y) ** 2).mean().detach().numpy()
+            sse_list.append(sse)
+
             p = X.shape[1]
             square_error = ((linear.Theta.mean(dim=0) - torch.tensor(truetheta, dtype=torch.float)) ** 2)
             sse_theta = square_error.sum().item()
             sse_zero = square_error[:(p-5)].sum().item()
             sse_nonzero = square_error[(p-5):].sum().item()
 
-
             sse_theta_list.append(sse_theta)
-            if sse_theta <= np.asarray(sse_theta_list).min():
+            if sse <= np.asarray(sse_list).min():
                 sse_zero_best = sse_zero
                 sse_nonzero_best = sse_nonzero
+                min_sse_theta = sse_theta
+                min_sse = sse
+                best_theta = linear.Theta.mean(dim=0).detach().cpu().numpy()
             # sse_test = ((y_hat - Y) ** 2).mean().detach().numpy()
 
         # print intermediet results
-        if i % 50 == 0:
+        if i % 1000 == 0 or i == epoch-1:
             z = linear.z.mean(dim=0).cpu().numpy()
             print('\n', i, 'last 5 responses:', y_hat[-5:].round().tolist(), Y[-5:].round().tolist())
-            print('sse_theta:{:3f}, min_sse_theta:{:3f}'.format(sse_theta, np.asarray(sse_theta_list).min()))
+            print('sse_theta:{:3f}, min_sse_theta:{:3f}'.format(sse_theta, min_sse_theta))
             print('sse_nonzero:{:3f}, best: {}'.format(sse_nonzero, sse_nonzero_best))
             print('sse_zero:{:3f}, best:{}'.format(sse_zero, sse_zero_best))
             print('est.thetas: {}, \n est z:{}'.format(linear.Theta.mean(dim=0)[-10:].cpu().numpy(), z[-50:]))
@@ -315,13 +330,14 @@ def train(Y, X, truetheta, phi, epoch=1000):
             threshold = utils.search_threshold(z, 0.05)
             print('threshold', threshold)
             print('number of cov above threshold', np.sum(z>threshold))
+            print('sse:{}, min_sse:{}'.format(sse, min_sse))
             # print('p={}, phi={}, loss: {}, nll:{}, kl:{}. SSE: {}, sse_test: {}'.format(X.shape[0], phi, nll, loss, kl, sse, sse_test))
         # if i % 100 == 0:
         #     utils.plot(linear.Theta, savefig=True)
 
     plt.plot(sse_list)
     # plt.savefig('/extra/yadongl10/git_project/GammaLearningResult/sse.png', dpi=100)
-    return linear
+    return linear, best_theta
 
 
 def test(Y, X, model):
@@ -342,13 +358,18 @@ config = {
 
 def main(config):
     n = 100
-    for p in [100, 500, 1000]:
-        for phi in [1, 4, 8]:
-            print('CONFIG: n {}, p {}, phi {}'.format(n, p, phi))
-            Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=1234, load_data=False)
-            Y, X = torch.tensor(Y, dtype=torch.float), torch.tensor(X, dtype=torch.float)
-            linear = train(Y, X, truetheta, phi=1, epoch=1100)  # 10000
-            test(Y, X, linear)
+    rep = 10
+    for i in range(rep):
+        for p in [100, 500, 1000]:  # [100, 500, 1000]
+            for phi in [4]: #[1, 4, 8]
+                print('CONFIG: n {}, p {}, phi {}'.format(n, p, phi))
+                Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=1234, load_data=False)
+                Y, X = torch.tensor(Y, dtype=torch.float), torch.tensor(X, dtype=torch.float)
+                linear, best_theta = train(Y, X, truetheta, phi=1, epoch=2000)  # 10000
+                test(Y, X, linear)
+                # with open('p{}_phi{}_repeat{}.pkl'.format(p, phi, i), 'wb') as f:
+                #     pkl.dump(best_theta, f)
+
 
             # if config['save_model']:
             #     torch.save(linear.state_dict(), config['save_model_dir']+'lognorm_nlp_linear_p1000.pt')
@@ -356,9 +377,7 @@ def main(config):
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Flow spike and slab')
-    parser.add_argument(
-        '--p',
-        type=int,
-        default=100,
-        help='number of covariates (default: 100)')
+    # parser.add_argument('--p',type=int, default=100, help='number of covariates (default: 100)')
+    parser.add_argument('--result_dir', type=str,
+                        default='/extra/yadongl10/git_project/nlpresult')
     main(config)
