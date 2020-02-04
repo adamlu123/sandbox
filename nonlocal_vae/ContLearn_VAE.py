@@ -40,7 +40,7 @@ class HardConcreteSampler(nn.Module):
     def __init__(self, p):
         super(HardConcreteSampler, self).__init__()
         self.p = p
-        self.zeta, self.gamma, self.beta = 1.1, -0.1, 2/3
+        self.zeta, self.gamma, self.beta = 1.1, -0.1, 9/10
         self.gamma_zeta_logratio = -self.gamma / self.zeta
         # self.logalpha.data.uniform_(np.log(0.2), np.log(10))
 
@@ -58,17 +58,22 @@ class HardConcreteSampler(nn.Module):
 
 class BaseFlow(nn.Module):
     def sample(self, n=1, context=None, **kwargs):
-        mu = kwargs['mu']
-        logvar = kwargs['logvar']
         dim = self.p
         if isinstance(self.p, int):
             dim = [dim, ]
 
-        batch_size = mu.shape[0]
-        spl = Variable(torch.FloatTensor(n, batch_size, *dim).normal_()).cuda()
-        std = torch.exp(0.5 * logvar)
-        spl = mu + std * spl
-        lgd = torch.zeros(n, batch_size, *dim).cuda()
+        if not kwargs:
+            spl = Variable(torch.FloatTensor(n, *dim).normal_())
+            lgd = torch.zeros(n, *dim)
+
+        else:
+            mu = kwargs['mu']
+            logvar = kwargs['logvar']
+            batch_size = mu.shape[0]
+            spl = Variable(torch.FloatTensor(n, batch_size, *dim).normal_()).cuda()
+            std = torch.exp(0.5 * logvar)
+            spl = mu + std * spl
+            lgd = torch.zeros(n, batch_size, *dim).cuda()
 
         if hasattr(self, 'gpu'):
             if self.gpu:

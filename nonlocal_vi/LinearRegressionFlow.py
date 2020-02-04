@@ -12,6 +12,9 @@ import utils
 import pickle as pkl
 
 torch.manual_seed(123)
+import os
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"]="3"
 
 
 def logit(x):
@@ -26,16 +29,17 @@ def nlp_pdf(x, phi, tau=0.358):
     return x**2*1/tau*(1/np.sqrt(2*np.pi*tau*phi))*torch.exp(-x**2/(2*tau*phi))
 
 
-def mom_log_pdf(x, phi, tau=0.358):  # 0.358
-    return (x**2).log() - np.log(tau) - np.log(np.sqrt(2*np.pi*tau*phi)) - x**2/(2*tau*phi)
+def mom_log_pdf(x, phi=1, tau=0.358):  # 0.358
+    return ((x**2).clamp(min=1e-10)).log() - np.log(tau) - np.log(np.sqrt(2*np.pi*tau*phi)) - x**2/(2*tau*phi)
 
 
 def imom_log_pdf(x, phi=1, tau=3):  #0.133
-    return 0.5*np.log(tau*phi/np.pi) - (x**2).log() - (tau*phi) / (x**2)
+    # x = x.sign() * x.abs().clamp(min=1e-5, max=1e5)
+    return 0.5*np.log(tau*phi/np.pi) - (x**2).clamp(min=1e-10).log() - (tau*phi) / (x**2).clamp(min=1e-10, max=1e10)
 
 
 def pemom_log_pdf(x, phi=1, tau=0.358):
-    return (np.sqrt(2) - (tau*phi) / x**2) - np.log(np.sqrt(2*np.pi*tau*phi)) - x**2/(2*tau*phi)
+    return (np.sqrt(2) - (tau*phi) / (x**2).clamp(min=1e-10) ) - np.log(np.sqrt(2*np.pi*tau*phi)) - x**2/(2*tau*phi)
 
 
 def normal_log_prob(x, var=10):
@@ -67,17 +71,17 @@ class HardConcreteSampler(nn.Module):
     """
     Sampler for Hard concrete random variable used for L0 gate
     """
-    def __init__(self, p):
+    def __init__(self, p, scale, temparature, init=np.log(0.1/0.9)):
         super(HardConcreteSampler, self).__init__()
         self.p = p
-        self.zeta, self.gamma, self.beta = 1.5, -0.05, 9/10  #2/3
+        self.zeta, self.gamma, self.beta = scale, -(scale - 1), temparature# 1.1, -0.1, 9/10  #2/3
         self.gamma_zeta_logratio = np.log(-self.gamma / self.zeta)
-        self.logalpha = nn.Parameter(np.log(0.1/0.9) * torch.ones(p)) # np.log(0.1/0.9)
+        self.logalpha = nn.Parameter(init * torch.ones(p)) # np.log(0.1/0.9)
         # self.logalpha.data.uniform_(np.log(0.2), np.log(10))
 
     def forward(self, repeat):
         qz = torch.sigmoid(self.logalpha - self.beta * self.gamma_zeta_logratio)   # qz = p(z>0)
-        u = Uniform(0, 1).sample([repeat, self.p])
+        u = Uniform(0, 1).sample([repeat, self.p]).cuda()
         s = torch.sigmoid((torch.log(u / (1 - u)) + self.logalpha) / self.beta)
         if self.training:
             z = torch.clamp((self.zeta - self.gamma) * s + self.gamma, 0, 1)
@@ -106,7 +110,7 @@ class BaseFlow(nn.Module):
                 lgd = lgd.cuda()
                 context = context.gpu()
 
-        return self.forward((spl, lgd, context))
+        return self.forward((spl.cuda(), lgd.cuda(), context))
 
     def cuda(self):
         self.gpu = True
@@ -182,34 +186,34 @@ class GaussianAlternative(nn.Module):
     def __init__(self, p):
         super(GaussianAlternative, self).__init__()
         self.p = p
-        self.mean = nn.Parameter(torch.rand(p))
-        self.logvar = nn.Parameter(torch.rand(p))
+        self.mean = nn.Parameter(torch.rand(p)).cuda()
+        self.logvar = nn.Parameter(torch.rand(p)).cuda()
 
     def forward(self, inputs):
         return inputs * (0.5 * self.logvar).exp() + self.mean
 
     def sample(self, n):
-        noise = torch.rand(n, self.p)
+        noise = torch.rand(n, self.p).cuda()
         x = self.forward(noise)
         qlogq = - 0.5*self.logvar - (x - self.mean) ** 2 / (2 * self.logvar.exp())
-        return x, -qlogq
+        return x, -qlogq, noise
 
 
 class SpikeAndSlabSampler(nn.Module):
     """
     Spike and slab sampler with Dirac spike and FlowAlternative slab.
     """
-    def __init__(self, p, alternative_sampler):
+    def __init__(self, p, alternative_sampler, scale, temparature, init):
         super(SpikeAndSlabSampler, self).__init__()
         self.p = p
         self.alternative_sampler = alternative_sampler(p)
-        self.z_sampler = HardConcreteSampler(p)
+        self.z_sampler = HardConcreteSampler(p, scale, temparature, init)
 
     def forward(self, repeat):
         theta, logdet, gaussians = self.alternative_sampler.sample(n=repeat)
         z, qz = self.z_sampler(repeat)
         out = z * theta
-        logq = normal_log_pdf(gaussians, torch.zeros(self.p), torch.zeros(self.p))
+        logq = normal_log_pdf(gaussians, torch.zeros(self.p).cuda(), torch.zeros(self.p).cuda())
         return out, theta, logq, logdet, z, qz
 
 
@@ -218,7 +222,7 @@ class LinearModel(nn.Module):
     Wrap around SpikeAndSlabSampler for a linear regression model.
     compare with: https://www.tandfonline.com/doi/pdf/10.1080/01621459.2015.1130634?needAccess=true
     """
-    def __init__(self, p, bias=False, alternative_sampler=FlowAlternative):  # FlowAlternative or GaussianAlternative
+    def __init__(self, p, scale, temparature, init, bias=False, alternative_sampler=FlowAlternative):  # FlowAlternative or GaussianAlternative
         super(LinearModel, self).__init__()
         self.add_bias = bias
         if self.add_bias:
@@ -228,28 +232,28 @@ class LinearModel(nn.Module):
         if isinstance(p, tuple):
             p = p[0] * p[1]
         self.alternative_sampler = alternative_sampler
-        self.sampler = SpikeAndSlabSampler(p=p, alternative_sampler=alternative_sampler)
+        self.sampler = SpikeAndSlabSampler(p, alternative_sampler, scale, temparature, init)
 
     def forward(self, x):
         self.Theta, self.theta, self.logq, self.logdet, self.z, self.qz = self.sampler(repeat=16)
         if self.add_bias:
-            out = x.matmul(self.Theta.mean(dim=0).view(x.shape[1], -1)) + self.bias
+            out = x.matmul(self.Theta.mean(dim=0)) + self.bias
         else:
-            out = x.matmul(self.Theta.mean(dim=0).view(x.shape[1], -1))  # TODO: defer taking mean to the output
-        return out.squeeze()
+            out = x.matmul(self.Theta.permute(1, 0))  # x.matmul(self.Theta.mean(dim=0))  # (100, repeat)
+        return out
 
-    def kl(self, phi, alter_prior='mom'):
+    def kl(self, alter_prior, tau):
         p = 0.5
-        qz = self.qz.expand_as(self.Theta)
-        kl_z = qz * torch.log(qz / p) + (1 - qz) * torch.log((1 - qz) / (1 - p))
+        qz = self.qz.expand_as(self.Theta)  # .clamp(min=1e-3, max=0.999)
+        kl_z = qz * torch.log(qz.clamp(min=1e-10) / p) + (1 - qz) * torch.log((1 - qz).clamp(1e-10) / (1 - p))
         qlogq = self.logq - self.logdet
 
         if alter_prior == 'mom':
-            qlogp = mom_log_pdf(self.theta, phi, tau=3)  # .clamp(min=np.log(1e-10))  # tau = 0.358
+            qlogp = mom_log_pdf(self.theta, tau) # .clamp(min=np.log(1e-10))  # tau = 0.358
         elif alter_prior == 'imom':
-            qlogp = imom_log_pdf(self.theta, tau=3)#.clamp(min=np.log(1e-100)) # 0.133
+            qlogp = imom_log_pdf(self.theta, tau).clamp(min=np.log(1e-10)) # 0.133
         elif alter_prior == 'pemom':
-            qlogp = pemom_log_pdf(self.theta)#.clamp(min=np.log(1e-10))
+            qlogp = pemom_log_pdf(self.theta, tau).clamp(min=np.log(1e-10))
         elif alter_prior == 'Gaussian':
             qlogp = normal_log_prob(self.theta, var=10.)  #.clamp(min=np.log(1e-10))
         kl_beta = qlogq - qlogp
@@ -259,22 +263,24 @@ class LinearModel(nn.Module):
 
 
 def loglike(y_hat, y):
-    ll = - (y_hat-y)**2/(2*1**2)
-    return ll.sum()
+    ll = - (y_hat.permute(1,0)-y)**2/(2*1**2)
+    return ll.sum(dim=1).mean()
 
 
 
-def train(Y, X, truetheta, phi, epoch=10000):
-    linear = LinearModel(p=X.shape[1])
-    # optimizer = optim.SGD(linear.parameters(), lr=0.0001, momentum=0.9)
-    optimizer = optim.Adam(linear.parameters(), lr=0.1, weight_decay=0)
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[1000, 2000], gamma=0.9,
+def train(Y, X, truetheta, epoch, alter_prior, tau, rep, lr, scale, temparature, init, p, phi, result_dir):
+    linear = LinearModel(p, scale, temparature, init).cuda()
+    # optimizer = optim.SGD(linear.parameters(), lr=lr, momentum=0.9)
+    optimizer = optim.Adam(linear.parameters(), lr=lr, weight_decay=0)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[1000, 2000], gamma=0.5,
                                                      last_epoch=-1)  # 10, 20, 30
     # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.9, last_epoch=-1)
 
     sse_list = []
     sse_theta_list = []
     sse_list_train = []
+    sse_nonzero_list = []
+    sse_zero_list = []
     for i in range(epoch):
         linear.train()
         optimizer.zero_grad()
@@ -282,7 +288,7 @@ def train(Y, X, truetheta, phi, epoch=10000):
         # forward pass and compute loss
         y_hat = linear(X)
         nll = -loglike(y_hat, Y)
-        kl, qlogp, qlogq = linear.kl(phi)
+        kl, qlogp, qlogq = linear.kl(alter_prior, tau)
         loss = nll + 1 * kl
         # print('qlogp, qlogq', qlogp.data, qlogq.data)
 
@@ -291,25 +297,28 @@ def train(Y, X, truetheta, phi, epoch=10000):
         optimizer.step()
         scheduler.step()
 
-        sse_train = ((y_hat - Y) ** 2).mean().detach().numpy()
+        sse_train = ((y_hat.permute(1,0) - Y) ** 2).mean().cpu().detach().numpy()
         sse_list_train.append(sse_train)
 
 
         with torch.no_grad():
             linear.eval()
             y_hat = linear(X)
+            y_hat = y_hat.mean(dim=1)
             # get sse
-            sse = ((y_hat - Y) ** 2).mean().detach().numpy()
+            sse = ((Y-y_hat) ** 2).mean().cpu().detach().numpy()
             sse_list.append(sse)
 
             p = X.shape[1]
-            square_error = ((linear.Theta.mean(dim=0) - torch.tensor(truetheta, dtype=torch.float)) ** 2)
+            square_error = ((linear.Theta.mean(dim=0).cpu() - torch.tensor(truetheta, dtype=torch.float)) ** 2)
             sse_theta = square_error.sum().item()
-            sse_zero = square_error[:(p-5)].sum().item()
-            sse_nonzero = square_error[(p-5):].sum().item()
+
+            sse_nonzero, sse_zero = square_error[(p-5):].sum().item(), square_error[:(p-5)].sum().item()
+            sse_nonzero_list.append(sse_nonzero)
+            sse_zero_list.append(sse_zero)
 
             sse_theta_list.append(sse_theta)
-            if sse <= np.asarray(sse_list).min():
+            if epoch > 100:  # sse <= np.asarray(sse_list).min() and
                 sse_zero_best = sse_zero
                 sse_nonzero_best = sse_nonzero
                 min_sse_theta = sse_theta
@@ -318,32 +327,39 @@ def train(Y, X, truetheta, phi, epoch=10000):
             # sse_test = ((y_hat - Y) ** 2).mean().detach().numpy()
 
         # print intermediet results
-        if i % 1000 == 0 or i == epoch-1:
+        if i % 500 == 0 or i == epoch-1:
             z = linear.z.mean(dim=0).cpu().numpy()
-            print('\n', i, 'last 5 responses:', y_hat[-5:].round().tolist(), Y[-5:].round().tolist())
-            print('sse_theta:{:3f}, min_sse_theta:{:3f}'.format(sse_theta, min_sse_theta))
-            print('sse_nonzero:{:3f}, best: {}'.format(sse_nonzero, sse_nonzero_best))
-            print('sse_zero:{:3f}, best:{}'.format(sse_zero, sse_zero_best))
-            print('est.thetas: {}, \n est z:{}'.format(linear.Theta.mean(dim=0)[-10:].cpu().numpy(), z[-50:]))
+            # qz = linear.qz
+            print('\n', 'repeat', rep, 'epoch', i, 'last 5 responses:', y_hat[-5:].round().tolist(), Y[-5:].round().tolist())
+            print('sse_theta:{:.3f}, min_sse_theta:{:.3f}'.format(sse_theta, min_sse_theta))
+            print('sse_nonzero:{:.3f}, best: {}'.format(sse_nonzero, sse_nonzero_best))
+            print('sse_zero:{:.3f}, best:{}'.format(sse_zero, sse_zero_best))
+            print('est.thetas: {}, \n est z:{}'.format(linear.Theta.mean(dim=0)[-10:].cpu().numpy().round(3), z[-50:].round(3)))
             print('epoch {}, z min: {}, z mean: {}, non-zero: {}'.format(i, z.min(), z.mean(), z.nonzero()[0].shape))
-            print('nll, kl', nll.tolist(), kl.tolist())
+            print('nll, kl, qlogp', nll.tolist(), kl.tolist(), qlogp.item())
             threshold = utils.search_threshold(z, 0.05)
             print('threshold', threshold)
             print('number of cov above threshold', np.sum(z>threshold))
-            print('sse:{}, min_sse:{}'.format(sse, min_sse))
-            # print('p={}, phi={}, loss: {}, nll:{}, kl:{}. SSE: {}, sse_test: {}'.format(X.shape[0], phi, nll, loss, kl, sse, sse_test))
+            print('sse:{}, min_sse:{}, \n'.format(sse, min_sse))
         # if i % 100 == 0:
         #     utils.plot(linear.Theta, savefig=True)
+        # plt.plot(sse_list)
+        # plt.savefig('/extra/yadongl10/git_project/GammaLearningResult/sse.png', dpi=100)
 
-    plt.plot(sse_list)
-    # plt.savefig('/extra/yadongl10/git_project/GammaLearningResult/sse.png', dpi=100)
-    return linear, best_theta
+
+    with open(result_dir + '/{}_sse_zero_list_p{}_phi{}_repeat{}.pkl'.format(alter_prior, p, phi, rep), 'wb') as f:
+        pkl.dump(sse_zero_list, f)
+    with open(result_dir + '/{}_sse_nonzero_list_p{}_phi{}_repeat{}.pkl'.format(alter_prior, p, phi, rep), 'wb') as f:
+        pkl.dump(sse_nonzero_list, f)
+
+    return linear, best_theta, sse_nonzero_best, sse_zero_best, min_sse_theta
 
 
 def test(Y, X, model):
     model.eval()
     y_hat = model(X)
-    sse = ((y_hat - Y) ** 2).mean().detach().numpy()
+    y_hat = y_hat.mean(dim=1)
+    sse = ((y_hat - Y) ** 2).cpu().mean().detach().numpy()
 
     print('test SSE:{}'.format(sse))
     if model.z.nonzero().shape[0] < 10:
@@ -358,17 +374,52 @@ config = {
 
 def main(config):
     n = 100
-    rep = 10
-    for i in range(rep):
-        for p in [100, 500, 1000]:  # [100, 500, 1000]
-            for phi in [4]: #[1, 4, 8]
-                print('CONFIG: n {}, p {}, phi {}'.format(n, p, phi))
-                Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=1234, load_data=False)
-                Y, X = torch.tensor(Y, dtype=torch.float), torch.tensor(X, dtype=torch.float)
-                linear, best_theta = train(Y, X, truetheta, phi=1, epoch=2000)  # 10000
+    rep = 2
+    alter_prior = 'imom'  # Gaussian, mom
+
+    result_dir = '/extra/yadongl10/git_project/nlpresult/0204/adam005_init0/{}'.format(alter_prior)
+
+    if not os.path.isdir(result_dir):
+        os.mkdir(result_dir)
+
+    epochs = 500
+    tau = 10
+    seed = 100 + np.arange(rep)
+    lr = 0.05   # 0.0001
+    scale = 1.01
+    temparature = 9/10
+    init = 0. #np.log(0.1/0.9)
+
+
+
+    for p in [500, 1000, 1500]:  # [100, 500, 1000]  500, 1000, 1500
+        for phi in [4]:  #[1, 4, 8]
+            # sse_zero_best_ls = []
+            # sse_nonzero_best_ls = []
+            # sse_total_best_ls = []
+            sse_theta_ls = []
+            for i in range(rep):
+                print('CONFIG: n {}, p {}, phi {}, alter_prior {}, seed {}'.format(n, p, phi, alter_prior, seed[i]))
+                Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=seed[i], load_data=False)
+                Y, X = torch.tensor(Y, dtype=torch.float).cuda(), torch.tensor(X, dtype=torch.float).cuda()
+                linear, best_theta, sse_nonzero_best, sse_zero_best, sse_theta = train(Y, X, truetheta, epoch=epochs,
+                                                                                    alter_prior=alter_prior, tau=tau, rep=i, lr=lr, p=p,
+                                                                                    scale=scale, temparature=temparature, init=init, phi=phi, result_dir=result_dir)
+
+                sse_theta_ls.append([sse_theta, sse_nonzero_best, sse_zero_best])
                 test(Y, X, linear)
-                # with open('p{}_phi{}_repeat{}.pkl'.format(p, phi, i), 'wb') as f:
-                #     pkl.dump(best_theta, f)
+
+                with open(result_dir + '/p{}_phi{}_repeat{}.pkl'.format(p, phi, i), 'wb') as f:
+                    pkl.dump(best_theta, f)
+
+            # with open(result_dir + '/p{}_phi{}_sse_nonzero_best_ls_{}_tau{}.pkl'.format(p, phi, i, alter_prior, tau), 'wb') as f:
+            #     pkl.dump(sse_nonzero_best_ls, f)
+            # with open(result_dir + '/p{}_phi{}_sse_zero_best_ls_{}_tau{}.pkl'.format(p, phi, i, alter_prior, tau), 'wb') as f:
+            #     pkl.dump(sse_zero_best_ls, f)
+            # with open(result_dir + '/p{}_phi{}_sse_total_best_ls_{}_tau{}.pkl'.format(p, phi, i, alter_prior, tau), 'wb') as f:
+            #     pkl.dump(sse_total_best_ls, f)
+            with open(result_dir + '/p{}_phi{}_sse_theta_ls_{}_tau{}.pkl'.format(p, phi, i, tau), 'wb') as f:
+                pkl.dump(sse_theta_ls, f)
 
 
             # if config['save_model']:
@@ -379,5 +430,5 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Flow spike and slab')
     # parser.add_argument('--p',type=int, default=100, help='number of covariates (default: 100)')
     parser.add_argument('--result_dir', type=str,
-                        default='/extra/yadongl10/git_project/nlpresult')
+                        default='/extra/yadongl10/git_project/nlpresult/0203')
     main(config)
