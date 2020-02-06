@@ -40,7 +40,7 @@ class HardConcreteSampler(nn.Module):
     def __init__(self, p):
         super(HardConcreteSampler, self).__init__()
         self.p = p
-        self.zeta, self.gamma, self.beta = 1.1, -0.1, 9/10
+        self.zeta, self.gamma, self.beta = 1.2, -0.2, 1/10
         self.gamma_zeta_logratio = -self.gamma / self.zeta
         # self.logalpha.data.uniform_(np.log(0.2), np.log(10))
 
@@ -246,7 +246,8 @@ class NonLocalVAE(nn.Module):
     def kl(self, phi=1, classes=0):
         p = 0.5  # 1e-1 * (classes + 1)
         qz = self.qz.expand_as(self.theta)
-        kl_z = qz * torch.log(qz / p) + (1 - qz) * torch.log((1 - qz) / (1 - p))
+        # kl_z = qz * torch.log(qz / p) + (1 - qz) * torch.log((1 - qz) / (1 - p))
+        kl_z = qz * torch.log(qz.clamp(min=1e-10) / p) + (1 - qz) * torch.log((1 - qz).clamp(1e-10) / (1 - p))
         qlogp = utils.nlp_log_pdf(self.theta, phi, tau=10)  # .clamp(min=np.log(1e-10))  .358
         qlogq = self.logq - self.logdet
 

@@ -39,7 +39,7 @@ def imom_log_pdf(x, phi=1, tau=3):  #0.133
 
 
 def pemom_log_pdf(x, phi=1, tau=0.358):
-    return (np.sqrt(2) - (tau*phi) / (x**2).clamp(min=1e-10) ) - np.log(np.sqrt(2*np.pi*tau*phi)) - x**2/(2*tau*phi)
+    return (np.sqrt(2) - (tau*phi) / (x**2).clamp(min=1e-10)) - np.log(np.sqrt(2*np.pi*tau*phi)) - x**2/(2*tau*phi)
 
 
 def normal_log_prob(x, var=10):
@@ -89,6 +89,34 @@ class HardConcreteSampler(nn.Module):
             z = torch.clamp(torch.sigmoid(self.logalpha) * (self.zeta - self.gamma) + self.gamma, 0, 1).expand_as(u)
         return z, qz
 
+class LearnableHardConcreteSampler(nn.Module):
+    """
+    Sampler for Hard concrete random variable used for L0 gate
+    """
+    def __init__(self, p, scale, temparature, init=np.log(0.1/0.9)):
+        super(LearnableHardConcreteSampler, self).__init__()
+        self.p = p
+        # self.temparature = nn.Parameter(5. * torch.ones(p))
+        # self.zeta, self.gamma = scale, -(scale - 1)  # 1.1, -0.1, 9/10  #2/3
+        # self.gamma_zeta_logratio = np.log(-self.gamma / self.zeta)
+
+        self.scale = nn.Parameter(-0. * torch.ones(p))
+        self.logalpha = nn.Parameter(init * torch.ones(p))  # np.log(0.1/0.9)
+
+    def forward(self, repeat):
+        self.beta = 0.9  #F.softplus(self.temparature).clamp(min=0.1, max=0.1)  # 1.1, -0.1, 9/10  #2/3
+        scale = torch.exp(self.scale) + 1
+        self.zeta, self.gamma = scale, -(scale - 1)
+        self.gamma_zeta_logratio = torch.log(-self.gamma / self.zeta)
+
+        qz = torch.sigmoid(self.logalpha - self.beta * self.gamma_zeta_logratio)   # qz = p(z>0)
+        u = Uniform(0, 1).sample([repeat, self.p]).cuda()
+        s = torch.sigmoid((torch.log(u / (1 - u)) + self.logalpha) / self.beta)
+        if self.training:
+            z = torch.clamp((self.zeta - self.gamma) * s + self.gamma, 0, 1)
+        else:
+            z = torch.clamp(torch.sigmoid(self.logalpha) * (self.zeta - self.gamma) + self.gamma, 0, 1).expand_as(u)
+        return z, qz
 
 class BaseFlow(nn.Module):
     def sample(self, n=1, context=None, **kwargs):
@@ -207,7 +235,7 @@ class SpikeAndSlabSampler(nn.Module):
         super(SpikeAndSlabSampler, self).__init__()
         self.p = p
         self.alternative_sampler = alternative_sampler(p)
-        self.z_sampler = HardConcreteSampler(p, scale, temparature, init)
+        self.z_sampler = LearnableHardConcreteSampler(p, scale, temparature, init)
 
     def forward(self, repeat):
         theta, logdet, gaussians = self.alternative_sampler.sample(n=repeat)
@@ -243,13 +271,13 @@ class LinearModel(nn.Module):
         return out
 
     def kl(self, alter_prior, tau):
-        p = 0.5
+        p = 0.1
         qz = self.qz.expand_as(self.Theta)  # .clamp(min=1e-3, max=0.999)
         kl_z = qz * torch.log(qz.clamp(min=1e-10) / p) + (1 - qz) * torch.log((1 - qz).clamp(1e-10) / (1 - p))
         qlogq = self.logq - self.logdet
 
         if alter_prior == 'mom':
-            qlogp = mom_log_pdf(self.theta, tau) # .clamp(min=np.log(1e-10))  # tau = 0.358
+            qlogp = mom_log_pdf(self.theta, tau).clamp(min=np.log(1e-10))  # tau = 0.358
         elif alter_prior == 'imom':
             qlogp = imom_log_pdf(self.theta, tau).clamp(min=np.log(1e-10)) # 0.133
         elif alter_prior == 'pemom':
@@ -290,7 +318,6 @@ def train(Y, X, truetheta, epoch, alter_prior, tau, rep, lr, scale, temparature,
         nll = -loglike(y_hat, Y)
         kl, qlogp, qlogq = linear.kl(alter_prior, tau)
         loss = nll + 1 * kl
-        # print('qlogp, qlogq', qlogp.data, qlogq.data)
 
         # compute gradient and do SGD step
         loss.backward()
@@ -324,7 +351,6 @@ def train(Y, X, truetheta, epoch, alter_prior, tau, rep, lr, scale, temparature,
                 min_sse_theta = sse_theta
                 min_sse = sse
                 best_theta = linear.Theta.mean(dim=0).detach().cpu().numpy()
-            # sse_test = ((y_hat - Y) ** 2).mean().detach().numpy()
 
         # print intermediet results
         if i % 500 == 0 or i == epoch-1:
@@ -341,10 +367,6 @@ def train(Y, X, truetheta, epoch, alter_prior, tau, rep, lr, scale, temparature,
             print('threshold', threshold)
             print('number of cov above threshold', np.sum(z>threshold))
             print('sse:{}, min_sse:{}, \n'.format(sse, min_sse))
-        # if i % 100 == 0:
-        #     utils.plot(linear.Theta, savefig=True)
-        # plt.plot(sse_list)
-        # plt.savefig('/extra/yadongl10/git_project/GammaLearningResult/sse.png', dpi=100)
 
 
     with open(result_dir + '/{}_sse_zero_list_p{}_phi{}_repeat{}.pkl'.format(alter_prior, p, phi, rep), 'wb') as f:
@@ -374,33 +396,28 @@ config = {
 
 def main(config):
     n = 100
-    rep = 2
-    alter_prior = 'imom'  # Gaussian, mom
+    rep = 10
+    alter_prior = 'imom'  # Gaussian, imom
 
-    result_dir = '/extra/yadongl10/git_project/nlpresult/0204/adam005_init0/{}'.format(alter_prior)
+    result_dir = '/extra/yadongl10/git_project/nlpresult/0205/adam005_init0_tau10_rho025_notlearned/{}'.format(alter_prior) # gau_alter_
 
     if not os.path.isdir(result_dir):
         os.mkdir(result_dir)
 
-    epochs = 500
-    tau = 10
+    epochs = 20000
+    tau = 1
     seed = 100 + np.arange(rep)
-    lr = 0.05   # 0.0001
+    lr = 0.05   # sgd 0.0001  adam 0.005
     scale = 1.01
     temparature = 9/10
-    init = 0. #np.log(0.1/0.9)
+    init = 0.  #np.log(0.1/0.9)
 
-
-
-    for p in [500, 1000, 1500]:  # [100, 500, 1000]  500, 1000, 1500
-        for phi in [4]:  #[1, 4, 8]
-            # sse_zero_best_ls = []
-            # sse_nonzero_best_ls = []
-            # sse_total_best_ls = []
+    for phi in [4, 1]:  # [1, 4, 8]
+        for p in [1000, 1500]:  # [100, 500, 1000]  500, 1000, 1500
             sse_theta_ls = []
             for i in range(rep):
-                print('CONFIG: n {}, p {}, phi {}, alter_prior {}, seed {}'.format(n, p, phi, alter_prior, seed[i]))
-                Y, X, truetheta = generate_data(n, p, phi, rho=0, seed=seed[i], load_data=False)
+                print('CONFIG: n {}, p {}, phi {}, alter_prior {}, seed {}, lr {}'.format(n, p, phi, alter_prior, seed[i], lr))
+                Y, X, truetheta = generate_data(n, p, phi, rho=0., seed=seed[i], load_data=False)
                 Y, X = torch.tensor(Y, dtype=torch.float).cuda(), torch.tensor(X, dtype=torch.float).cuda()
                 linear, best_theta, sse_nonzero_best, sse_zero_best, sse_theta = train(Y, X, truetheta, epoch=epochs,
                                                                                     alter_prior=alter_prior, tau=tau, rep=i, lr=lr, p=p,
@@ -412,18 +429,9 @@ def main(config):
                 with open(result_dir + '/p{}_phi{}_repeat{}.pkl'.format(p, phi, i), 'wb') as f:
                     pkl.dump(best_theta, f)
 
-            # with open(result_dir + '/p{}_phi{}_sse_nonzero_best_ls_{}_tau{}.pkl'.format(p, phi, i, alter_prior, tau), 'wb') as f:
-            #     pkl.dump(sse_nonzero_best_ls, f)
-            # with open(result_dir + '/p{}_phi{}_sse_zero_best_ls_{}_tau{}.pkl'.format(p, phi, i, alter_prior, tau), 'wb') as f:
-            #     pkl.dump(sse_zero_best_ls, f)
-            # with open(result_dir + '/p{}_phi{}_sse_total_best_ls_{}_tau{}.pkl'.format(p, phi, i, alter_prior, tau), 'wb') as f:
-            #     pkl.dump(sse_total_best_ls, f)
-            with open(result_dir + '/p{}_phi{}_sse_theta_ls_{}_tau{}.pkl'.format(p, phi, i, tau), 'wb') as f:
+            with open(result_dir + '/p{}_phi{}_sse_theta_ls_tau{}.pkl'.format(p, phi, tau), 'wb') as f:
                 pkl.dump(sse_theta_ls, f)
 
-
-            # if config['save_model']:
-            #     torch.save(linear.state_dict(), config['save_model_dir']+'lognorm_nlp_linear_p1000.pt')
 
 
 if __name__=='__main__':
