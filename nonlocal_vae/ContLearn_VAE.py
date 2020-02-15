@@ -33,6 +33,15 @@ device = 'cuda' # torch.device("cuda" if args.cuda else "cpu")
 kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
 
 
+def normal_log_pdf(x, mu, logvar):
+    return -0.5 * logvar - 0.5 * np.log(2*np.pi) - (x - mu)**2/(2*logvar.exp())
+
+
+def mom_log_pdf(x, phi=1, tau=0.358):  # 0.358
+    return ((x**2).clamp(min=1e-10)).log() - np.log(tau) - np.log(np.sqrt(2*np.pi*tau*phi)) - x**2/(2*tau*phi)
+
+
+
 class HardConcreteSampler(nn.Module):
     """
     Sampler for Hard concrete random variable used for L0 gate
@@ -40,7 +49,7 @@ class HardConcreteSampler(nn.Module):
     def __init__(self, p):
         super(HardConcreteSampler, self).__init__()
         self.p = p
-        self.zeta, self.gamma, self.beta = 1.2, -0.2, 1/10
+        self.zeta, self.gamma, self.beta = 1.1, -0.1, 9/10
         self.gamma_zeta_logratio = -self.gamma / self.zeta
         # self.logalpha.data.uniform_(np.log(0.2), np.log(10))
 
@@ -148,11 +157,29 @@ class FlowAlternative(BaseFlow):
         return h, logdet, x
 
 
+class GaussianAlternative(nn.Module):
+    """
+    Independent Gaussian alternative distribution
+    """
+    def __init__(self, p):
+        super(GaussianAlternative, self).__init__()
+        self.p = p
+
+    def forward(self, inputs, mu, logvar):
+        return inputs * (0.5 * logvar).exp() + mu
+
+    def sample(self, n, mu, logvar):
+        noise = torch.rand(n, mu.shape[0], self.p).cuda() #  rep, batch, latent_dim
+        x = self.forward(noise, mu, logvar)
+        logdet = 0.5*logvar
+        return x, logdet, noise
+
+
 class SpikeAndSlabSampler(nn.Module):
     """
     Spike and slab sampler with Dirac spike and FlowAlternative slab.
     """
-    def __init__(self, p, alternative_sampler=FlowAlternative):
+    def __init__(self, p, alternative_sampler=GaussianAlternative):  # FlowAlternative,  GaussianAlternative
         super(SpikeAndSlabSampler, self).__init__()
         self.p = p
         self.alternative_sampler = alternative_sampler(p)
@@ -160,29 +187,26 @@ class SpikeAndSlabSampler(nn.Module):
 
     def forward(self, repeat, mu, logvar, logalpha):
         theta, logdet, gaussians = self.alternative_sampler.sample(n=repeat, mu=mu, logvar=logvar)
-        logq = utils.normal_log_pdf(gaussians, mu, logvar)
+        logq = normal_log_pdf(gaussians, torch.zeros_like(mu), torch.zeros_like(logvar))
         z, qz = self.z_sampler(repeat, logalpha)  # z.shape = (repeat, batch, p)  qz.shape=(p)
-        theta = theta.permute([1, 0, 2])  # -> (16, 128, 32)
+        # theta = theta.permute([1, 0, 2])  # -> (16, 128, 32)
         out = z * theta
         return out, theta, logq, logdet, z, qz
 
+    # def reparameterize(self, n=repeat, mu=mu, logvar=logvar):
+    #     noise = torch.rand(n, mu.shape[0], self.p).cuda()
+    #     return noise * (0.5 * logvar).exp() + mu,
 
 class Encoder(nn.Module):
     def __init__(self, input_dim, latent_dim):
         super(Encoder, self).__init__()
         self.input_dim = input_dim
-        self.fc1 = nn.Linear(input_dim, 1200)
-        self.fc2 = nn.Linear(1200, 600)
-        self.fc3 = nn.Linear(600, 300)
-        self.fc4 = nn.Linear(300, 150)
-        self.fc_output = nn.Linear(150, latent_dim*3)
+        self.fc1 = nn.Linear(784, 400)
+        self.fc_output = nn.Linear(400, latent_dim*3)
 
     def forward(self, x):
         x = x.view(-1, self.input_dim)
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
-        x = F.relu(self.fc4(x))
         out = self.fc_output(x)
         return out.chunk(3, 1)
         # return out[:, :32], out[:, 32:64], out[:, 64:96]
@@ -191,14 +215,13 @@ class Encoder(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, input_dim, output_dim):
         super(Decoder, self).__init__()
-        self.fc3 = nn.Linear(input_dim, 500)
-        self.fc4 = nn.Linear(500, 500)
-        self.fc5 = nn.Linear(500, output_dim)
+        self.fc3 = nn.Linear(input_dim, 400)
+        self.fc4 = nn.Linear(400, output_dim)
 
     def forward(self, z):
         z = F.relu(self.fc3(z))
         z = F.relu(self.fc4(z))
-        return torch.sigmoid(self.fc5(z))
+        return torch.sigmoid(z)
 
 
 class Encoder_rat(nn.Module):
@@ -231,31 +254,42 @@ class Decoder_rat(nn.Module):
 
 
 class NonLocalVAE(nn.Module):
-    def __init__(self, input_dim=784, latent_dim=32):
+    def __init__(self, input_dim=784, latent_dim=32, prior='mom', tau=10):
         super(NonLocalVAE, self).__init__()
-        self.encoder = Encoder_rat(input_dim, latent_dim)
-        self.decoder = Decoder_rat(latent_dim, input_dim)
+        self.encoder = Encoder(input_dim, latent_dim)
+        self.decoder = Decoder(latent_dim, input_dim)
         self.latent_sampler = SpikeAndSlabSampler(p=latent_dim)
+        self.prior = prior
+        self.tau = tau
 
     def forward(self, data):
         mu, logvar, logalpha = self.encoder(data)
-        latent, self.theta, self.logq, self.logdet, self.z, self.qz = self.latent_sampler(64, mu, logvar, logalpha)
+        latent, self.theta, self.logq, self.logdet, self.z, self.qz = self.latent_sampler(1, mu, logvar, logalpha)
         recon_batch = self.decoder(latent)
         return recon_batch
 
-    def kl(self, phi=1, classes=0):
-        p = 0.5  # 1e-1 * (classes + 1)
+    def kl(self):
+        p = 0.9
         qz = self.qz.expand_as(self.theta)
-        # kl_z = qz * torch.log(qz / p) + (1 - qz) * torch.log((1 - qz) / (1 - p))
         kl_z = qz * torch.log(qz.clamp(min=1e-10) / p) + (1 - qz) * torch.log((1 - qz).clamp(1e-10) / (1 - p))
-        qlogp = utils.nlp_log_pdf(self.theta, phi, tau=10)  # .clamp(min=np.log(1e-10))  .358
+        if self.prior == 'mom':
+            qlogp = mom_log_pdf(self.theta, phi=1, tau=self.tau)  # .clamp(min=np.log(1e-10))  .358
+        elif self.prior == 'Gaussian':
+            qlogp = normal_log_pdf(self.theta, torch.zeros_like(self.theta), torch.zeros_like(self.theta))
         qlogq = self.logq - self.logdet
 
         kl_beta = qlogq - qlogp  # (16, 128, 32)
         kl = (kl_z + qz*kl_beta).sum(dim=2).mean(dim=0)  # (128)
-        return kl, qlogp.mean(), qlogq.mean()
+        return kl.sum(), qlogp.mean(), qlogq.mean()
 
+    def calculate_loss(self, recon_x, x, mode='train'):
+        BCE = F.binary_cross_entropy(recon_x.view(-1, 784), x.view(-1, 784), reduction='sum')
 
+        KLD, _, _ = self.kl()
+        if mode == 'test':
+            return BCE + KLD, F.binary_cross_entropy(recon_x, x.view(-1, 784), reduction='none').sum(dim=1)
+        else:
+            return BCE + KLD, BCE
 
 def train(epoch, model, optimizer, train_loader, classes):
     train_loss = 0

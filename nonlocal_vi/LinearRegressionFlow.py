@@ -12,9 +12,9 @@ import utils
 import pickle as pkl
 
 torch.manual_seed(123)
-import os
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"]="3"
+# import os
+# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+# os.environ["CUDA_VISIBLE_DEVICES"]="3"
 
 
 def logit(x):
@@ -74,7 +74,7 @@ class HardConcreteSampler(nn.Module):
     def __init__(self, p, scale, temparature, init=np.log(0.1/0.9)):
         super(HardConcreteSampler, self).__init__()
         self.p = p
-        self.zeta, self.gamma, self.beta = scale, -(scale - 1), temparature# 1.1, -0.1, 9/10  #2/3
+        self.zeta, self.gamma, self.beta = scale, -(scale - 1), temparature # 1.1, -0.1, 9/10  #2/3
         self.gamma_zeta_logratio = np.log(-self.gamma / self.zeta)
         self.logalpha = nn.Parameter(init * torch.ones(p)) # np.log(0.1/0.9)
         # self.logalpha.data.uniform_(np.log(0.2), np.log(10))
@@ -117,6 +117,7 @@ class LearnableHardConcreteSampler(nn.Module):
         else:
             z = torch.clamp(torch.sigmoid(self.logalpha) * (self.zeta - self.gamma) + self.gamma, 0, 1).expand_as(u)
         return z, qz
+
 
 class BaseFlow(nn.Module):
     def sample(self, n=1, context=None, **kwargs):
@@ -369,6 +370,11 @@ def train(Y, X, truetheta, epoch, alter_prior, tau, rep, lr, scale, temparature,
             print('sse:{}, min_sse:{}, \n'.format(sse, min_sse))
 
 
+    theta, _, _, _, _, _ = linear.sampler(repeat=2000)
+    theta = theta.detach().cpu().numpy()
+    with open(result_dir + '/{}_theta_posterior_p{}_phi{}_repeat{}.pkl'.format(alter_prior, p, phi, rep), 'wb') as f:
+        pkl.dump(theta, f)
+
     with open(result_dir + '/{}_sse_zero_list_p{}_phi{}_repeat{}.pkl'.format(alter_prior, p, phi, rep), 'wb') as f:
         pkl.dump(sse_zero_list, f)
     with open(result_dir + '/{}_sse_nonzero_list_p{}_phi{}_repeat{}.pkl'.format(alter_prior, p, phi, rep), 'wb') as f:
@@ -399,25 +405,27 @@ def main(config):
     rep = 10
     alter_prior = 'imom'  # Gaussian, imom
 
-    result_dir = '/extra/yadongl10/git_project/nlpresult/0205/adam005_init0_tau10_rho025_notlearned/{}'.format(alter_prior) # gau_alter_
+    result_dir = '/extra/yadongl10/git_project/nlpresult/0205/adam005_init0_tau10_learned/{}'.format(alter_prior) # gau_alter_
 
     if not os.path.isdir(result_dir):
         os.mkdir(result_dir)
 
-    epochs = 20000
+    epochs = 2000
+
     tau = 1
+    rho = 0.25
     seed = 100 + np.arange(rep)
     lr = 0.05   # sgd 0.0001  adam 0.005
     scale = 1.01
     temparature = 9/10
     init = 0.  #np.log(0.1/0.9)
 
-    for phi in [4, 1]:  # [1, 4, 8]
-        for p in [1000, 1500]:  # [100, 500, 1000]  500, 1000, 1500
+    for phi in [1]:  # [1, 4, 8]
+        for p in [500]:  # [100, 500, 1000]  500, 1000, 1500
             sse_theta_ls = []
             for i in range(rep):
                 print('CONFIG: n {}, p {}, phi {}, alter_prior {}, seed {}, lr {}'.format(n, p, phi, alter_prior, seed[i], lr))
-                Y, X, truetheta = generate_data(n, p, phi, rho=0., seed=seed[i], load_data=False)
+                Y, X, truetheta = generate_data(n, p, phi, rho=rho, seed=seed[i], load_data=False)
                 Y, X = torch.tensor(Y, dtype=torch.float).cuda(), torch.tensor(X, dtype=torch.float).cuda()
                 linear, best_theta, sse_nonzero_best, sse_zero_best, sse_theta = train(Y, X, truetheta, epoch=epochs,
                                                                                     alter_prior=alter_prior, tau=tau, rep=i, lr=lr, p=p,
