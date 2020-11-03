@@ -14,13 +14,15 @@ def get_condition(Z, U, c, V, d):
 
 
 
+
+
 class MarsagliaTsampler(nn.Module):
     def __init__(self, size):
         super().__init__()
         self.alpha = nn.Parameter(3*torch.ones(size))
         self.size = size
     def forward(self, batch_size):
-        d = self.alpha - 1/3
+        d = torch.relu(self.alpha)+1 - 1/3
         c = 1. / torch.sqrt(9. * d)
         Z = Normal(0, 1).sample([batch_size, self.size])
         U = Uniform(0, 1).sample([batch_size, self.size])
