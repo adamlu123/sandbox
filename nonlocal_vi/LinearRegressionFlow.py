@@ -12,7 +12,11 @@ import utils
 import pickle as pkl
 
 torch.manual_seed(123)
+<<<<<<< HEAD
 import os
+=======
+# import os
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 # os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
 # os.environ["CUDA_VISIBLE_DEVICES"]="3"
 
@@ -93,10 +97,16 @@ class LearnableHardConcreteSampler(nn.Module):
     """
     Sampler for Hard concrete random variable used for L0 gate
     """
+<<<<<<< HEAD
     def __init__(self, p, temparature, init=np.log(0.1/0.9)):
         super(LearnableHardConcreteSampler, self).__init__()
         self.p = p
         self.beta = temparature
+=======
+    def __init__(self, p, scale, temparature, init=np.log(0.1/0.9)):
+        super(LearnableHardConcreteSampler, self).__init__()
+        self.p = p
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
         # self.temparature = nn.Parameter(5. * torch.ones(p))
         # self.zeta, self.gamma = scale, -(scale - 1)  # 1.1, -0.1, 9/10  #2/3
         # self.gamma_zeta_logratio = np.log(-self.gamma / self.zeta)
@@ -105,8 +115,13 @@ class LearnableHardConcreteSampler(nn.Module):
         self.logalpha = nn.Parameter(init * torch.ones(p))  # np.log(0.1/0.9)
 
     def forward(self, repeat):
+<<<<<<< HEAD
         scale = F.softplus(self.scale) + 1#.clamp(min=0.1, max=0.1)  # 1.1, -0.1, 9/10  #2/3
         # scale = torch.exp(self.scale) + 1
+=======
+        self.beta = 0.9  #F.softplus(self.temparature).clamp(min=0.1, max=0.1)  # 1.1, -0.1, 9/10  #2/3
+        scale = torch.exp(self.scale) + 1
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
         self.zeta, self.gamma = scale, -(scale - 1)
         self.gamma_zeta_logratio = torch.log(-self.gamma / self.zeta)
 
@@ -237,10 +252,14 @@ class SpikeAndSlabSampler(nn.Module):
         super(SpikeAndSlabSampler, self).__init__()
         self.p = p
         self.alternative_sampler = alternative_sampler(p)
+<<<<<<< HEAD
         if scale == 'learned':
             self.z_sampler = LearnableHardConcreteSampler(p, temparature, init)
         else:
             self.z_sampler = HardConcreteSampler(p, scale, temparature, init)
+=======
+        self.z_sampler = LearnableHardConcreteSampler(p, scale, temparature, init)
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
     def forward(self, repeat):
         theta, logdet, gaussians = self.alternative_sampler.sample(n=repeat)
@@ -322,7 +341,11 @@ def train(Y, X, truetheta, epoch, alter_prior, tau, rep, lr, scale, temparature,
         y_hat = linear(X)
         nll = -loglike(y_hat, Y)
         kl, qlogp, qlogq = linear.kl(alter_prior, tau)
+<<<<<<< HEAD
         loss = nll + (0.05*X.shape[1]) * kl / X.shape[0]
+=======
+        loss = nll + 1 * kl
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
         # compute gradient and do SGD step
         loss.backward()
@@ -358,7 +381,11 @@ def train(Y, X, truetheta, epoch, alter_prior, tau, rep, lr, scale, temparature,
                 best_theta = linear.Theta.mean(dim=0).detach().cpu().numpy()
 
         # print intermediet results
+<<<<<<< HEAD
         if i % 200 == 0 or i == epoch-1:
+=======
+        if i % 500 == 0 or i == epoch-1:
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
             z = linear.z.mean(dim=0).cpu().numpy()
             # qz = linear.qz
             print('\n', 'repeat', rep, 'epoch', i, 'last 5 responses:', y_hat[-5:].round().tolist(), Y[-5:].round().tolist())
@@ -376,6 +403,7 @@ def train(Y, X, truetheta, epoch, alter_prior, tau, rep, lr, scale, temparature,
 
     theta, _, _, _, _, _ = linear.sampler(repeat=2000)
     theta = theta.detach().cpu().numpy()
+<<<<<<< HEAD
     # with open(result_dir + '/{}_theta_posterior_p{}_phi{}_repeat{}.pkl'.format(alter_prior, p, phi, rep), 'wb') as f:
     #     pkl.dump(theta, f)
     # #
@@ -383,6 +411,15 @@ def train(Y, X, truetheta, epoch, alter_prior, tau, rep, lr, scale, temparature,
     #     pkl.dump(sse_zero_list, f)
     # with open(result_dir + '/{}_sse_nonzero_list_p{}_phi{}_repeat{}.pkl'.format(alter_prior, p, phi, rep), 'wb') as f:
     #     pkl.dump(sse_nonzero_list, f)
+=======
+    with open(result_dir + '/{}_theta_posterior_p{}_phi{}_repeat{}.pkl'.format(alter_prior, p, phi, rep), 'wb') as f:
+        pkl.dump(theta, f)
+
+    with open(result_dir + '/{}_sse_zero_list_p{}_phi{}_repeat{}.pkl'.format(alter_prior, p, phi, rep), 'wb') as f:
+        pkl.dump(sse_zero_list, f)
+    with open(result_dir + '/{}_sse_nonzero_list_p{}_phi{}_repeat{}.pkl'.format(alter_prior, p, phi, rep), 'wb') as f:
+        pkl.dump(sse_nonzero_list, f)
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
     return linear, best_theta, sse_nonzero_best, sse_zero_best, min_sse_theta
 
@@ -406,14 +443,22 @@ config = {
 
 def main(config):
     n = 100
+<<<<<<< HEAD
     rep = 30
     alter_prior = 'imom'  # Gaussian, imom
 
     result_dir = '/extra/yadongl10/git_project/nlpresult/0205/adam005_init0_tau10_rho025_notlearned_scale1.1_q_gauss/{}'.format(alter_prior)  # gau_alter_
+=======
+    rep = 10
+    alter_prior = 'imom'  # Gaussian, imom
+
+    result_dir = '/extra/yadongl10/git_project/nlpresult/0205/adam005_init0_tau10_learned/{}'.format(alter_prior) # gau_alter_
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
     if not os.path.isdir(result_dir):
         os.mkdir(result_dir)
 
+<<<<<<< HEAD
     epochs = 10000
 
     tau = 10
@@ -421,14 +466,30 @@ def main(config):
     seed = 100 + np.arange(rep)
     lr = 0.01   # sgd 0.0001  adam 0.005
     scale = 'learned'  # 1.1
+=======
+    epochs = 2000
+
+    tau = 1
+    rho = 0.25
+    seed = 100 + np.arange(rep)
+    lr = 0.05   # sgd 0.0001  adam 0.005
+    scale = 1.01
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
     temparature = 9/10
     init = 0.  #np.log(0.1/0.9)
 
     for phi in [1]:  # [1, 4, 8]
+<<<<<<< HEAD
         for p in [500, 1000, 1500]:  # [100, 500, 1000]  500, 1000, 1500
             sse_theta_ls = []
             for i in range(rep+2):
                 print('CONFIG: n {}, p {}, phi {}, alter_prior {}, seed {}, lr {}, temparature {}'.format(n, p, phi, alter_prior, seed[i], lr, temparature))
+=======
+        for p in [500]:  # [100, 500, 1000]  500, 1000, 1500
+            sse_theta_ls = []
+            for i in range(rep):
+                print('CONFIG: n {}, p {}, phi {}, alter_prior {}, seed {}, lr {}'.format(n, p, phi, alter_prior, seed[i], lr))
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
                 Y, X, truetheta = generate_data(n, p, phi, rho=rho, seed=seed[i], load_data=False)
                 Y, X = torch.tensor(Y, dtype=torch.float).cuda(), torch.tensor(X, dtype=torch.float).cuda()
                 linear, best_theta, sse_nonzero_best, sse_zero_best, sse_theta = train(Y, X, truetheta, epoch=epochs,
@@ -438,11 +499,19 @@ def main(config):
                 sse_theta_ls.append([sse_theta, sse_nonzero_best, sse_zero_best])
                 test(Y, X, linear)
 
+<<<<<<< HEAD
             #     with open(result_dir + '/p{}_phi{}_repeat{}.pkl'.format(p, phi, i), 'wb') as f:
             #         pkl.dump(best_theta, f)
             #
             # with open(result_dir + '/p{}_phi{}_sse_theta_ls_tau{}.pkl'.format(p, phi, tau), 'wb') as f:
             #     pkl.dump(sse_theta_ls, f)
+=======
+                with open(result_dir + '/p{}_phi{}_repeat{}.pkl'.format(p, phi, i), 'wb') as f:
+                    pkl.dump(best_theta, f)
+
+            with open(result_dir + '/p{}_phi{}_sse_theta_ls_tau{}.pkl'.format(p, phi, tau), 'wb') as f:
+                pkl.dump(sse_theta_ls, f)
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
 
 
@@ -451,6 +520,10 @@ if __name__=='__main__':
     # parser.add_argument('--p',type=int, default=100, help='number of covariates (default: 100)')
     parser.add_argument('--result_dir', type=str,
                         default='/extra/yadongl10/git_project/nlpresult/0203')
+<<<<<<< HEAD
     main(config)
 
 
+=======
+    main(config)
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8

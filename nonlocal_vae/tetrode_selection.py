@@ -2,7 +2,10 @@ import argparse
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
 os.environ["CUDA_VISIBLE_DEVICES"]="1"
+<<<<<<< HEAD
 os.sys.path.append('/extra/yadongl10/git_project/sandbox/nonlocal_vi')
+=======
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
 import torch.utils.data
 from torch import nn, optim
@@ -13,9 +16,14 @@ import torch.nn.functional as F
 import torch.nn as nn
 import numpy as np
 import pickle as pkl
+<<<<<<< HEAD
 
 from nonlocal_vi.LinearRegressionFlow import FlowAlternative
 from ContLearn_VAE import HardConcreteSampler, LearnedHardConcreteSampler
+=======
+from nonlocal_vi.LinearRegressionFlow import FlowAlternative
+from ContLearn_VAE import HardConcreteSampler
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
 
 parser = argparse.ArgumentParser(description='VAE MNIST Example')
@@ -46,9 +54,14 @@ def mom_log_pdf(x, phi=1, tau=0.358):  # 0.358
 
 
 def imom_log_pdf(x, phi=1, tau=3):  #0.133
+<<<<<<< HEAD
     x = x.clamp(min=1e-5, max=1e10)
     # x = x.sign() * x.abs().clamp(min=1e-5, max=1e5)
     return 0.5*np.log(tau*phi/np.pi) - (x**2).log() - (tau*phi) / (x**2)
+=======
+    # x = x.sign() * x.abs().clamp(min=1e-5, max=1e5)
+    return 0.5*np.log(tau*phi/np.pi) - (x**2).log() - (tau*phi) / (x**2) #.clamp(min=1e-10, max=1e10)
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
 def pemom_log_pdf(x, phi=1, tau=0.358):
     return (np.sqrt(2) - (tau*phi) / x**2) - np.log(np.sqrt(2*np.pi*tau*phi)) - x**2/(2*tau*phi)
@@ -76,7 +89,11 @@ def prepare_data(rat_name = 'SuperChris'):
     # process data
     trial_indices = filter_trials(trial_info)
     decoding_start = 210  # 210
+<<<<<<< HEAD
     decoding_end = decoding_start + 40  # 25
+=======
+    decoding_end = decoding_start + 25  # 25
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
     # scale data first
     spike_data_binned = spike_data_binned[trial_indices, :, :]
     spike_data_binned = (spike_data_binned - np.mean(spike_data_binned)) / np.std(spike_data_binned)
@@ -106,7 +123,11 @@ def prepare_data(rat_name = 'SuperChris'):
         tetrode_units = {12:16, 13:15, 14:4, 15:2, 16:6, 17:2, 18:12, 19:15, 1:0, 20:12, 21:0, 22:1,
                          23:4, 2:0, 3:4, 4:0, 5:0, 6:0, 7:3, 8:1, 9:7}
     tetrode_data = organize_tetrode(decoding_data_spike, decoding_data_lfp, tetrode_ids, tetrode_units)
+<<<<<<< HEAD
     return tetrode_data, odor, tetrode_ids, tetrode_units, spike_data_binned, decoding_data_spike, lfp_data_sampled
+=======
+    return tetrode_data, odor, tetrode_ids, tetrode_units, spike_data_binned, decoding_data_spike.mean(axis=2), lfp_data_sampled
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
 
 def organize_tetrode(spike_data, lfp_data, tetrode_ids, tetrode_units, verbose=True):
@@ -224,23 +245,37 @@ class TetrodeSelectNet(nn.Module):
             self.bias.data.uniform_(-0.1, 0.1)
 
         self.alternative_sampler = alternative_sampler(p=input_dim*output_dim)  # (46 * 4)
+<<<<<<< HEAD
         self.z_sampler = LearnedHardConcreteSampler(num_tetrodes*output_dim)
         self.logalpha_group = nn.Parameter(-0.9 * torch.ones(num_tetrodes*output_dim))
         # self.z_sampler = LearnedHardConcreteSampler(input_dim * output_dim)
         # self.logalpha_group = nn.Parameter(-0.9 * torch.ones(input_dim * output_dim))
+=======
+        self.z_sampler = HardConcreteSampler(num_tetrodes*output_dim)
+        self.logalpha_group = nn.Parameter(-0.9 * torch.ones(num_tetrodes*output_dim))
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
 
     def forward(self, x):
         rep=32
+<<<<<<< HEAD
         self.z_group, self.qz_group = self.z_sampler(repeat=rep, logalpha=self.logalpha_group.view(1, -1))  # z.shape = (repeat, batch, p)  qz.shape=(p)
         # self.z, self.qz = self.z_group.squeeze(), self.qz_group.squeeze()
         self.z, self.qz = expand_z(self.z_group, self.qz_group, self.tetrode_group)
+=======
+        self.z_group, self.qz_goup = self.z_sampler(repeat=rep, logalpha=self.logalpha_group.view(1,-1))  # z.shape = (repeat, batch, p)  qz.shape=(p)
+        self.z, self.qz = expand_z(self.z_group, self.qz_goup, self.tetrode_group)
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
         self.theta, self.logdet, gaussians = self.alternative_sampler.sample(n=rep)
         self.logq = normal_log_pdf(gaussians,
                                    torch.zeros(self.input_dim*self.output_dim).cuda(),
                                    torch.zeros(self.input_dim*self.output_dim).cuda())
+<<<<<<< HEAD
         self.Theta = (self.theta.view(-1, 46, self.output_dim).squeeze() * self.z).permute(1, 0)  # (16, 46, 4) -> (46 ,4)
+=======
+        self.Theta = (self.theta.view(-1, 46, self.output_dim).squeeze() * self.z).permute(1,0)  # (16, 46, 4) -> (46 ,4)
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
         if self.add_bias:
             out = (x.matmul(self.Theta) + self.bias)
@@ -256,7 +291,11 @@ class TetrodeSelectNet(nn.Module):
         if alter_prior == 'mom':
             qlogp = mom_log_pdf(self.theta, phi, tau=1).clamp(min=np.log(1e-10))  # tau = 0.358
         elif alter_prior == 'imom':
+<<<<<<< HEAD
             qlogp = imom_log_pdf(self.theta, tau=1.).clamp(min=np.log(1e-10))  # 0.133
+=======
+            qlogp = imom_log_pdf(self.theta, tau=1).clamp(min=np.log(1e-10))  # 0.133
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
         elif alter_prior == 'pemom':
             qlogp = pemom_log_pdf(self.theta)  #.clamp(min=np.log(1e-10))
         elif alter_prior == 'Gaussian':
@@ -270,17 +309,21 @@ class TetrodeSelectNet(nn.Module):
 class OdorClassification(nn.Module):
     def __init__(self, input_dim, output_dim, SelectNet=TetrodeSelectNet):
         super(OdorClassification, self).__init__()
+<<<<<<< HEAD
         # self.w = nn.Parameter(torch.ones(40))
         # self.b = nn.Parameter(torch.ones(46))
         # self.conv1d_1 = nn.Conv1d(40, 1, kernel_size=1, stride=1, bias=True)
         # self.conv1d_2 = nn.Conv1d(10, 1, kernel_size=1, stride=1, bias=True)
         # self.BatchNorm1d = nn.BatchNorm1d(10)
+=======
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
         self.SelectNet = SelectNet(input_dim, output_dim, add_bias=True)
         self.upper_layer1 = nn.Linear(1, 4)
         # self.upper_layer2 = nn.Linear(4, 4)
         # self.upper_layer3 = nn.Linear(4, 4)
 
     def forward(self, x):
+<<<<<<< HEAD
         x = x.mean(dim=2)  # (n, 46 ,25)
         # x = F.relu(x.matmul(self.w) + self.b)
         # x = F.relu(self.conv1d_1(x.view(-1, 25, 46)))
@@ -289,6 +332,14 @@ class OdorClassification(nn.Module):
         x = self.SelectNet(x.squeeze())
         x = F.relu(x)
         x = self.upper_layer1(x)
+=======
+        x = self.SelectNet(x)
+        # x = F.relu(x)
+        # x = torch.tanh(x)
+        x = self.upper_layer1(x)
+        # x = F.relu(self.upper_layer2(x))
+        # x = F.relu(self.upper_layer3(x))
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
         return x
 
     def kl(self, phi, alter_prior, p):
@@ -339,7 +390,11 @@ def test(model, data, odor, odor_onehot, config):
         loss = nll + kl
 
     print('test test loss: {:.3f}  acc :{:.3f}'.format(loss.item(), acc.item()))
+<<<<<<< HEAD
     return z, nll.item(), acc.item()
+=======
+    return z, loss.item(), acc.item()
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
 
 def diff(full_set, second):
@@ -355,13 +410,17 @@ def main(rep, config):
 
     n = odor.shape[0]
     spike_data = torch.tensor(spike_data, dtype=torch.float).to(device) * 1
+<<<<<<< HEAD
     torch.manual_seed(1)
     ind = torch.randperm(n)
     spike_data, odor = spike_data[ind], odor[ind]
+=======
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
     test_size = n // 5
     test_id = np.arange(rep*test_size, (rep+1)*test_size)
     train_id = diff(np.arange(n), test_id)
+<<<<<<< HEAD
     # val_id = train_id[-35:]
     # train_id = train_id[:-35]
 
@@ -404,10 +463,41 @@ def main(rep, config):
     with open(result_dir + '/lr0001_relu_LHC_temp09_ep{}_SuperChris_selection_by_tetrode_p{}_prior{}_testloss.txt'.format(config['epochs'], config['p'], config['alter_prior']), 'a') as f:
         f.write('\n' + str(test_loss))
 
+=======
+
+    train_spike_data, test_spike_data = spike_data[train_id, :], spike_data[test_id, :]
+
+    odor_onehot = torch.tensor((np.arange(4) == odor[:, None]).astype(np.float32), dtype=torch.float).to(device)
+    train_odor_onehot, test_odor_onehot = odor_onehot[train_id, :], odor_onehot[test_id, :]
+
+    # define model
+    model = OdorClassification(input_dim=spike_data.shape[1], output_dim=config['output_dim']).to(device)
+    optimizer = optim.Adam(model.parameters(), lr=0.01)
+    print(model.parameters)
+
+    # start training
+    train_loss_list = []
+    for epoch in range(config['epochs'] + 1):
+        loss, model = train(epoch, model, optimizer, train_spike_data, odor[train_id], config)
+        if epoch % 100 == 0:
+            mask_by_odor, test_loss, test_acc = test(model, test_spike_data, odor[test_id], test_odor_onehot, config)
+            print(mask_by_odor.round(2))
+
+    # save results
+    result_dir = '/extra/yadongl10/git_project/nlpresult/rat_exp/cross_valid'
+    # np.savetxt(result_dir + '/SuperChris_selection_by_odor_prior{}_no_bias.pkl'.format('mom'), )
+    # with open(result_dir + '/3odor_SuperChris_selection_by_tetrode_p{}_prior{}_repeat{}.pkl'.format(config['p'], config['alter_prior'], rep), 'wb') as f:
+    #     pkl.dump(mask_by_odor, f)
+    # with open(result_dir + '/3odor_SuperChris_selection_by_tetrode_p{}_prior{}_testacc.txt'.format(config['p'], config['alter_prior']), 'a') as f:
+    #     f.write('\n' + str(test_acc))
+    # with open(result_dir + '/3odor_SuperChris_selection_by_tetrode_p{}_prior{}_testloss.txt'.format(config['p'], config['alter_prior']), 'a') as f:
+    #     f.write('\n' + str(test_loss))
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
 
 if __name__ == "__main__":
     # 5-fold CV
+<<<<<<< HEAD
     tetrode_group = [1, 12, 13, 14, 15, 16, 19, 2, 21, 22, 23, 7, 8, 9]
     tetrode_units = {1: 3, 10: 0, 12: 1, 13: 8, 14: 4, 15: 6, 16: 1, 18: 0, 19: 4, 2: 3,
                      20: 0, 21: 1, 22: 5, 23: 7, 3: 0, 4: 0, 5: 0, 6: 0, 7: 1, 8: 1, 9: 1}
@@ -418,6 +508,13 @@ if __name__ == "__main__":
               'output_dim': 1,
               'epochs': 500000,
               'lr': 0.001}
+=======
+    repeat = 5
+    config = {'alter_prior': 'imom',  # Gaussian, mom, imom
+              'p': 0.2,
+              'output_dim': 1,
+              'epochs': 10000}
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
     for rep in range(repeat):
         print('start rep', rep, '\n')
         main(rep, config)

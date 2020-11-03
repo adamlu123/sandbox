@@ -42,6 +42,7 @@ def mom_log_pdf(x, phi=1, tau=0.358):  # 0.358
 
 
 
+<<<<<<< HEAD
 
 class LearnedHardConcreteSampler(nn.Module):
     """
@@ -71,6 +72,8 @@ class LearnedHardConcreteSampler(nn.Module):
 
 
 
+=======
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 class HardConcreteSampler(nn.Module):
     """
     Sampler for Hard concrete random variable used for L0 gate
@@ -78,7 +81,11 @@ class HardConcreteSampler(nn.Module):
     def __init__(self, p):
         super(HardConcreteSampler, self).__init__()
         self.p = p
+<<<<<<< HEAD
         self.zeta, self.gamma, self.beta = 1.1, -0.1, 1/10
+=======
+        self.zeta, self.gamma, self.beta = 1.1, -0.1, 9/10
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
         self.gamma_zeta_logratio = -self.gamma / self.zeta
         # self.logalpha.data.uniform_(np.log(0.2), np.log(10))
 

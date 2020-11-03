@@ -1,7 +1,11 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+<<<<<<< HEAD
 # import pandas as pd
+=======
+import pandas as pd
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 import networkx as nx
 
 ### ploting
@@ -259,7 +263,11 @@ def log_sum_exp(A, axis=-1, sum_op=torch.sum):
     return B
 
 
+<<<<<<< HEAD
 # import seaborn as sns
+=======
+import seaborn as sns
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
 
 def plot(x, savefig=True):
@@ -281,6 +289,10 @@ def plot(x, savefig=True):
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+<<<<<<< HEAD
+=======
+import pandas as pd
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 import networkx as nx
 
 ### ploting
@@ -538,6 +550,11 @@ def log_sum_exp(A, axis=-1, sum_op=torch.sum):
     return B
 
 
+<<<<<<< HEAD
+=======
+import seaborn as sns
+
+>>>>>>> 35e3750592b72c7dca4270a15322425449793af8
 
 def plot(x, savefig=True):
     mean = np.asarray([0.6, 1.2, 1.8, 2.4, 3])
