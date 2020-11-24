@@ -2,45 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e44c722f-3e28-4a47-9abe-72e45a577b99" name="Default Changelist" comment="minor">
-      <change afterPath="$PROJECT_DIR$/.idea/deployment.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/other.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/sandbox.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/NeuReparam/beta-gamma-MF-2stage.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/NeuReparam/beta-gamma-MF.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/NeuReparam/vae_bayes_update.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/NeuReparam/vae_repar.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/code_vae/main.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/code_vae/preprocess_data.ipynb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vae/ContLearn_VAE.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vae/non_local_vae.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vae/ordor_specific_mask.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vae/simple_vae.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vae/superchris_latent.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vae/tetrode_select_lasso.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vae/tetrode_selection.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vae/utils.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vi/ContLearn_VAE.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vi/LinearRegression.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vi/LinearRegressionDDM.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vi/LinearRegressionFlow.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vi/LinearRegressionLognorm.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vi/LinearRegressonParameterSearch.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vi/MicrobioCountData.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vi/OracleLinear.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vi/README.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vi/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vi/bash.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vi/parameter_search.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vi/search.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/nonlocal_vi/utils.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/phase_transit/bash.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/phase_transit/multi.sh" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/phase_transit/single_thres_gate.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/GammaDistributionLearning/LinearRegression.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/GammaDistributionLearning/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/nonlocal_vi/MarsagliaTsampler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/sandbox.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sandbox.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/generate.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/generate.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/mass_regression.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/mass_regression.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/resnet.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/resnet.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/train.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -50,43 +17,25 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/nonlocal_vi/search.sh">
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/multi_prongs/train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="540">
-              <caret line="30" column="8" selection-start-line="30" selection-start-column="8" selection-end-line="30" selection-end-column="8" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/nonlocal_vi/bash.sh">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="270">
-              <caret line="15" column="14" selection-start-line="15" selection-start-column="14" selection-end-line="15" selection-end-column="14" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/nonlocal_vi/LinearRegressonParameterSearch.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-6306">
-              <caret line="74" column="37" selection-start-line="74" selection-start-column="37" selection-end-line="74" selection-end-column="37" />
+            <state relative-caret-position="255">
+              <caret line="191" column="45" lean-forward="true" selection-start-line="191" selection-start-column="45" selection-end-line="191" selection-end-column="45" />
               <folding>
-                <element signature="e#0#15#0" expanded="true" />
+                <element signature="e#101#112#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/nonlocal_vi/LinearRegression.py">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/multi_prongs/resnet.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="244">
-              <caret line="216" column="49" selection-start-line="216" selection-start-column="49" selection-end-line="216" selection-end-column="49" />
+            <state relative-caret-position="2952">
+              <caret line="169" column="21" selection-start-line="169" selection-start-column="21" selection-end-line="169" selection-end-column="21" />
               <folding>
-                <element signature="e#0#12#0" expanded="true" />
+                <element signature="e#997#1009#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -104,27 +53,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>_theta_posterior_p</find>
-      <find>SigmoidFlow</find>
-      <find>TetrodeSelectNet</find>
-      <find>LearnedHardConcreteSampler</find>
-      <find>permute</find>
-      <find>imom_log_pdf</find>
-      <find>LinearModel</find>
-      <find>model</find>
-      <find>pandas</find>
-      <find>pd</find>
-      <find>load_data</find>
-      <find>config</find>
-      <find>args.lr</find>
-      <find>LearnableHardConcreteSampler</find>
-      <find>imom</find>
-      <find>pkl.dump</find>
-      <find>learned</find>
-      <find>torch</find>
-      <find>scale</find>
-      <find>.save</find>
-      <find>.backward</find>
       <find>loss.ba</find>
       <find>threshold</find>
       <find>result_dir</find>
@@ -134,6 +62,27 @@
       <find>nohup</find>
       <find>.cuda</find>
       <find>lr{</find>
+      <find>linear</find>
+      <find>HLNetBase</find>
+      <find>iter_test</find>
+      <find>torch.relu(pred)</find>
+      <find>processed</find>
+      <find>neta_pixels</find>
+      <find>reduction</find>
+      <find>0.66</find>
+      <find>torch.save</find>
+      <find>0.68</find>
+      <find>epoch</find>
+      <find>save</find>
+      <find>weights</find>
+      <find>data_generator</find>
+      <find>filename</find>
+      <find>hlnet_base</find>
+      <find>HL_normalized</find>
+      <find>make_hlnet_base</find>
+      <find>resnet20base</find>
+      <find>model</find>
+      <find>JetImageMassNet</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -184,14 +133,16 @@
         <option value="$PROJECT_DIR$/nonlocal_vi/search.sh" />
         <option value="$PROJECT_DIR$/nonlocal_vi/LinearRegressonParameterSearch.py" />
         <option value="$PROJECT_DIR$/nonlocal_vi/LinearRegression.py" />
+        <option value="$PROJECT_DIR$/multi_prongs/generate.py" />
+        <option value="$PROJECT_DIR$/multi_prongs/mass_regression.py" />
+        <option value="$PROJECT_DIR$/multi_prongs/resnet.py" />
+        <option value="$PROJECT_DIR$/multi_prongs/train.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6" fullScreen="true">
-    <option name="x" value="-1920" />
-    <option name="y" value="-907" />
-    <option name="width" value="1920" />
-    <option name="height" value="1200" />
+    <option name="width" value="1440" />
+    <option name="height" value="900" />
   </component>
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
@@ -212,7 +163,7 @@
             <path>
               <item name="sandbox" type="b2602c69:ProjectViewProjectNode" />
               <item name="sandbox" type="462c0819:PsiDirectoryNode" />
-              <item name="NeuReparam" type="462c0819:PsiDirectoryNode" />
+              <item name="multi_prongs" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="sandbox" type="b2602c69:ProjectViewProjectNode" />
@@ -247,29 +198,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.LinearRegressionFlow">
-    <configuration name="ContLearn_VAE" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <module name="sandbox" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/nonlocal_vae" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/nonlocal_vae/ContLearn_VAE.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
+  <component name="RunManager" selected="Python.train">
     <configuration name="LinearRegressionFlow" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="sandbox" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -284,6 +213,28 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/nonlocal_vi/LinearRegressionFlow.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="mass_regression" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="sandbox" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/multi_prongs" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/multi_prongs/mass_regression.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -314,28 +265,6 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="simple_vae" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <module name="sandbox" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/nonlocal_vae" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/nonlocal_vae/simple_vae.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
     <configuration name="tetrode_selection" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="sandbox" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -358,20 +287,42 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="train" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="sandbox" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/multi_prongs" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/multi_prongs/train.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <list>
-      <item itemvalue="Python.ContLearn_VAE" />
       <item itemvalue="Python.LinearRegressionFlow" />
       <item itemvalue="Python.non_local_vae" />
-      <item itemvalue="Python.simple_vae" />
       <item itemvalue="Python.tetrode_selection" />
+      <item itemvalue="Python.train" />
+      <item itemvalue="Python.mass_regression" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.train" />
+        <item itemvalue="Python.mass_regression" />
         <item itemvalue="Python.LinearRegressionFlow" />
         <item itemvalue="Python.tetrode_selection" />
         <item itemvalue="Python.non_local_vae" />
-        <item itemvalue="Python.simple_vae" />
-        <item itemvalue="Python.ContLearn_VAE" />
       </list>
     </recent_temporary>
   </component>
@@ -403,11 +354,14 @@
       <workItem from="1595715944952" duration="2131000" />
       <workItem from="1602524915519" duration="5302000" />
       <workItem from="1602550372125" duration="4964000" />
+      <workItem from="1604431120637" duration="17291000" />
+      <workItem from="1604958887793" duration="31834000" />
+      <workItem from="1606242516491" duration="1458000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="699883000" />
+    <option name="totallyTimeSpent" value="750466000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -419,24 +373,24 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-281" y="-1200" width="1920" height="1200" extended-state="0" />
+    <frame x="0" y="0" width="1440" height="900" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Favorites" order="0" side_tool="true" />
-      <window_info active="true" content_ui="combo" id="Project" order="1" visible="true" weight="0.1373802" />
+      <window_info content_ui="combo" id="Project" order="1" visible="true" weight="0.10586552" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Concurrent Activities Diagram" order="0" weight="0.32891566" />
       <window_info anchor="bottom" id="Database Changes" order="1" />
       <window_info anchor="bottom" id="Terminal" order="2" weight="0.3283186" />
       <window_info anchor="bottom" id="Event Log" order="3" sideWeight="0.5005325" side_tool="true" weight="0.30973452" />
       <window_info anchor="bottom" id="Version Control" order="4" weight="0.32891566" />
-      <window_info anchor="bottom" id="File Transfer" order="5" sideWeight="0.49946752" weight="0.08495575" />
+      <window_info anchor="bottom" id="File Transfer" order="5" sideWeight="0.49946752" weight="0.27228916" />
       <window_info anchor="bottom" id="Python Console" order="6" sideWeight="0.49946752" weight="0.32891566" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Message" order="8" />
       <window_info anchor="bottom" id="Find" order="9" weight="0.32771084" />
-      <window_info anchor="bottom" id="Run" order="10" sideWeight="0.49946752" weight="0.35840708" />
-      <window_info anchor="bottom" id="Debug" order="11" sideWeight="0.49946752" weight="0.4495575" />
+      <window_info active="true" anchor="bottom" id="Run" order="10" sideWeight="0.49946752" visible="true" weight="0.37951806" />
+      <window_info anchor="bottom" id="Debug" order="11" sideWeight="0.49946752" weight="0.37405404" />
       <window_info anchor="bottom" id="Cvs" order="12" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="13" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="14" weight="0.32891566" />
@@ -447,6 +401,8 @@
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="4" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="5" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="6" weight="0.25" />
+      <window_info anchor="right" id="R Graphics" order="7" />
+      <window_info anchor="right" id="R Packages" order="8" />
     </layout>
     <layout-to-restore>
       <window_info id="Favorites" order="0" side_tool="true" />
@@ -548,7 +504,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/nonlocal_vae/ContLearn_VAE.py</url>
-          <line>381</line>
+          <line>388</line>
           <option name="timeStamp" value="174" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -578,7 +534,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/nonlocal_vae/ContLearn_VAE.py</url>
-          <line>325</line>
+          <line>332</line>
           <option name="timeStamp" value="312" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -593,23 +549,38 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/nonlocal_vae/ContLearn_VAE.py</url>
-          <line>147</line>
+          <line>154</line>
           <option name="timeStamp" value="435" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/nonlocal_vae/ContLearn_VAE.py</url>
-          <line>113</line>
+          <line>120</line>
           <option name="timeStamp" value="437" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/nonlocal_vae/tetrode_selection.py</url>
-          <line>353</line>
+          <line>408</line>
           <option name="timeStamp" value="439" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/nonlocal_vi/LinearRegressionFlow.py</url>
-          <line>324</line>
+          <line>344</line>
           <option name="timeStamp" value="442" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/multi_prongs/mass_regression.py</url>
+          <line>84</line>
+          <option name="timeStamp" value="456" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/multi_prongs/train.py</url>
+          <line>162</line>
+          <option name="timeStamp" value="460" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/multi_prongs/train.py</url>
+          <line>90</line>
+          <option name="timeStamp" value="461" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -645,10 +616,12 @@
     <SUITE FILE_PATH="coverage/sandbox$superchris_latent.coverage" NAME="superchris_latent Coverage Results" MODIFIED="1580341718493" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
     <SUITE FILE_PATH="coverage/sandbox$single_thres_gate.coverage" NAME="single_thres_gate Coverage Results" MODIFIED="1579913613168" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/phase_transit" />
     <SUITE FILE_PATH="coverage/sandbox$tetrode_selection.coverage" NAME="tetrode_selection Coverage Results" MODIFIED="1582222659593" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
+    <SUITE FILE_PATH="coverage/sandbox$mass_regression.coverage" NAME="mass_regression Coverage Results" MODIFIED="1604698891395" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
     <SUITE FILE_PATH="coverage/sandbox$vae.coverage" NAME="vae Coverage Results" MODIFIED="1572893206444" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
     <SUITE FILE_PATH="coverage/sandbox$LinearRegressionLognorm.coverage" NAME="LinearRegressionLognorm Coverage Results" MODIFIED="1577692877871" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
     <SUITE FILE_PATH="coverage/sandbox$main.coverage" NAME="main Coverage Results" MODIFIED="1579479138471" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/code_vae" />
     <SUITE FILE_PATH="coverage/sandbox$ContLearn_VAE.coverage" NAME="ContLearn_VAE Coverage Results" MODIFIED="1581011320761" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
+    <SUITE FILE_PATH="coverage/sandbox$train.coverage" NAME="train Coverage Results" MODIFIED="1606242979057" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
   </component>
   <component name="debuggerHistoryManager">
     <expressions id="evaluateCodeFragment">
@@ -713,90 +686,53 @@ print(sse_zero_best_ls)</expression-string>
     </expressions>
     <expressions id="evaluateExpression">
       <expression>
-        <expression-string>0.01*X.shape[1]</expression-string>
+        <expression-string>self.m1(mass.view(-1, 1))</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>(0.01*X.shape[1]</expression-string>
+        <expression-string>mass</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>X.shape[1]</expression-string>
+        <expression-string>(torch.argmax(pred, dim=1) == target).max()</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>Y.shape[0]</expression-string>
+        <expression-string>(torch.argmax(pred, dim=1) == target).sum()</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>kl</expression-string>
+        <expression-string>torch.argmax(pred, dim=1)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>load_data</expression-string>
+        <expression-string>target</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>np.sum(odor==0)</expression-string>
+        <expression-string>torch.argmax(pred, dim=0)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>np.sum(odor==4)</expression-string>
+        <expression-string>target.max()</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>np.sum(odor==3)</expression-string>
+        <expression-string>weights.min()</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/nonlocal_vi/MarsagliaTsampler.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="434">
-          <caret line="67" column="49" selection-start-line="67" selection-start-column="49" selection-end-line="67" selection-end-column="49" />
-          <folding>
-            <element signature="e#0#12#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/nonlocal_vi/OracleLinear.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="50">
-          <caret line="51" column="68" selection-start-line="51" selection-start-column="68" selection-end-line="51" selection-end-column="68" />
-          <folding>
-            <element signature="e#0#12#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1651615519/1671378136/torch/autograd/function.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="205">
-          <caret line="75" selection-start-line="75" selection-end-line="75" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1651615519/1671378136/torch/autograd/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="207">
-          <caret line="27" selection-start-line="27" selection-end-line="27" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Untitled.ipynb">
-      <provider selected="true" editor-type-id="jupyter-editor" />
-    </entry>
     <entry file="file://$PROJECT_DIR$/BFS.py" />
     <entry file="file://$PROJECT_DIR$/DensityEstimation.gif">
       <provider selected="true" editor-type-id="images" />
@@ -936,13 +872,6 @@ print(sse_zero_best_ls)</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/torch/nn/modules/linear.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="173">
-          <caret line="66" selection-start-line="66" selection-end-line="66" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/nonlocal_vae/ordor_specific_mask.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="126">
@@ -998,20 +927,6 @@ print(sse_zero_best_ls)</expression-string>
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="137">
           <caret line="863" selection-start-line="863" selection-end-line="863" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/torch/nn/functional.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="373">
-          <caret line="2018" selection-start-line="2018" selection-end-line="2018" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/torch/nn/modules/module.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="199">
-          <caret line="508" selection-start-line="508" selection-end-line="508" />
         </state>
       </provider>
     </entry>
@@ -1081,7 +996,6 @@ print(sse_zero_best_ls)</expression-string>
           <caret line="315" column="20" selection-start-line="315" selection-start-column="4" selection-end-line="315" selection-end-column="20" />
           <folding>
             <element signature="e#0#15#0" expanded="true" />
-            <marker date="1582175930383" expanded="true" signature="17532:18155" ph="..." />
           </folding>
         </state>
       </provider>
@@ -1113,16 +1027,6 @@ print(sse_zero_best_ls)</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/nonlocal_vi/LinearRegressionFlow.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="154">
-          <caret line="324" column="38" lean-forward="true" selection-start-line="324" selection-start-column="21" selection-end-line="324" selection-end-column="38" />
-          <folding>
-            <element signature="e#0#15#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/nonlocal_vi/search.sh">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="540">
@@ -1139,7 +1043,7 @@ print(sse_zero_best_ls)</expression-string>
     </entry>
     <entry file="file://$PROJECT_DIR$/nonlocal_vi/LinearRegressonParameterSearch.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-6306">
+        <state relative-caret-position="1278">
           <caret line="74" column="37" selection-start-line="74" selection-start-column="37" selection-end-line="74" selection-end-column="37" />
           <folding>
             <element signature="e#0#15#0" expanded="true" />
@@ -1147,12 +1051,80 @@ print(sse_zero_best_ls)</expression-string>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/NNPI.ipynb">
+      <provider selected="true" editor-type-id="jupyter-editor" />
+    </entry>
     <entry file="file://$PROJECT_DIR$/nonlocal_vi/LinearRegression.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="244">
-          <caret line="216" column="49" selection-start-line="216" selection-start-column="49" selection-end-line="216" selection-end-column="49" />
+        <state relative-caret-position="-4352">
+          <caret line="1" selection-start-line="1" selection-end-line="2" selection-end-column="23" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/torch/nn/modules/module.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="227">
+          <caret line="549" selection-start-line="549" selection-end-line="549" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/torch/nn/modules/linear.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="227">
+          <caret line="86" selection-start-line="86" selection-end-line="86" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/torch/nn/functional.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="222">
+          <caret line="1611" selection-start-line="1611" selection-end-line="1611" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/multi_prongs/mass_regression.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="279">
+          <caret line="22" column="6" selection-start-line="22" selection-end-line="23" />
           <folding>
-            <element signature="e#0#12#0" expanded="true" />
+            <element signature="e#101#112#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/multi_prongs/generate.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="343">
+          <caret line="56" column="42" selection-start-line="56" selection-start-column="36" selection-end-line="56" selection-end-column="42" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/nonlocal_vi/LinearRegressionFlow.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="222">
+          <caret line="86" column="20" selection-start-line="86" selection-start-column="20" selection-end-line="86" selection-end-column="20" />
+          <folding>
+            <element signature="e#0#15#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/multi_prongs/train.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="191" column="45" lean-forward="true" selection-start-line="191" selection-start-column="45" selection-end-line="191" selection-end-column="45" />
+          <folding>
+            <element signature="e#101#112#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/multi_prongs/resnet.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2952">
+          <caret line="169" column="21" selection-start-line="169" selection-start-column="21" selection-end-line="169" selection-end-column="21" />
+          <folding>
+            <element signature="e#997#1009#0" expanded="true" />
           </folding>
         </state>
       </provider>
