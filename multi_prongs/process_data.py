@@ -189,9 +189,9 @@ for i in target:
 print([len(np.where(trasformed_target==N)[0]) for N in np.arange(6)])
 trasformed_target = np.array(trasformed_target)
 
-padded_tower = np.zeros((b_and_u_subset_idx.reshape(-1).shape[0], 300))
+padded_tower = np.zeros((b_and_u_subset_idx.reshape(-1).shape[0], 300, 3))
 for i, tower in enumerate(parsed_Tower[b_and_u_subset_idx.reshape(-1)].tolist()):
-    padded_tower[i, :min(len(tower), 300)] = tower[:min(len(tower), 300)]
+    padded_tower[i, :min(len(tower), 300), :] = np.array(tower)[:min(len(tower), 300), :]
 
 # save
 print('start to save')
