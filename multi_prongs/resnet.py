@@ -25,7 +25,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as init
-
+import torchvision.models as models
+resnet18 = models.resnet18()
 from torch.autograd import Variable
 
 __all__ = ['ResNet', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110', 'resnet1202']
@@ -174,10 +175,27 @@ def make_hlnet_base():
 def resnet20base():
     return ResNetBase(BasicBlock, [3, 3, 3])
 
+def resnet56base():
+    return ResNetBase(BasicBlock, [9, 9, 9])
 
 def resnet110base():
     return ResNetBase(BasicBlock, [18, 18, 18])
 
+def resnet18base():
+    resnet18 = models.resnet18()
+    resnet18.fc = nn.Linear(512, 64)
+    resnet18.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3,
+                           bias=False)
+    return resnet18
+
+
+
+def resnet50base():
+    resnet50 = models.resnet50()
+    resnet50.fc = nn.Linear(512, 64)
+    resnet50.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3,
+                           bias=False)
+    return resnet50
 
 def resnet20():
     return ResNet(BasicBlock, [3, 3, 3])

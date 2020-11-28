@@ -2,10 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e44c722f-3e28-4a47-9abe-72e45a577b99" name="Default Changelist" comment="minor">
-      <change beforePath="$PROJECT_DIR$/.idea/sandbox.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sandbox.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/multi_prongs/process_data.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/multi_prongs/process_data.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/generate.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/generate.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/mass_regression.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/mass_regression.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/multi_prongs/resnet.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/resnet.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/multi_prongs/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/train.py" afterDir="false" />
     </list>
@@ -17,11 +16,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/multi_prongs/train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="255">
-              <caret line="191" column="45" lean-forward="true" selection-start-line="191" selection-start-column="45" selection-end-line="191" selection-end-column="45" />
+            <state relative-caret-position="241">
+              <caret line="107" column="26" selection-start-line="107" selection-start-column="26" selection-end-line="107" selection-end-column="26" />
               <folding>
                 <element signature="e#101#112#0" expanded="true" />
               </folding>
@@ -32,10 +31,31 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/multi_prongs/resnet.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2952">
-              <caret line="169" column="21" selection-start-line="169" selection-start-column="21" selection-end-line="169" selection-end-column="21" />
+            <state relative-caret-position="-885">
+              <caret line="153" column="50" selection-start-line="153" selection-start-column="50" selection-end-line="153" selection-end-column="50" />
               <folding>
                 <element signature="e#997#1009#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/multi_prongs/process_data.sh">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="72">
+              <caret line="4" column="19" selection-start-line="4" selection-start-column="19" selection-end-line="4" selection-end-column="19" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/multi_prongs/process_data.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="198">
+              <caret line="11" column="17" selection-start-line="11" selection-start-column="17" selection-end-line="11" selection-end-column="17" />
+              <folding>
+                <element signature="e#0#18#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -53,13 +73,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>loss.ba</find>
-      <find>threshold</find>
-      <find>result_dir</find>
-      <find>loglike</find>
-      <find>rho</find>
-      <find>train</find>
-      <find>nohup</find>
       <find>.cuda</find>
       <find>lr{</find>
       <find>linear</find>
@@ -70,7 +83,6 @@
       <find>neta_pixels</find>
       <find>reduction</find>
       <find>0.66</find>
-      <find>torch.save</find>
       <find>0.68</find>
       <find>epoch</find>
       <find>save</find>
@@ -83,6 +95,14 @@
       <find>resnet20base</find>
       <find>model</find>
       <find>JetImageMassNet</find>
+      <find>CombinedNet</find>
+      <find>exp_name</find>
+      <find>torch.save</find>
+      <find>resnetbase</find>
+      <find>name_dict</find>
+      <find>subset</find>
+      <find>parsed_Tower</find>
+      <find>resnet110base</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -137,12 +157,16 @@
         <option value="$PROJECT_DIR$/multi_prongs/mass_regression.py" />
         <option value="$PROJECT_DIR$/multi_prongs/resnet.py" />
         <option value="$PROJECT_DIR$/multi_prongs/train.py" />
+        <option value="$PROJECT_DIR$/multi_prongs/process_data.sh" />
+        <option value="$PROJECT_DIR$/multi_prongs/process_data.py" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds" extendedState="6" fullScreen="true">
-    <option name="width" value="1440" />
-    <option name="height" value="900" />
+  <component name="ProjectFrameBounds" fullScreen="true">
+    <option name="x" value="-217" />
+    <option name="y" value="-1177" />
+    <option name="width" value="1920" />
+    <option name="height" value="1177" />
   </component>
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
@@ -198,7 +222,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.train">
+  <component name="RunManager" selected="Python.process_data">
     <configuration name="LinearRegressionFlow" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="sandbox" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -243,7 +267,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="non_local_vae" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="process_data" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="sandbox" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -251,12 +275,12 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/nonlocal_vae" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/multi_prongs" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/nonlocal_vae/non_local_vae.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/multi_prongs/process_data.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -265,7 +289,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="tetrode_selection" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="resnet" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="sandbox" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -273,12 +297,12 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/nonlocal_vae" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/multi_prongs" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/nonlocal_vae/tetrode_selection.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/multi_prongs/resnet.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -311,18 +335,18 @@
     </configuration>
     <list>
       <item itemvalue="Python.LinearRegressionFlow" />
-      <item itemvalue="Python.non_local_vae" />
-      <item itemvalue="Python.tetrode_selection" />
       <item itemvalue="Python.train" />
       <item itemvalue="Python.mass_regression" />
+      <item itemvalue="Python.resnet" />
+      <item itemvalue="Python.process_data" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.process_data" />
         <item itemvalue="Python.train" />
+        <item itemvalue="Python.resnet" />
         <item itemvalue="Python.mass_regression" />
         <item itemvalue="Python.LinearRegressionFlow" />
-        <item itemvalue="Python.tetrode_selection" />
-        <item itemvalue="Python.non_local_vae" />
       </list>
     </recent_temporary>
   </component>
@@ -356,12 +380,12 @@
       <workItem from="1602550372125" duration="4964000" />
       <workItem from="1604431120637" duration="17291000" />
       <workItem from="1604958887793" duration="31834000" />
-      <workItem from="1606242516491" duration="1458000" />
+      <workItem from="1606242516491" duration="32752000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="750466000" />
+    <option name="totallyTimeSpent" value="781760000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -373,15 +397,15 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="0" width="1440" height="900" extended-state="6" />
+    <frame x="-217" y="-1200" width="1920" height="1200" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Favorites" order="0" side_tool="true" />
-      <window_info content_ui="combo" id="Project" order="1" visible="true" weight="0.10586552" />
+      <window_info active="true" content_ui="combo" id="Project" order="1" visible="true" weight="0.07880724" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Concurrent Activities Diagram" order="0" weight="0.32891566" />
       <window_info anchor="bottom" id="Database Changes" order="1" />
-      <window_info anchor="bottom" id="Terminal" order="2" weight="0.3283186" />
+      <window_info anchor="bottom" id="Terminal" order="2" weight="0.32771084" />
       <window_info anchor="bottom" id="Event Log" order="3" sideWeight="0.5005325" side_tool="true" weight="0.30973452" />
       <window_info anchor="bottom" id="Version Control" order="4" weight="0.32891566" />
       <window_info anchor="bottom" id="File Transfer" order="5" sideWeight="0.49946752" weight="0.27228916" />
@@ -389,13 +413,13 @@
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Message" order="8" />
       <window_info anchor="bottom" id="Find" order="9" weight="0.32771084" />
-      <window_info active="true" anchor="bottom" id="Run" order="10" sideWeight="0.49946752" visible="true" weight="0.37951806" />
-      <window_info anchor="bottom" id="Debug" order="11" sideWeight="0.49946752" weight="0.37405404" />
+      <window_info anchor="bottom" id="Run" order="10" sideWeight="0.49946752" weight="0.24216868" />
+      <window_info anchor="bottom" id="Debug" order="11" sideWeight="0.49946752" visible="true" weight="0.2920354" />
       <window_info anchor="bottom" id="Cvs" order="12" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="13" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="14" weight="0.32891566" />
       <window_info anchor="right" x="0" y="0" width="430" height="1000" id="Documentation" order="0" side_tool="true" weight="0.32960597" />
-      <window_info anchor="right" id="SciView" order="1" weight="0.32747602" />
+      <window_info anchor="right" id="SciView" order="1" weight="0.32689556" />
       <window_info anchor="right" id="Database" order="2" />
       <window_info anchor="right" id="Remote Host" order="3" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="4" type="SLIDING" weight="0.4" />
@@ -574,13 +598,23 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/multi_prongs/train.py</url>
-          <line>162</line>
-          <option name="timeStamp" value="460" />
+          <line>98</line>
+          <option name="timeStamp" value="461" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/multi_prongs/train.py</url>
-          <line>90</line>
-          <option name="timeStamp" value="461" />
+          <line>141</line>
+          <option name="timeStamp" value="462" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/multi_prongs/resnet.py</url>
+          <line>186</line>
+          <option name="timeStamp" value="466" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/multi_prongs/process_data.py</url>
+          <line>173</line>
+          <option name="timeStamp" value="469" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -598,30 +632,32 @@
     </watches-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/sandbox$feature_selection_rat.coverage" NAME="feature_selection_rat Coverage Results" MODIFIED="1580877801824" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
     <SUITE FILE_PATH="coverage/sandbox$LinearRegression.coverage" NAME="LinearRegression Coverage Results" MODIFIED="1572459211839" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GammaDistributionLearning" />
     <SUITE FILE_PATH="coverage/sandbox$beta_gamma_MF.coverage" NAME="beta-gamma-MF Coverage Results" MODIFIED="1572802274423" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
     <SUITE FILE_PATH="coverage/sandbox$vae_repar.coverage" NAME="vae_repar Coverage Results" MODIFIED="1579467225239" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
-    <SUITE FILE_PATH="coverage/sandbox$beta_gamma_MF_2stage.coverage" NAME="beta-gamma-MF-2stage Coverage Results" MODIFIED="1572830613681" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
     <SUITE FILE_PATH="coverage/sandbox$LinearRegression__1_.coverage" NAME="LinearRegression (1) Coverage Results" MODIFIED="1572562495040" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
-    <SUITE FILE_PATH="coverage/sandbox$LinearRegressionFlow.coverage" NAME="LinearRegressionFlow Coverage Results" MODIFIED="1602790878660" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vi" />
     <SUITE FILE_PATH="coverage/sandbox$LinearRegressionDDM.coverage" NAME="LinearRegressionDDM Coverage Results" MODIFIED="1570666436852" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GammaDistributionLearning" />
-    <SUITE FILE_PATH="coverage/sandbox$vae_bayes_update.coverage" NAME="vae_bayes_update Coverage Results" MODIFIED="1572893815757" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
-    <SUITE FILE_PATH="coverage/sandbox$utils.coverage" NAME="utils Coverage Results" MODIFIED="1578382286386" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
     <SUITE FILE_PATH="coverage/sandbox$MicrobioCountData.coverage" NAME="MicrobioCountData Coverage Results" MODIFIED="1578898230834" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
-    <SUITE FILE_PATH="coverage/sandbox$simple_vae.coverage" NAME="simple_vae Coverage Results" MODIFIED="1581969987263" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
     <SUITE FILE_PATH="coverage/sandbox$model.coverage" NAME="model Coverage Results" MODIFIED="1570558744789" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GammaDistributionLearning" />
     <SUITE FILE_PATH="coverage/sandbox$Oracle.coverage" NAME="Oracle Coverage Results" MODIFIED="1570656177344" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GammaDistributionLearning" />
-    <SUITE FILE_PATH="coverage/sandbox$non_local_vae.coverage" NAME="non_local_vae Coverage Results" MODIFIED="1582129159430" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
-    <SUITE FILE_PATH="coverage/sandbox$superchris_latent.coverage" NAME="superchris_latent Coverage Results" MODIFIED="1580341718493" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
     <SUITE FILE_PATH="coverage/sandbox$single_thres_gate.coverage" NAME="single_thres_gate Coverage Results" MODIFIED="1579913613168" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/phase_transit" />
     <SUITE FILE_PATH="coverage/sandbox$tetrode_selection.coverage" NAME="tetrode_selection Coverage Results" MODIFIED="1582222659593" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
+    <SUITE FILE_PATH="coverage/sandbox$main.coverage" NAME="main Coverage Results" MODIFIED="1579479138471" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/code_vae" />
+    <SUITE FILE_PATH="coverage/sandbox$process_data.coverage" NAME="process_data Coverage Results" MODIFIED="1606541173184" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
+    <SUITE FILE_PATH="coverage/sandbox$feature_selection_rat.coverage" NAME="feature_selection_rat Coverage Results" MODIFIED="1580877801824" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
+    <SUITE FILE_PATH="coverage/sandbox$beta_gamma_MF_2stage.coverage" NAME="beta-gamma-MF-2stage Coverage Results" MODIFIED="1572830613681" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
+    <SUITE FILE_PATH="coverage/sandbox$LinearRegressionFlow.coverage" NAME="LinearRegressionFlow Coverage Results" MODIFIED="1602790878660" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vi" />
+    <SUITE FILE_PATH="coverage/sandbox$vae_bayes_update.coverage" NAME="vae_bayes_update Coverage Results" MODIFIED="1572893815757" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
+    <SUITE FILE_PATH="coverage/sandbox$resnet.coverage" NAME="resnet Coverage Results" MODIFIED="1606504842307" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
+    <SUITE FILE_PATH="coverage/sandbox$utils.coverage" NAME="utils Coverage Results" MODIFIED="1578382286386" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
+    <SUITE FILE_PATH="coverage/sandbox$simple_vae.coverage" NAME="simple_vae Coverage Results" MODIFIED="1581969987263" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
+    <SUITE FILE_PATH="coverage/sandbox$non_local_vae.coverage" NAME="non_local_vae Coverage Results" MODIFIED="1582129159430" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
+    <SUITE FILE_PATH="coverage/sandbox$superchris_latent.coverage" NAME="superchris_latent Coverage Results" MODIFIED="1580341718493" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
     <SUITE FILE_PATH="coverage/sandbox$mass_regression.coverage" NAME="mass_regression Coverage Results" MODIFIED="1604698891395" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
     <SUITE FILE_PATH="coverage/sandbox$vae.coverage" NAME="vae Coverage Results" MODIFIED="1572893206444" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
     <SUITE FILE_PATH="coverage/sandbox$LinearRegressionLognorm.coverage" NAME="LinearRegressionLognorm Coverage Results" MODIFIED="1577692877871" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
-    <SUITE FILE_PATH="coverage/sandbox$main.coverage" NAME="main Coverage Results" MODIFIED="1579479138471" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/code_vae" />
     <SUITE FILE_PATH="coverage/sandbox$ContLearn_VAE.coverage" NAME="ContLearn_VAE Coverage Results" MODIFIED="1581011320761" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
-    <SUITE FILE_PATH="coverage/sandbox$train.coverage" NAME="train Coverage Results" MODIFIED="1606242979057" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
+    <SUITE FILE_PATH="coverage/sandbox$train.coverage" NAME="train Coverage Results" MODIFIED="1606505669096" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
   </component>
   <component name="debuggerHistoryManager">
     <expressions id="evaluateCodeFragment">
@@ -686,57 +722,58 @@ print(sse_zero_best_ls)</expression-string>
     </expressions>
     <expressions id="evaluateExpression">
       <expression>
-        <expression-string>self.m1(mass.view(-1, 1))</expression-string>
+        <expression-string>max(lendddd)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>mass</expression-string>
+        <expression-string>max(len(parsed_HL[0]), 500)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>(torch.argmax(pred, dim=1) == target).max()</expression-string>
+        <expression-string>max(len(parsed_HL), 500)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>(torch.argmax(pred, dim=1) == target).sum()</expression-string>
+        <expression-string>max(len(tower), 500)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>torch.argmax(pred, dim=1)</expression-string>
+        <expression-string>b_and_u_subset_idx.reshape(-1)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>target</expression-string>
+        <expression-string>b_and_u_subset_idx.reshape(-1).shape[0]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>torch.argmax(pred, dim=0)</expression-string>
+        <expression-string>parsed_Tower.tolist()</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>target.max()</expression-string>
+        <expression-string>parsed_Tower.to_list()</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>weights.min()</expression-string>
+        <expression-string>parsed_Tower</expression-string>
+        <language-id>Python</language-id>
+        <evaluation-mode>EXPRESSION</evaluation-mode>
+      </expression>
+      <expression>
+        <expression-string>max([len(i) for i in parsed_Tower])</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/BFS.py" />
-    <entry file="file://$PROJECT_DIR$/DensityEstimation.gif">
-      <provider selected="true" editor-type-id="images" />
-    </entry>
     <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1651615519/1671378136/torch/distributions/distribution.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="415">
@@ -876,13 +913,6 @@ print(sse_zero_best_ls)</expression-string>
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="126">
           <caret line="7" column="26" lean-forward="true" selection-start-line="7" selection-end-line="8" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1651615519/-1515638028/codecs.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="170">
-          <caret line="308" selection-start-line="308" selection-end-line="308" />
         </state>
       </provider>
     </entry>
@@ -1109,22 +1139,46 @@ print(sse_zero_best_ls)</expression-string>
         </state>
       </provider>
     </entry>
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1651615519/-1515638028/codecs.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3">
+          <caret line="308" selection-start-line="308" selection-end-line="308" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/multi_prongs/train.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="191" column="45" lean-forward="true" selection-start-line="191" selection-start-column="45" selection-end-line="191" selection-end-column="45" />
+        <state relative-caret-position="241">
+          <caret line="107" column="26" selection-start-line="107" selection-start-column="26" selection-end-line="107" selection-end-column="26" />
           <folding>
             <element signature="e#101#112#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/multi_prongs/process_data.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="72">
+          <caret line="4" column="19" selection-start-line="4" selection-start-column="19" selection-end-line="4" selection-end-column="19" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/multi_prongs/resnet.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2952">
-          <caret line="169" column="21" selection-start-line="169" selection-start-column="21" selection-end-line="169" selection-end-column="21" />
+        <state relative-caret-position="-885">
+          <caret line="153" column="50" selection-start-line="153" selection-start-column="50" selection-end-line="153" selection-end-column="50" />
           <folding>
             <element signature="e#997#1009#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/multi_prongs/process_data.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="198">
+          <caret line="11" column="17" selection-start-line="11" selection-start-column="17" selection-end-line="11" selection-end-column="17" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
           </folding>
         </state>
       </provider>
