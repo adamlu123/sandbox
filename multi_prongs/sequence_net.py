@@ -9,7 +9,7 @@ import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
 os.environ["CUDA_VISIBLE_DEVICES"]="0, 1"
 import os
-
+from resnet import make_hlnet_base
 
 ## load config
 device = 'cuda'
@@ -17,7 +17,7 @@ batchsize = 128
 epoch = 100
 load_pretrained = True
 root = '/baldig/physicsprojects2/N_tagger/exp'
-exp_name = '/20201127_lr_5e-3_decay0.5_nowc_BiLSTM'
+exp_name = '/20201130_lr_5e-3_decay0.5_nowc_pointconv1d'
 if not os.path.exists(root + exp_name):
     os.makedirs(root + exp_name)
 filename = '/baldig/physicsprojects2/N_tagger/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
@@ -71,9 +71,52 @@ class RNN(nn.Module):
         return out
 
 
-model_type = 'BiLSTM'
-lstm = nn.LSTM(input_size=3, hidden_size=20, num_layers=2, bidirectional=True)
-model = RNN(lstm).to(device)
+class Conv1DNet(nn.Module):
+    def __init__(self):
+        super(Conv1DNet, self).__init__()
+        modules = [nn.Conv1d(in_channels=2, out_channels=16, kernel_size=1), nn.ReLU(), nn.BatchNorm1d(16),
+                   nn.Conv1d(in_channels=16, out_channels=32, kernel_size=1), nn.ReLU(), nn.BatchNorm1d(32),
+                   nn.Conv1d(in_channels=32, out_channels=1, kernel_size=1), nn.ReLU()]
+        self.module = nn.Sequential(*modules)
+        self.linear_xy = nn.Linear(230, 64)
+        self.linear_pt = nn.Linear(230, 64)
+        self.out = nn.Linear(128, 64)
+
+    def forward(self, X):
+        X = X.permute([0, 2, 1])  # shape = batch, 3, 230
+        pt, xy = X[:, 0, :], X[:, 1:, :]
+        X = self.module(xy).squeeze()
+        pt = F.relu(self.linear_pt(pt))
+        X = F.relu(self.linear_xy(X))
+        X = F.relu(self.out(torch.cat([pt, X], -1)))
+        return X
+
+
+class PointConvNet(nn.Module):
+    def __init__(self, hlnet_base, conv1d_base):
+        super(PointConvNet, self).__init__()
+        self.hlnet_base = hlnet_base
+        self.conv1d_base = conv1d_base
+
+         
+        # self.top = nn.Linear(64 * 2, 64)
+        self.out = nn.Linear(64, 64)
+
+    def forward(self, X, HL):
+        HL = self.hlnet_base(HL)
+        X = self.conv1d_base(X)
+        # out = self.top(torch.cat([HL, X], dim=-1))
+        out = self.out(F.relu(X))
+        return out
+
+
+model_type = 'PointConvNet'
+if model_type == 'BiLSTM':
+    lstm = nn.LSTM(input_size=3, hidden_size=20, num_layers=2, bidirectional=True)
+    model = RNN(lstm).to(device)
+elif model_type == 'PointConvNet':
+    hlnet_base, conv1d_base = make_hlnet_base(), Conv1DNet()
+    model = PointConvNet(hlnet_base, conv1d_base).to(device)
 model = nn.DataParallel(model)
 
 
@@ -91,9 +134,13 @@ def train(model, optimizer):
         # X, HL, target, weights = next(generator['train'])
         # X, HL, target, weights = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), \
         #                          torch.tensor(target).long().to(device), torch.tensor(weights).to(device)
-        X, _, target = next(generator['train'])
-        X, target = torch.tensor(X).float().to(device), torch.tensor(target).long().to(device)
-        pred = model(X)
+        X, HL, target = next(generator['train'])
+        X, HL, target = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), \
+                    torch.tensor(target).long().to(device)
+        if model_type == 'BiLSTM':
+            pred = model(X)
+        elif model_type == 'PointConvNet':
+            pred = model(X, HL)
         loss = loss_fn(pred, target) #* weights
         loss = loss.mean()
         loss.backward()
@@ -115,7 +162,10 @@ def test(model, subset):
             # X, HL, target = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), torch.tensor(target).to(device)
             X, HL, target = next(generator[subset])
             X, HL, target = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), torch.tensor(target).to(device)
-            pred = model(X)
+            if model_type == 'BiLSTM':
+                pred = model(X)
+            elif model_type == 'PointConvNet':
+                pred = model(X, HL)
             pred = torch.argmax(pred, dim=1)
             tmp += torch.sum(pred==target).item() / target.shape[0]
     print(model_type, 'acc', tmp / iter_test)
@@ -129,11 +179,11 @@ def main(model):
         val_acc, model = train(model, optimizer)
         if val_acc > best_acc:
             best_acc = val_acc
-            torch.save(model.state_dict(), root + exp_name + '/best_{}_merged_b_u.pt'.format(model_type))
-            print('model saved')
+            # torch.save(model.state_dict(), root + exp_name + '/best_{}_merged_b_u.pt'.format(model_type))
+            # print('model saved')
         if (i+1) % 10 == 0:
-            torch.save(model.state_dict(),
-                       root + exp_name + '/{}_merged_b_u_ep{}.pt'.format(model_type, i))
+            # torch.save(model.state_dict(),
+            #            root + exp_name + '/{}_merged_b_u_ep{}.pt'.format(model_type, i))
             print('model saved at epoch', i)
         #     test(model, 'test')
     testacc = test(model, 'test')

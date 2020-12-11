@@ -10,31 +10,36 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch import optim
-from resnet import resnet20base, make_hlnet_base, resnet110base, resnet56base, resnet18base
+from resnet import resnet20base, make_hlnet_base, resnet110base, resnet56base, resnet18base, resnet50base
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"]="0, 1"
-import os
+os.environ["CUDA_VISIBLE_DEVICES"]="2, 3"
+from shutil import copyfile
 
 
 ## load config
 device = 'cuda'
 batchsize = 128
 epoch = 100
-load_pretrained = True
+load_pretrained = False
 root = '/baldig/physicsprojects2/N_tagger/exp'
-exp_name = '/20201126_lr_5e-3_decay0.5_nowc_weighted_sample'
+exp_name = '/20201207_lr_5e-3_decay0.5_nowc_noweighted_sample_HL_from_img'
+# exp_name = '/20201204_lr_5e-3_decay0.5_nowc_noweighted_sample_HL_original_witoutpt'
 if not os.path.exists(root + exp_name):
     os.makedirs(root + exp_name)
+## loging:
+copyfile('/extra/yadongl10/git_project/sandbox/multi_prongs/train.py', root+exp_name+'/train.py')
+
 # filename = '/extra/yadongl10/data/N-tagger/combined_1103.h5'
 # total_num_sample = 215630
 # filename = '/baldig/physicsprojects2/N_tagger/20201109/combined_1109.h5'
 # filename = '/baldig/physicsprojects2/N_tagger/res3/res3_mass300_700_b_u_shuffled.h5'
 # filename = '/baldig/physicsprojects2/N_tagger/merged/merged_mass300_700_b_u_shuffled.h5'
-filename = '/baldig/physicsprojects2/N_tagger/merged/weights_res1_res5_merged_mass300_700_b_u_shuffled.h5'
+# filename = '/baldig/physicsprojects2/N_tagger/merged/weights_res1_res5_merged_mass300_700_b_u_shuffled.h5'
+filename = '/baldig/physicsprojects2/N_tagger/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
 
 with h5py.File(filename, 'r') as f:
-    total_num_sample = f['image'].shape[0]
+    total_num_sample = f['target'].shape[0]
 train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
 
 iterations = int(train_cut / batchsize)
@@ -48,8 +53,10 @@ def data_generator(filename, batchsize, start, stop=None, weighted=False):
     with h5py.File(filename, 'r') as f:
         while True:
             batch = slice(iexample, iexample + batchsize)
-            X = f['image'][batch, :, :]
-            HL = f['HL_normalized'][batch, :-4]
+            X = f['image_corrected'][batch, :, :]
+            HL = f['HL_from_img_normalized'][batch]
+            # HL = f['HL_normalized'][batch, :-4]
+            # HL = np.delete(HL, -2, 1)  # delete pt
             target = f['target'][batch]
             if weighted:
                 weights = f['weights'][batch]
@@ -68,8 +75,9 @@ generator['test'] = data_generator(filename, batchsize, start=val_cut, stop=test
 
 ################### model
 resnetbase = resnet110base()
+# resnetbase = resnet110base()
 # resnetbase = resnet56base()
-hlnet_base = make_hlnet_base()
+hlnet_base = make_hlnet_base(input_dim=17)
 
 
 class JetImageNet(nn.Module):
@@ -174,7 +182,7 @@ for name, param in model.named_parameters():
 print('num of param in hl', len(hl_param), 'num of param in other', len(other_param))
 param_groups = [
     {'params': hl_param, 'lr': 5e-3},
-    {'params': other_param, 'lr': 0}
+    {'params': other_param, 'lr': 5e-3}
 ]
 
 optimizer = optim.Adam(param_groups, weight_decay=0)
@@ -190,6 +198,8 @@ def train(model, optimizer):
         X, HL, target, weights = next(generator['train'])
         X, HL, target, weights = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), \
                                  torch.tensor(target).long().to(device), torch.tensor(weights).to(device)
+        # loc = torch.cat([torch.where(target == 1)[0], torch.where(target == 2)[0]], 0)
+        # X, HL, target = X[loc], HL[loc], target[loc]
         # X, HL, target = next(generator['train'])
         # X, HL, target = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), \
         #                          torch.tensor(target).long().to(device)
@@ -201,7 +211,9 @@ def train(model, optimizer):
             pred = model(HL)
         elif model_type == 'JetImageMassNet':
             pred = model(X, HL[:, -1])
-        loss = loss_fn(pred, target) * weights
+        # ones = torch.ones_like(target).cuda()
+        # upweighted = torch.where(target>=2, ones, 5*ones)
+        loss = loss_fn(pred, target) #* weights
         loss = loss.mean()
         loss.backward()
         optimizer.step()
@@ -222,6 +234,8 @@ def test(model, subset):
         for i in range(iter_test):
             X, HL, target, _ = next(generator[subset])
             X, HL, target = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), torch.tensor(target).to(device)
+            # loc = torch.cat([torch.where(target == 1)[0], torch.where(target == 2)[0]], 0)
+            # X, HL, target = X[loc], HL[loc], target[loc]
             # X, HL, target = next(generator[subset])
             # X, HL, target = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), torch.tensor(target).to(device)
             if model_type == 'JetImageNet':

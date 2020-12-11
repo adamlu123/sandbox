@@ -2,10 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e44c722f-3e28-4a47-9abe-72e45a577b99" name="Default Changelist" comment="minor">
-      <change afterPath="$PROJECT_DIR$/multi_prongs/sequence_net.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/process_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/process_data.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/multi_prongs/process_data.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/process_data.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/resnet.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/resnet.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/sequence_net.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/sequence_net.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/train.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -15,11 +16,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/multi_prongs/train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="67">
-              <caret line="118" column="19" lean-forward="true" selection-start-line="118" selection-start-column="19" selection-end-line="118" selection-end-column="19" />
+            <state relative-caret-position="401">
+              <caret line="57" column="14" selection-start-line="57" selection-start-column="14" selection-end-line="58" selection-end-column="52" />
               <folding>
                 <element signature="e#101#112#0" expanded="true" />
               </folding>
@@ -30,8 +31,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/multi_prongs/resnet.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-885">
-              <caret line="153" column="50" selection-start-line="153" selection-start-column="50" selection-end-line="153" selection-end-column="50" />
+            <state relative-caret-position="562">
+              <caret line="170" column="19" selection-start-line="170" selection-start-column="4" selection-end-line="170" selection-end-column="19" />
               <folding>
                 <element signature="e#997#1009#0" expanded="true" />
               </folding>
@@ -42,20 +43,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/multi_prongs/process_data.sh">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="72">
-              <caret line="4" column="11" selection-start-line="4" selection-start-column="11" selection-end-line="4" selection-end-column="11" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/multi_prongs/sequence_net.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="294">
-              <caret line="65" column="37" selection-start-line="65" selection-start-column="37" selection-end-line="65" selection-end-column="37" />
-              <folding>
-                <element signature="e#1#12#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="36">
+              <caret line="2" column="3" lean-forward="true" selection-start-line="2" selection-start-column="3" selection-end-line="2" selection-end-column="52" />
             </state>
           </provider>
         </entry>
@@ -63,10 +52,22 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/multi_prongs/process_data.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="559">
-              <caret line="197" column="118" lean-forward="true" selection-start-line="197" selection-start-column="57" selection-end-line="197" selection-end-column="118" />
+            <state relative-caret-position="3618">
+              <caret line="201" column="31" lean-forward="true" selection-start-line="201" selection-start-column="31" selection-end-line="201" selection-end-column="31" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/multi_prongs/sequence_net.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="253">
+              <caret line="39" column="31" selection-start-line="39" selection-start-column="19" selection-end-line="39" selection-end-column="31" />
+              <folding>
+                <element signature="e#1#12#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -84,10 +85,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>.cuda</find>
-      <find>lr{</find>
-      <find>linear</find>
-      <find>HLNetBase</find>
       <find>iter_test</find>
       <find>torch.relu(pred)</find>
       <find>processed</find>
@@ -97,23 +94,27 @@
       <find>0.68</find>
       <find>epoch</find>
       <find>save</find>
-      <find>weights</find>
       <find>data_generator</find>
       <find>filename</find>
       <find>hlnet_base</find>
       <find>HL_normalized</find>
-      <find>make_hlnet_base</find>
       <find>resnet20base</find>
       <find>model</find>
-      <find>JetImageMassNet</find>
       <find>CombinedNet</find>
       <find>exp_name</find>
       <find>torch.save</find>
       <find>resnetbase</find>
       <find>name_dict</find>
-      <find>subset</find>
       <find>parsed_Tower</find>
       <find>resnet110base</find>
+      <find>resnet50base</find>
+      <find>mass</find>
+      <find>parsed_HL</find>
+      <find>load_pretrained</find>
+      <find>JetImageMassNet</find>
+      <find>weights</find>
+      <find>subset</find>
+      <find>make_hlnet_base</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -166,19 +167,19 @@
         <option value="$PROJECT_DIR$/nonlocal_vi/LinearRegression.py" />
         <option value="$PROJECT_DIR$/multi_prongs/generate.py" />
         <option value="$PROJECT_DIR$/multi_prongs/mass_regression.py" />
+        <option value="$PROJECT_DIR$/multi_prongs/process_data.sh" />
+        <option value="$PROJECT_DIR$/multi_prongs/sequence_net.py" />
         <option value="$PROJECT_DIR$/multi_prongs/resnet.py" />
         <option value="$PROJECT_DIR$/multi_prongs/train.py" />
         <option value="$PROJECT_DIR$/multi_prongs/process_data.py" />
-        <option value="$PROJECT_DIR$/multi_prongs/process_data.sh" />
-        <option value="$PROJECT_DIR$/multi_prongs/sequence_net.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" fullScreen="true">
-    <option name="x" value="-217" />
-    <option name="y" value="-1177" />
+    <option name="x" value="-321" />
+    <option name="y" value="-1080" />
     <option name="width" value="1920" />
-    <option name="height" value="1097" />
+    <option name="height" value="1080" />
   </component>
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
@@ -188,7 +189,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -210,6 +210,7 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -234,7 +235,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.sequence_net">
+  <component name="RunManager" selected="Python.train">
     <configuration name="mass_regression" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="sandbox" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -354,9 +355,9 @@
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.train" />
         <item itemvalue="Python.sequence_net" />
         <item itemvalue="Python.process_data" />
-        <item itemvalue="Python.train" />
         <item itemvalue="Python.resnet" />
         <item itemvalue="Python.mass_regression" />
       </list>
@@ -392,12 +393,15 @@
       <workItem from="1602550372125" duration="4964000" />
       <workItem from="1604431120637" duration="17291000" />
       <workItem from="1604958887793" duration="31834000" />
-      <workItem from="1606242516491" duration="37231000" />
+      <workItem from="1606242516491" duration="54032000" />
+      <workItem from="1606891752849" duration="1119000" />
+      <workItem from="1606980462465" duration="274000" />
+      <workItem from="1607026314785" duration="16008000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="786239000" />
+    <option name="totallyTimeSpent" value="820441000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -409,24 +413,24 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-217" y="-1200" width="1920" height="1200" extended-state="0" />
+    <frame x="-321" y="-1080" width="1920" height="1080" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info id="Favorites" order="0" side_tool="true" />
-      <window_info content_ui="combo" id="Project" order="1" visible="true" weight="0.07880724" />
+      <window_info content_ui="combo" id="Project" order="1" visible="true" weight="0.19116081" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Concurrent Activities Diagram" order="0" weight="0.32891566" />
       <window_info anchor="bottom" id="Database Changes" order="1" />
       <window_info anchor="bottom" id="Terminal" order="2" weight="0.32743362" />
       <window_info anchor="bottom" id="Event Log" order="3" sideWeight="0.5005325" side_tool="true" weight="0.30973452" />
       <window_info anchor="bottom" id="Version Control" order="4" weight="0.32891566" />
-      <window_info anchor="bottom" id="File Transfer" order="5" sideWeight="0.49946752" weight="0.27228916" />
+      <window_info active="true" anchor="bottom" id="File Transfer" order="5" sideWeight="0.49946752" visible="true" weight="0.34950495" />
       <window_info anchor="bottom" id="Python Console" order="6" sideWeight="0.49946752" weight="0.32891566" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Message" order="8" />
       <window_info anchor="bottom" id="Find" order="9" weight="0.32771084" />
-      <window_info active="true" anchor="bottom" id="Run" order="10" sideWeight="0.49946752" visible="true" weight="0.24159291" />
-      <window_info anchor="bottom" id="Debug" order="11" sideWeight="0.49946752" weight="0.32654867" />
+      <window_info anchor="bottom" id="Run" order="10" sideWeight="0.49946752" weight="0.23168316" />
+      <window_info anchor="bottom" id="Debug" order="11" sideWeight="0.49946752" weight="0.3938053" />
       <window_info anchor="bottom" id="Cvs" order="12" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="13" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="14" weight="0.32891566" />
@@ -609,21 +613,6 @@
           <option name="timeStamp" value="456" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/multi_prongs/train.py</url>
-          <line>98</line>
-          <option name="timeStamp" value="461" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/multi_prongs/train.py</url>
-          <line>141</line>
-          <option name="timeStamp" value="462" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/multi_prongs/resnet.py</url>
-          <line>186</line>
-          <option name="timeStamp" value="466" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/multi_prongs/process_data.py</url>
           <line>172</line>
           <option name="timeStamp" value="469" />
@@ -635,13 +624,23 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/multi_prongs/sequence_net.py</url>
-          <line>69</line>
-          <option name="timeStamp" value="477" />
+          <line>66</line>
+          <option name="timeStamp" value="479" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/multi_prongs/sequence_net.py</url>
-          <line>66</line>
-          <option name="timeStamp" value="479" />
+          <line>87</line>
+          <option name="timeStamp" value="489" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/multi_prongs/train.py</url>
+          <line>236</line>
+          <option name="timeStamp" value="491" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/multi_prongs/train.py</url>
+          <line>200</line>
+          <option name="timeStamp" value="492" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
@@ -663,7 +662,7 @@
     <SUITE FILE_PATH="coverage/sandbox$beta_gamma_MF.coverage" NAME="beta-gamma-MF Coverage Results" MODIFIED="1572802274423" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
     <SUITE FILE_PATH="coverage/sandbox$vae_repar.coverage" NAME="vae_repar Coverage Results" MODIFIED="1579467225239" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
     <SUITE FILE_PATH="coverage/sandbox$LinearRegression__1_.coverage" NAME="LinearRegression (1) Coverage Results" MODIFIED="1572562495040" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
-    <SUITE FILE_PATH="coverage/sandbox$sequence_net.coverage" NAME="sequence_net Coverage Results" MODIFIED="1606592395612" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
+    <SUITE FILE_PATH="coverage/sandbox$sequence_net.coverage" NAME="sequence_net Coverage Results" MODIFIED="1606866800454" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
     <SUITE FILE_PATH="coverage/sandbox$LinearRegressionDDM.coverage" NAME="LinearRegressionDDM Coverage Results" MODIFIED="1570666436852" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GammaDistributionLearning" />
     <SUITE FILE_PATH="coverage/sandbox$MicrobioCountData.coverage" NAME="MicrobioCountData Coverage Results" MODIFIED="1578898230834" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
     <SUITE FILE_PATH="coverage/sandbox$model.coverage" NAME="model Coverage Results" MODIFIED="1570558744789" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GammaDistributionLearning" />
@@ -685,7 +684,7 @@
     <SUITE FILE_PATH="coverage/sandbox$vae.coverage" NAME="vae Coverage Results" MODIFIED="1572893206444" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
     <SUITE FILE_PATH="coverage/sandbox$LinearRegressionLognorm.coverage" NAME="LinearRegressionLognorm Coverage Results" MODIFIED="1577692877871" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
     <SUITE FILE_PATH="coverage/sandbox$ContLearn_VAE.coverage" NAME="ContLearn_VAE Coverage Results" MODIFIED="1581011320761" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
-    <SUITE FILE_PATH="coverage/sandbox$train.coverage" NAME="train Coverage Results" MODIFIED="1606505669096" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
+    <SUITE FILE_PATH="coverage/sandbox$train.coverage" NAME="train Coverage Results" MODIFIED="1607114075033" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
   </component>
   <component name="debuggerHistoryManager">
     <expressions id="evaluateCodeFragment">
@@ -757,54 +756,53 @@ print(sse_zero_best_ls)</expression-string>
     </expressions>
     <expressions id="evaluateExpression">
       <expression>
-        <expression-string>X.permute([1,0,2])</expression-string>
+        <expression-string>torch.where(target == 1)[0].shape</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>X</expression-string>
+        <expression-string>target == torch.ones_like(target) or target == torch.zeros_like(target)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>self</expression-string>
+        <expression-string>[torch.where(target == 0)[0], torch.where(target == 1)[0]]</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>X[0]</expression-string>
+        <expression-string>torch.cat([torch.where(target == 0)[0], torch.where(target == 1)[0]], 0)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>F.relu(X[0])</expression-string>
+        <expression-string>target == 0 or target == 1</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>model(X.permute([1,0,2]))</expression-string>
+        <expression-string>torch.where(target == 0)[0].shape</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>model(X.permute([2,0,1]))</expression-string>
+        <expression-string>torch.where(target == 0).shape</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>X.permute([1,0,2]).shape</expression-string>
+        <expression-string>torch.where(target == 0)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>X.permute([2,0,1]).shape</expression-string>
+        <expression-string>(target == 0) or (target == 1)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/debug.py" />
     <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1651615519/1671378136/torch/nn/modules/module.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="8676">
@@ -966,13 +964,6 @@ print(sse_zero_best_ls)</expression-string>
           <folding>
             <element signature="e#0#15#0" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/torch/nn/parallel/parallel_apply.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="173">
-          <caret line="60" selection-start-line="60" selection-end-line="60" />
         </state>
       </provider>
     </entry>
@@ -1162,56 +1153,72 @@ print(sse_zero_best_ls)</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/multi_prongs/process_data.py">
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/torchvision/models/resnet.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="559">
-          <caret line="197" column="118" lean-forward="true" selection-start-line="197" selection-start-column="57" selection-end-line="197" selection-end-column="118" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="456">
+          <caret line="214" selection-start-line="214" selection-end-line="214" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/multi_prongs/train.py">
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/torch/nn/modules/module.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="67">
-          <caret line="118" column="19" lean-forward="true" selection-start-line="118" selection-start-column="19" selection-end-line="118" selection-end-column="19" />
-          <folding>
-            <element signature="e#101#112#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="1189">
+          <caret line="549" selection-start-line="549" selection-end-line="549" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/multi_prongs/resnet.py">
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/torch/nn/parallel/parallel_apply.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-885">
-          <caret line="153" column="50" selection-start-line="153" selection-start-column="50" selection-end-line="153" selection-end-column="50" />
+        <state relative-caret-position="479">
+          <caret line="73" column="30" lean-forward="true" selection-start-line="73" selection-start-column="30" selection-end-line="73" selection-end-column="30" />
+          <caret line="74" column="26" lean-forward="true" selection-start-line="74" selection-start-column="26" selection-end-line="74" selection-end-column="26" />
+          <caret line="75" column="30" lean-forward="true" selection-start-line="75" selection-start-column="30" selection-end-line="75" selection-end-column="30" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/multi_prongs/sequence_net.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="253">
+          <caret line="39" column="31" selection-start-line="39" selection-start-column="19" selection-end-line="39" selection-end-column="31" />
           <folding>
-            <element signature="e#997#1009#0" expanded="true" />
+            <element signature="e#1#12#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/multi_prongs/process_data.sh">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="72">
-          <caret line="4" column="11" selection-start-line="4" selection-start-column="11" selection-end-line="4" selection-end-column="11" />
+        <state relative-caret-position="36">
+          <caret line="2" column="3" lean-forward="true" selection-start-line="2" selection-start-column="3" selection-end-line="2" selection-end-column="52" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/torch/nn/modules/module.py">
+    <entry file="file://$PROJECT_DIR$/multi_prongs/process_data.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="549" selection-start-line="549" selection-end-line="549" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/multi_prongs/sequence_net.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="294">
-          <caret line="65" column="37" selection-start-line="65" selection-start-column="37" selection-end-line="65" selection-end-column="37" />
+        <state relative-caret-position="3618">
+          <caret line="201" column="31" lean-forward="true" selection-start-line="201" selection-start-column="31" selection-end-line="201" selection-end-column="31" />
           <folding>
-            <element signature="e#1#12#0" expanded="true" />
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/multi_prongs/resnet.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="562">
+          <caret line="170" column="19" selection-start-line="170" selection-start-column="4" selection-end-line="170" selection-end-column="19" />
+          <folding>
+            <element signature="e#997#1009#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/multi_prongs/train.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="401">
+          <caret line="57" column="14" selection-start-line="57" selection-start-column="14" selection-end-line="58" selection-end-column="52" />
+          <folding>
+            <element signature="e#101#112#0" expanded="true" />
           </folding>
         </state>
       </provider>

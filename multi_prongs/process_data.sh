@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# cd /baldig/physicsprojects2/N_tagger/exp
 cd /extra/yadongl10/git_project/sandbox/multi_prongs
 source activate pytorch
 
