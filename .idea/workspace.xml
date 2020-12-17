@@ -2,9 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e44c722f-3e28-4a47-9abe-72e45a577b99" name="Default Changelist" comment="minor">
-      <change afterPath="$PROJECT_DIR$/multi_prongs/bert.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/multi_prongs/bert_net.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/multi_prongs/particle_net.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/bert_net.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/bert_net.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -38,11 +37,32 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/multi_prongs/bert_net.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="107">
-              <caret line="7" column="31" lean-forward="true" selection-start-line="7" selection-start-column="31" selection-end-line="7" selection-end-column="31" />
+            <state relative-caret-position="108">
+              <caret line="6" column="22" selection-start-line="6" selection-end-line="7" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/multi_prongs/particle_net.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="414">
+              <caret line="23" lean-forward="true" selection-start-line="23" selection-end-line="23" />
+              <folding>
+                <element signature="e#0#9#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/torch/nn/modules/module.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="641">
+              <caret line="549" selection-start-line="549" selection-end-line="549" />
             </state>
           </provider>
         </entry>
@@ -59,14 +79,8 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>filename</find>
-      <find>hlnet_base</find>
-      <find>HL_normalized</find>
-      <find>resnet20base</find>
-      <find>model</find>
       <find>CombinedNet</find>
       <find>exp_name</find>
-      <find>torch.save</find>
       <find>resnetbase</find>
       <find>name_dict</find>
       <find>parsed_Tower</find>
@@ -89,6 +103,12 @@
       <find>encoder_hidden_states</find>
       <find>BertAttention</find>
       <find>attention_mask</find>
+      <find>PointNet</find>
+      <find>emb_dims</find>
+      <find>args</find>
+      <find>optim</find>
+      <find>bn4</find>
+      <find>torch.save</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -97,7 +117,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/GammaDistributionLearning/utils.py" />
         <option value="$PROJECT_DIR$/GammaDistributionLearning/Oracle.py" />
         <option value="$PROJECT_DIR$/GammaDistributionLearning/Readme.md" />
         <option value="$PROJECT_DIR$/GammaDistributionLearning/model.py" />
@@ -148,6 +167,7 @@
         <option value="$PROJECT_DIR$/multi_prongs/process_data.py" />
         <option value="$PROJECT_DIR$/multi_prongs/bert.py" />
         <option value="$PROJECT_DIR$/multi_prongs/bert_net.py" />
+        <option value="$PROJECT_DIR$/multi_prongs/particle_net.py" />
       </list>
     </option>
   </component>
@@ -211,7 +231,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.bert_net">
+  <component name="RunManager" selected="Python.particle_net">
     <configuration name="bert" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="sandbox" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -256,7 +276,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="process_data" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="particle_net" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="sandbox" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -269,7 +289,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/multi_prongs/process_data.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/multi_prongs/particle_net.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -324,18 +344,18 @@
     </configuration>
     <list>
       <item itemvalue="Python.train" />
-      <item itemvalue="Python.process_data" />
       <item itemvalue="Python.sequence_net" />
       <item itemvalue="Python.bert" />
       <item itemvalue="Python.bert_net" />
+      <item itemvalue="Python.particle_net" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.particle_net" />
         <item itemvalue="Python.bert_net" />
         <item itemvalue="Python.bert" />
         <item itemvalue="Python.train" />
         <item itemvalue="Python.sequence_net" />
-        <item itemvalue="Python.process_data" />
       </list>
     </recent_temporary>
   </component>
@@ -372,12 +392,12 @@
       <workItem from="1606242516491" duration="54032000" />
       <workItem from="1606891752849" duration="1119000" />
       <workItem from="1606980462465" duration="274000" />
-      <workItem from="1607026314785" duration="22749000" />
+      <workItem from="1607026314785" duration="33591000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="827182000" />
+    <option name="totallyTimeSpent" value="838024000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -390,13 +410,14 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-217" y="-1200" width="1920" height="1200" extended-state="0" />
+    <editor active="true" />
     <layout>
       <window_info id="Favorites" order="0" side_tool="true" />
       <window_info content_ui="combo" id="Project" order="1" visible="true" weight="0.19116081" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Concurrent Activities Diagram" order="0" weight="0.32891566" />
       <window_info anchor="bottom" id="Database Changes" order="1" />
-      <window_info active="true" anchor="bottom" id="Terminal" order="2" visible="true" weight="0.32743362" />
+      <window_info anchor="bottom" id="Terminal" order="2" weight="0.32743362" />
       <window_info anchor="bottom" id="Event Log" order="3" sideWeight="0.5005325" side_tool="true" weight="0.30973452" />
       <window_info anchor="bottom" id="Version Control" order="4" weight="0.32891566" />
       <window_info anchor="bottom" id="File Transfer" order="5" sideWeight="0.49946752" weight="0.31238937" />
@@ -404,8 +425,8 @@
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Message" order="8" />
       <window_info anchor="bottom" id="Find" order="9" weight="0.32771084" />
-      <window_info anchor="bottom" id="Run" order="10" sideWeight="0.49946752" weight="0.23097345" />
-      <window_info anchor="bottom" id="Debug" order="11" sideWeight="0.49946752" weight="0.43274337" />
+      <window_info active="true" anchor="bottom" id="Run" order="10" sideWeight="0.49946752" visible="true" weight="0.23097345" />
+      <window_info anchor="bottom" id="Debug" order="11" sideWeight="0.49946752" weight="0.35309735" />
       <window_info anchor="bottom" id="Cvs" order="12" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="13" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="14" weight="0.32891566" />
@@ -617,6 +638,11 @@
           <line>200</line>
           <option name="timeStamp" value="492" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/multi_prongs/particle_net.py</url>
+          <line>108</line>
+          <option name="timeStamp" value="536" />
+        </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
         <breakpoint type="python-exception">
@@ -643,6 +669,7 @@
     <SUITE FILE_PATH="coverage/sandbox$MicrobioCountData.coverage" NAME="MicrobioCountData Coverage Results" MODIFIED="1578898230834" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
     <SUITE FILE_PATH="coverage/sandbox$model.coverage" NAME="model Coverage Results" MODIFIED="1570558744789" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GammaDistributionLearning" />
     <SUITE FILE_PATH="coverage/sandbox$Oracle.coverage" NAME="Oracle Coverage Results" MODIFIED="1570656177344" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GammaDistributionLearning" />
+    <SUITE FILE_PATH="coverage/sandbox$particle_net.coverage" NAME="particle_net Coverage Results" MODIFIED="1608238457066" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
     <SUITE FILE_PATH="coverage/sandbox$single_thres_gate.coverage" NAME="single_thres_gate Coverage Results" MODIFIED="1579913613168" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/phase_transit" />
     <SUITE FILE_PATH="coverage/sandbox$tetrode_selection.coverage" NAME="tetrode_selection Coverage Results" MODIFIED="1582222659593" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
     <SUITE FILE_PATH="coverage/sandbox$main.coverage" NAME="main Coverage Results" MODIFIED="1579479138471" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/code_vae" />
@@ -748,60 +775,53 @@ print(sse_zero_best_ls)</expression-string>
     </expressions>
     <expressions id="evaluateExpression">
       <expression>
-        <expression-string>target.min()</expression-string>
+        <expression-string>x</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>target.max()</expression-string>
+        <expression-string>x.permute(0, 2, 1).unsqueeze(-1)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>target</expression-string>
+        <expression-string>self.conv5(x.permute(0, 2, 1))</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>pred</expression-string>
+        <expression-string>self.conv5(x.permute(0, 2, 1).unsqueeze(-1))</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>input_shape[:2]</expression-string>
+        <expression-string>self.conv5(x)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>extended_attention_mask</expression-string>
+        <expression-string>x3</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>embedding_output</expression-string>
+        <expression-string>F.adaptive_max_pool1d(torch.cat((x1, x2, x3, x4), dim=-1), 1)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>input_ids</expression-string>
+        <expression-string>torch.cat((x1, x2, x3, x4), dim=-1)</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
       <expression>
-        <expression-string>embedding_output.unsqueeze(1)</expression-string>
+        <expression-string>x1</expression-string>
         <language-id>Python</language-id>
         <evaluation-mode>EXPRESSION</evaluation-mode>
       </expression>
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/ipykernel/kernelbase.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="162">
-          <caret line="18" selection-start-line="18" selection-end-line="18" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/nonlocal_vi/MicrobioCountData.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="953">
@@ -1157,20 +1177,6 @@ print(sse_zero_best_ls)</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/torch/nn/functional.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-10">
-          <caret line="1594" lean-forward="true" selection-start-line="1594" selection-end-line="1594" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/torch/nn/modules/module.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="839">
-          <caret line="549" selection-start-line="549" selection-end-line="549" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/multi_prongs/sequence_net.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-1154">
@@ -1210,8 +1216,32 @@ print(sse_zero_best_ls)</expression-string>
     </entry>
     <entry file="file://$PROJECT_DIR$/multi_prongs/bert_net.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="107">
-          <caret line="7" column="31" lean-forward="true" selection-start-line="7" selection-start-column="31" selection-end-line="7" selection-end-column="31" />
+        <state relative-caret-position="108">
+          <caret line="6" column="22" selection-start-line="6" selection-end-line="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/torch/nn/functional.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="269">
+          <caret line="756" selection-start-line="756" selection-end-line="756" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2019.1/remote_sources/1447708971/1671378136/torch/nn/modules/module.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="641">
+          <caret line="549" selection-start-line="549" selection-end-line="549" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/multi_prongs/particle_net.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="414">
+          <caret line="23" lean-forward="true" selection-start-line="23" selection-end-line="23" />
+          <folding>
+            <element signature="e#0#9#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

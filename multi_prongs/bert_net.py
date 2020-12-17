@@ -7,10 +7,8 @@ import torch.nn as nn
 from torch import optim
 import torch.nn.functional as F
 import os
-
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"  # see issue #152
 os.environ["CUDA_VISIBLE_DEVICES"] = "1,2"
-import os
 from bert import BertForSequenceClassification
 
 ## load config
