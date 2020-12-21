@@ -51,7 +51,7 @@ def get_graph_feature(x, f, k=20, idx=None):
 
 
 class DGCNN(nn.Module):
-    def __init__(self, emb_dims=64, k=10, dropout=0.5, output_channels=6):
+    def __init__(self, emb_dims=64, k=25, dropout=0.5, output_channels=6):
         super(DGCNN, self).__init__()
         self.k = k
 
@@ -61,7 +61,7 @@ class DGCNN(nn.Module):
         self.bn4 = nn.BatchNorm2d(256)
         self.bn5 = nn.BatchNorm1d(emb_dims)
 
-        self.conv1 = nn.Sequential(nn.Conv2d(2, 64, kernel_size=1, bias=False),
+        self.conv1 = nn.Sequential(nn.Conv2d(2, 64, kernel_size=1, bias=True),
                                    self.bn1,
                                    nn.LeakyReLU(negative_slope=0.2))
         self.conv2 = nn.Sequential(nn.Conv2d(64 * 2, 64, kernel_size=1, bias=False),
@@ -79,13 +79,14 @@ class DGCNN(nn.Module):
         self.linear1 = nn.Linear(emb_dims * 2, 512, bias=False)
         self.bn6 = nn.BatchNorm1d(512)
         self.dp1 = nn.Dropout(p=dropout)
-        self.linear2 = nn.Linear(512, 256)
-        self.bn7 = nn.BatchNorm1d(256)
+        self.linear2 = nn.Linear(512, 11)
+        self.bn7 = nn.BatchNorm1d(11)
         self.dp2 = nn.Dropout(p=dropout)
-        self.linear3 = nn.Linear(256, output_channels)
+        self.linear3 = nn.Linear(12, output_channels)
 
-    def forward(self, x):
+    def forward(self, x, mass):
         # input x shape:(batch, num_points, 3)
+        # x = x[:, :50, :]
         batch_size = x.size(0)
         pts, fts = x[:, :, 1:], x[:, :, 0].unsqueeze(-1)
         x = get_graph_feature(pts, fts, k=self.k)  # (128, 2, 230, 10)
@@ -111,10 +112,13 @@ class DGCNN(nn.Module):
         x2 = F.adaptive_avg_pool1d(x, 1).view(batch_size, -1)
         x = torch.cat((x1, x2), 1)
 
-        x = F.leaky_relu(self.bn6(self.linear1(x)), negative_slope=0.2)
-        x = self.dp1(x)
-        x = F.leaky_relu(self.bn7(self.linear2(x)), negative_slope=0.2)
-        x = self.dp2(x)
+        # x = F.leaky_relu(self.bn6(self.linear1(x)), negative_slope=0.2)
+        # x = self.dp1(x)
+        # x = F.leaky_relu(self.bn7(self.linear2(x)), negative_slope=0.2)
+        # x = self.dp2(x)
+        x = F.relu(self.linear1(x))
+        x = F.relu(self.linear2(x))
+        x = torch.cat([x, mass.view(-1, 1)], 1)
         x = self.linear3(x)
         return x
 
@@ -153,7 +157,7 @@ def data_generator(filename, batchsize, start, stop=None, weighted=False):
     with h5py.File(filename, 'r') as f:
         while True:
             batch = slice(iexample, iexample + batchsize)
-            X = f['parsed_Tower'][batch, :, :]
+            X = f['parsed_Tower_centered'][batch, :, :]
             HL = f['HL_normalized'][batch, :-4]
             target = f['target'][batch]
             if weighted:
@@ -198,7 +202,7 @@ def train(model, optimizer):
         X, HL, target = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), \
                         torch.tensor(target).long().to(device)
         if model_type == 'DGCNN':
-            pred = model(X)
+            pred = model(X, HL[:,-1])
         loss = loss_fn(pred, target)  # * weights
         loss = loss.mean()
         loss.backward()
@@ -221,7 +225,7 @@ def test(model, subset):
             X, HL, target = next(generator[subset])
             X, HL, target = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), torch.tensor(target).to(device)
             if model_type == 'DGCNN':
-                pred = model(X)
+                pred = model(X, HL[:,-1])
             pred = torch.argmax(pred, dim=1)
             tmp += torch.sum(pred == target).item() / target.shape[0]
     print(model_type, 'acc', tmp / iter_test)

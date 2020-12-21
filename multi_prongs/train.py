@@ -56,7 +56,7 @@ def data_generator(filename, batchsize, start, stop=None, weighted=False):
             X = f['image_corrected'][batch, :, :]
             HL = f['HL_from_img_normalized'][batch]
             # HL = f['HL_normalized'][batch, :-4]
-            # HL = np.delete(HL, -2, 1)  # delete pt
+            # HL = np.delete(HL, -2, 1)  # delete pt TODO check whther -1 or -2 is mass
             target = f['target'][batch]
             if weighted:
                 weights = f['weights'][batch]
