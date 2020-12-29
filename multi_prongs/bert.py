@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss, MSELoss
 from transformers import *
 from transformers.modeling_bert import BertEncoder, BertPooler
-
+import numpy as np
 
 class BertModel(BertPreTrainedModel):
     """
@@ -32,7 +32,7 @@ class BertModel(BertPreTrainedModel):
         self.embeddings = None #BertEmbeddings(config)
         self.encoder = BertEncoder(config)
         self.pooler = BertPooler(config)
-
+        self.embedding_linear = nn.Linear(3, config.hidden_size, bias=False)
         self.init_weights()
 
     # def get_input_embeddings(self):
@@ -113,7 +113,9 @@ class BertModel(BertPreTrainedModel):
         device = input_ids.device if input_ids is not None else inputs_embeds.device
 
         if attention_mask is None:
-            attention_mask = torch.ones(input_shape[:2], device=device)
+            # attention_mask = torch.ones(input_shape[:2], device=device)
+            # here we default the attention mask to be consistent with the length of the input_ids
+            attention_mask = torch.where(abs(input_ids[:, :, 0])>0, torch.ones_like(input_ids[:, :, 0]), torch.zeros_like(input_ids[:, :, 0])).to(device)
         if token_type_ids is None:
             token_type_ids = torch.zeros(input_shape, dtype=torch.long, device=device)
 
@@ -199,6 +201,7 @@ class BertModel(BertPreTrainedModel):
         #     input_ids=input_ids, position_ids=position_ids, token_type_ids=token_type_ids, inputs_embeds=inputs_embeds
         # )
         embedding_output = input_ids # swap embedding outputs with input_ids, which is treated as input with shape of 3: pt, eta, phi
+        embedding_output = self.embedding_linear(embedding_output)
 
         encoder_outputs = self.encoder(
             embedding_output,
@@ -286,6 +289,17 @@ class BertForSequenceClassification(BertPreTrainedModel):
             head_mask=head_mask,
             inputs_embeds=inputs_embeds,
         )
+
+        # idx = np.random.permutation(230)
+        # input_ids = input_ids[:, idx, :]
+        # outputs_permute = self.bert(
+        #     input_ids,
+        #     attention_mask=attention_mask,
+        #     token_type_ids=token_type_ids,
+        #     position_ids=position_ids,
+        #     head_mask=head_mask,
+        #     inputs_embeds=inputs_embeds,
+        # )
 
         pooled_output = outputs[1]
 

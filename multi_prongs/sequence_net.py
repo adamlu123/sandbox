@@ -7,7 +7,7 @@ from torch import optim
 import torch.nn.functional as F
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"]="0, 1"
+os.environ["CUDA_VISIBLE_DEVICES"]="1, 2"
 import os
 from resnet import make_hlnet_base
 
@@ -37,7 +37,7 @@ def data_generator(filename, batchsize, start, stop=None, weighted=False):
     with h5py.File(filename, 'r') as f:
         while True:
             batch = slice(iexample, iexample + batchsize)
-            X = f['parsed_Tower'][batch, :, :]
+            X = f['parsed_Tower_centered'][batch, :, :]
             HL = f['HL'][batch, :-4]
             target = f['target'][batch]
             if weighted:

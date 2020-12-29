@@ -9,11 +9,12 @@ import h5py
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch import optim
 from resnet import resnet20base, make_hlnet_base, resnet110base, resnet56base, resnet18base, resnet50base
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"]="2, 3"
+os.environ["CUDA_VISIBLE_DEVICES"]="1, 2"
 from shutil import copyfile
 
 
@@ -21,9 +22,9 @@ from shutil import copyfile
 device = 'cuda'
 batchsize = 128
 epoch = 100
-load_pretrained = False
+load_pretrained = True
 root = '/baldig/physicsprojects2/N_tagger/exp'
-exp_name = '/20201207_lr_5e-3_decay0.5_nowc_noweighted_sample_HL_from_img'
+exp_name = '/2020122_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image_retrain_emphasis_4'
 # exp_name = '/20201204_lr_5e-3_decay0.5_nowc_noweighted_sample_HL_original_witoutpt'
 if not os.path.exists(root + exp_name):
     os.makedirs(root + exp_name)
@@ -54,9 +55,9 @@ def data_generator(filename, batchsize, start, stop=None, weighted=False):
         while True:
             batch = slice(iexample, iexample + batchsize)
             X = f['image_corrected'][batch, :, :]
-            HL = f['HL_from_img_normalized'][batch]
-            # HL = f['HL_normalized'][batch, :-4]
-            # HL = np.delete(HL, -2, 1)  # delete pt TODO check whther -1 or -2 is mass
+            # HL = f['HL_from_img_normalized'][batch]
+            HL = f['HL_normalized'][batch, :-4]
+            HL = np.delete(HL, -2, 1)  # delete pt TODO  mass: -1: mass, -2: pt
             target = f['target'][batch]
             if weighted:
                 weights = f['weights'][batch]
@@ -153,7 +154,7 @@ class CombinedNet(nn.Module):
         return out
 
 
-model_type = 'HLNet'
+model_type = 'JetImageMassNet'
 if model_type == 'JetImageNet':
     model = JetImageNet(resnetbase).to(device)
 elif model_type == 'CombinedNet':
@@ -167,7 +168,7 @@ model = nn.DataParallel(model)
 
 if load_pretrained:
     # cp = torch.load('/baldig/physicsprojects2/N_tagger/exp/20201126_lr_5e-3_decay0.5_nowc_weighted_sample_batch200/best_HLNet_merged_b_u.pt')
-    cp = torch.load('/baldig/physicsprojects2/N_tagger/exp/20201126_lr_5e-3_decay0.5_nowc_weighted_sample_batch200/best_{}_merged_b_u.pt'.format(model_type))
+    cp = torch.load('/baldig/physicsprojects2/N_tagger/exp/20201203_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image/best_{}_merged_b_u.pt'.format(model_type))
     # cp = torch.load(root + exp_name + '/{}_merged_b_u_ep{}.pt'.format(model_type, 9))
     model.load_state_dict(cp, strict=False)
 
@@ -211,9 +212,10 @@ def train(model, optimizer):
             pred = model(HL)
         elif model_type == 'JetImageMassNet':
             pred = model(X, HL[:, -1])
-        # ones = torch.ones_like(target).cuda()
-        # upweighted = torch.where(target>=2, ones, 5*ones)
-        loss = loss_fn(pred, target) #* weights
+        ones = torch.ones_like(target).cuda()
+        mask = (target > 2) & (target < 5)
+        upweighted = torch.where(mask, 5*ones, 1*ones)
+        loss = loss_fn(pred, target) * upweighted #* weights
         loss = loss.mean()
         loss.backward()
         optimizer.step()

@@ -8,18 +8,26 @@ from torch import optim
 import torch.nn.functional as F
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"  # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"] = "1,2"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1, 3"
 from bert import BertForSequenceClassification
+from shutil import copyfile
+
+import sys
+sys.path.append('/extra/yadongl10/git_project/pytorch-lamb')
+from pytorch_lamb import Lamb
 
 ## load config
 device = 'cuda'
-batchsize = 128
-epoch = 100
+batchsize = 512
+epoch = 500
 load_pretrained = True
 root = '/baldig/physicsprojects2/N_tagger/exp'
-exp_name = '/20201211_lr_5e-3_decay0.5_nowc_bert_toweronly'
+exp_name = '/20201228_lr_1e-3_decay0.5_nowc_bert_toweronly_centered_embed1024_lamb'
 if not os.path.exists(root + exp_name):
     os.makedirs(root + exp_name)
+## loging:
+copyfile('/extra/yadongl10/git_project/sandbox/multi_prongs/bert_net.py', root + exp_name + '/bert_net.py')
+
 filename = '/baldig/physicsprojects2/N_tagger/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
 
 with h5py.File(filename, 'r') as f:
@@ -37,7 +45,7 @@ def data_generator(filename, batchsize, start, stop=None, weighted=False):
     with h5py.File(filename, 'r') as f:
         while True:
             batch = slice(iexample, iexample + batchsize)
-            X = f['parsed_Tower'][batch, :, :]
+            X = f['parsed_Tower_centered'][batch, :, :]
             HL = f['HL_normalized'][batch, :-4]
             target = f['target'][batch]
             if weighted:
@@ -57,23 +65,50 @@ generator['test'] = data_generator(filename, batchsize, start=val_cut, stop=test
 
 
 ################### model
+class TransformerClassification(nn.Module):
+    def __init__(self, d_model, nhead, dropout, num_layers, seq_len=230):
+        super(TransformerClassification, self).__init__()
+        encoder_layer = nn.TransformerEncoderLayer(d_model=d_model, nhead=nhead, dropout=dropout)
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        self.embed = nn.Linear(3, d_model, bias=False)
+        self.pool = nn.Linear(d_model, 1)
+        self.out_linear = nn.Linear(seq_len, 6)
+
+    def forward(self, X):
+        src = self.embed(X)    # batch, S, embed_size
+        src_key_padding_mask = torch.where(X[:, :, 0] != 0, torch.ones_like(X[:, :, 0]),
+                                           torch.zeros_like(X[:, :, 0]))
+        out = self.transformer_encoder(src=src.permute([1,0,2]), src_key_padding_mask=src_key_padding_mask.bool())
+        out = out.permute([1,0,2])  # batch, S, embed_size
+        out = self.pool(out).squeeze()
+        out = self.out_linear(out)
+        return out
+
+
 config = BertConfig(
-                    hidden_size=3,  # 25
-                    num_hidden_layers=10, num_attention_heads=3,
-                    intermediate_size=10, num_labels=6,
-                    input_dim=230
+                    hidden_size=1024,
+                    num_hidden_layers=6, num_attention_heads=8,
+                    intermediate_size=128, num_labels=6,
+                    input_dim=230,
+                    attention_probs_dropout_prob=0.1, hidden_dropout_prob=0.1
                     )
 
 model_type = 'bert'
 if model_type == 'bert':
     model = BertForSequenceClassification(config).to(device)
+elif model_type == 'transformer':
+    model = TransformerClassification(d_model=16, nhead=8, dropout=0.1, num_layers=6).to(device)
 
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+print('training parameters', count_parameters(model))
 model = nn.DataParallel(model)
 
 ################### training
-
-optimizer = optim.Adam(model.parameters(), lr=5e-3, weight_decay=0)
-scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[20, 40, 60, 80], gamma=0.5, last_epoch=-1)
+# optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=0)
+optimizer = Lamb(model.parameters(), lr=1e-3, weight_decay=0, adam=True)
+scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[100, 200, 300, 400], gamma=0.5, last_epoch=-1)
 loss_fn = nn.CrossEntropyLoss(reduction='none')
 
 
@@ -85,9 +120,9 @@ def train(model, optimizer):
         # X, HL, target, weights = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), \
         #                          torch.tensor(target).long().to(device), torch.tensor(weights).to(device)
         X, HL, target = next(generator['train'])
-        X, HL, target = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), \
+        X, target = torch.tensor(X).float().to(device), \
                         torch.tensor(target).long().to(device)
-        if model_type == 'bert':
+        if model_type == 'bert' or model_type == 'transformer':
             pred = model(X)
         loss = loss_fn(pred, target)  # * weights
         loss = loss.mean()
@@ -109,9 +144,8 @@ def test(model, subset):
             # X, HL, target, _ = next(generator[subset])
             # X, HL, target = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), torch.tensor(target).to(device)
             X, HL, target = next(generator[subset])
-            X, HL, target = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), torch.tensor(
-                target).to(device)
-            if model_type == 'bert':
+            X, target = torch.tensor(X).float().to(device), torch.tensor(target).to(device)
+            if model_type == 'bert' or model_type == 'transformer':
                 pred = model(X)
             pred = torch.argmax(pred, dim=1)
             tmp += torch.sum(pred == target).item() / target.shape[0]
@@ -126,8 +160,8 @@ def main(model):
         val_acc, model = train(model, optimizer)
         if val_acc > best_acc:
             best_acc = val_acc
-            # torch.save(model.state_dict(), root + exp_name + '/best_{}_merged_b_u.pt'.format(model_type))
-            # print('model saved')
+            torch.save(model.state_dict(), root + exp_name + '/best_{}_merged_b_u.pt'.format(model_type))
+            print('model saved')
         if (i + 1) % 10 == 0:
             # torch.save(model.state_dict(),
             #            root + exp_name + '/{}_merged_b_u_ep{}.pt'.format(model_type, i))
