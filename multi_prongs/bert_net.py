@@ -8,7 +8,7 @@ from torch import optim
 import torch.nn.functional as F
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"  # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"] = "1, 3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 from bert import BertForSequenceClassification
 from shutil import copyfile
 
@@ -22,7 +22,7 @@ batchsize = 512
 epoch = 500
 load_pretrained = True
 root = '/baldig/physicsprojects2/N_tagger/exp'
-exp_name = '/20201228_lr_1e-3_decay0.5_nowc_bert_toweronly_centered_embed1024_lamb'
+exp_name = '/20201228_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed1024_hidden3_head4'
 if not os.path.exists(root + exp_name):
     os.makedirs(root + exp_name)
 ## loging:
@@ -45,7 +45,8 @@ def data_generator(filename, batchsize, start, stop=None, weighted=False):
     with h5py.File(filename, 'r') as f:
         while True:
             batch = slice(iexample, iexample + batchsize)
-            X = f['parsed_Tower_centered'][batch, :, :]
+            X = f['tower_from_img'][batch, :, :]
+            # X = f['parsed_Tower_centered'][batch, :, :]
             HL = f['HL_normalized'][batch, :-4]
             target = f['target'][batch]
             if weighted:
@@ -85,17 +86,34 @@ class TransformerClassification(nn.Module):
         return out
 
 
+class BertMassNet(nn.Module):
+    def __init__(self, bert_model):
+        super(BertMassNet, self).__init__()
+        self.bert = bert_model
+        self.top = nn.Linear(6*2, 6)
+        self.m1 = nn.Linear(1, 6)
+
+    def forward(self, X, mass):
+        X = self.bert(X)
+        m = self.m1(mass.reshape(-1, 1))
+        out = self.top(torch.cat([X, m], dim=-1))
+        return out
+
+
 config = BertConfig(
                     hidden_size=1024,
-                    num_hidden_layers=6, num_attention_heads=8,
+                    num_hidden_layers=3, num_attention_heads=4,
                     intermediate_size=128, num_labels=6,
-                    input_dim=230,
+                    input_dim=182, #230
                     attention_probs_dropout_prob=0.1, hidden_dropout_prob=0.1
                     )
 
 model_type = 'bert'
 if model_type == 'bert':
     model = BertForSequenceClassification(config).to(device)
+elif model_type == 'BertMassNet':
+    bert_model = BertForSequenceClassification(config)
+    model = BertMassNet(bert_model).to(device)
 elif model_type == 'transformer':
     model = TransformerClassification(d_model=16, nhead=8, dropout=0.1, num_layers=6).to(device)
 
@@ -106,8 +124,8 @@ print('training parameters', count_parameters(model))
 model = nn.DataParallel(model)
 
 ################### training
-# optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=0)
-optimizer = Lamb(model.parameters(), lr=1e-3, weight_decay=0, adam=True)
+optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=0)
+# optimizer = Lamb(model.parameters(), lr=1e-3, weight_decay=0, adam=True)
 scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[100, 200, 300, 400], gamma=0.5, last_epoch=-1)
 loss_fn = nn.CrossEntropyLoss(reduction='none')
 
@@ -124,6 +142,9 @@ def train(model, optimizer):
                         torch.tensor(target).long().to(device)
         if model_type == 'bert' or model_type == 'transformer':
             pred = model(X)
+        elif model_type == 'BertMassNet':
+            HL = torch.tensor(HL).float().to(device)
+            pred = model(X, HL[:, -1])
         loss = loss_fn(pred, target)  # * weights
         loss = loss.mean()
         loss.backward()
@@ -147,6 +168,9 @@ def test(model, subset):
             X, target = torch.tensor(X).float().to(device), torch.tensor(target).to(device)
             if model_type == 'bert' or model_type == 'transformer':
                 pred = model(X)
+            elif model_type == 'BertMassNet':
+                HL = torch.tensor(HL).float().to(device)
+                pred = model(X, HL[:, -1])
             pred = torch.argmax(pred, dim=1)
             tmp += torch.sum(pred == target).item() / target.shape[0]
     print(model_type, 'acc', tmp / iter_test)
