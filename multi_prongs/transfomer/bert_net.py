@@ -18,11 +18,11 @@ from pytorch_lamb import Lamb
 
 ## load config
 device = 'cuda'
-batchsize = 512
+batchsize = 256
 epoch = 500
 load_pretrained = True
 root = '/baldig/physicsprojects2/N_tagger/exp'
-exp_name = '/20201228_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed1024_hidden3_head4'
+exp_name = '/20201228_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed512_hidden6_head8'
 if not os.path.exists(root + exp_name):
     os.makedirs(root + exp_name)
 ## loging:
@@ -101,8 +101,8 @@ class BertMassNet(nn.Module):
 
 
 config = BertConfig(
-                    hidden_size=1024,
-                    num_hidden_layers=3, num_attention_heads=4,
+                    hidden_size=512,
+                    num_hidden_layers=6, num_attention_heads=8,
                     intermediate_size=128, num_labels=6,
                     input_dim=182, #230
                     attention_probs_dropout_prob=0.1, hidden_dropout_prob=0.1

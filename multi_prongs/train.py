@@ -1,4 +1,4 @@
-# Author
+# Author Yadong
 
 # 1. load data
 # 2. models: HLNet, JetImageNet, CombinedNet
