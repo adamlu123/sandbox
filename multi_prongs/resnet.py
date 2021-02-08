@@ -151,7 +151,7 @@ class ResNetBase(nn.Module):
 
 
 class HLNetBase(nn.Module):
-    def __init__(self, input_dim, inter_dim=100, num_hidden=5, out_dim=64):
+    def __init__(self, input_dim, inter_dim=100, num_hidden=3, out_dim=64):
         super(HLNetBase, self).__init__()
         self.l1 = nn.Linear(input_dim, inter_dim)
         modules = []
@@ -168,8 +168,8 @@ class HLNetBase(nn.Module):
         return F.relu(self.output(HL))
 
 
-def make_hlnet_base(input_dim=18):
-    return HLNetBase(input_dim=input_dim)
+def make_hlnet_base(input_dim, inter_dim, num_hidden):
+    return HLNetBase(input_dim=input_dim, inter_dim=inter_dim, num_hidden=num_hidden)
 
 
 def resnet20base():

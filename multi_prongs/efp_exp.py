@@ -4,34 +4,71 @@
 # 2. models: HLNet
 # 3. training
 # 4. evaluation
-
+import argparse
+import time
 import h5py
 import numpy as np
+
+parser = argparse.ArgumentParser(description='Sparse Auto-regressive Model')
+parser.add_argument(
+    "--num_hidden", type=int, default=5,
+    help="number of latent layer in the flow"
+    )
+parser.add_argument(
+    "--inter_dim", type=int, default=100,
+    help="number of latent layer in the flow"
+    )
+parser.add_argument(
+    "--result_dir", type=str,
+    default="/baldig/physicsprojects2/N_tagger/exp/efps/2020207_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image_noramed_efp_hl_original"
+    )
+parser.add_argument('--stage', default='train', help='mode in [eval, train]')
+parser.add_argument('--batch_size', type=int, default=256, help='input batch size for training (default: 100)')
+parser.add_argument('--epochs', type=int, default=300, help='number of epochs to train (default: 1000)')
+parser.add_argument('--seed', type=int, default=123, help='random seed (default: 1)')
+parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 0.0001)')
+parser.add_argument("--GPU", type=str, default='0',help='GPU id')
+args = parser.parse_args()
+
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = args.GPU
+print('training using GPU:', args.GPU)
+
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch import optim
-import os
-os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"]="1, 2"
-from shutil import copyfile
 from resnet import make_hlnet_base
+from torch.utils.tensorboard import SummaryWriter
+writer = SummaryWriter(args.result_dir)
 
+stage = args.stage
+load_pretrained = False
 
-## load config
+## I/O config
 device = 'cuda'
-batchsize = 128
-epoch = 500
-load_pretrained = True
-root = '/baldig/physicsprojects2/N_tagger/exp/efps'
-exp_name = '/2020201_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image_normed_efp_hl_original'
-if not os.path.exists(root + exp_name):
-    os.makedirs(root + exp_name)
+lr = args.lr
+batchsize = args.batch_size
+epoch = args.epochs
+result_dir = args.result_dir
+
+# from shutil import copyfile
+# root = '/baldig/physicsprojects2/N_tagger/exp/efps'
+# exp_name = '/2020201_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image_efp'
+# exp_name = '/2020207_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image_noramed_efp_hl_original'
+# exp_name = '/2020201_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image_normed_efp_only_d7_n5_parsed_tower'
+#     os.makedirs(root + exp_name)
+#     copyfile('/extra/yadongl10/git_project/sandbox/multi_prongs/efp_exp.py', root + exp_name + '/efp_exp.py')
+
 ## loging:
-copyfile('/extra/yadongl10/git_project/sandbox/multi_prongs/efp_exp.py', root+exp_name+'/efp_exp.py')
+# ================ HL+mass file
 filename = '/baldig/physicsprojects2/N_tagger/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
-fn_efps = '/baldig/physicsprojects2/N_tagger/efp/20200201_tower_original/efp_merge.h5' # 20200201_tower_original 20200201_tower_img
+# ================ target file
 fn_target = '/baldig/physicsprojects2/N_tagger/exp/test/combined_pred_all.h5'
+tower_subset = 'parsed_Tower' # or tower_from_img parsed_Tower
+# ================ efps file
+# dv, nv = 7, 5
+# fn_efps = '/baldig/physicsprojects2/N_tagger/efp/20200202_{}_d{}_n{}/efpf_merge.h5'.format(tower_subset, dv, nv)
+fn_efps = '/baldig/physicsprojects2/N_tagger/efp/20200202_tower_d4/efp_merge.h5' # 20200201_tower_original 20200201_tower_img
 
 with h5py.File(filename, 'r') as f:
     total_num_sample = f['target'].shape[0]
@@ -49,16 +86,18 @@ def data_generator(filename, batchsize, start, stop=None, weighted=False):
         while True:
             batch = slice(iexample, iexample + batchsize)
             X = f['image_corrected'][batch, :, :]
+            HL_unnorm = f['HL'][batch, :-4]
+
             # HL = f['HL_from_img_normalized'][batch]
             HL = f['HL_normalized'][batch, :-4]
             HL = np.delete(HL, -2, 1)  # delete pt TODO  mass: -1: mass, -2: pt
-            HL = HL / HL.std(0)
+            # HL = HL / HL.std(0)
             target = f['target'][batch]
             if weighted:
                 weights = f['weights'][batch]
-                yield X, HL, target, weights
+                yield X, HL, target, weights, HL_unnorm
             else:
-                yield X, HL, target
+                yield X, HL, target, HL_unnorm
             iexample += batchsize
             if iexample + batchsize >= stop:
                 iexample = start
@@ -69,8 +108,9 @@ def efp_data_generator(filename, batchsize, start, stop=None):
     with h5py.File(filename, 'r') as f:
         while True:
             batch = slice(iexample, iexample + batchsize)
-            efps = f['efp_merge'][batch, :]
-            efps = (efps - efps.mean(axis=0)) / efps.std(axis=0)
+            # efps = f['efp_merge'][batch, :]
+            # efps = (efps - efps.mean(axis=0)) / efps.std(axis=0)
+            efps = f['efp_merge_normalized'][batch, :]
             yield efps
             iexample += batchsize
             if iexample + batchsize >= stop:
@@ -106,8 +146,10 @@ target_generator['val'] = target_data_generator(fn_target, batchsize, start=trai
 target_generator['test'] = target_data_generator(fn_target, batchsize, start=val_cut, stop=test_cut)
 
 ################### model
-hlnet_base = make_hlnet_base(input_dim=17)
-efpnet_base = make_hlnet_base(input_dim=207)
+inter_dim = args.inter_dim
+num_hidden = args.num_hidden
+hlnet_base = make_hlnet_base(input_dim=17, inter_dim=100, num_hidden=3)
+efpnet_base = make_hlnet_base(input_dim=126, inter_dim=100, num_hidden=3)  # 207 566
 
 
 class HLNet(nn.Module):
@@ -119,6 +161,18 @@ class HLNet(nn.Module):
     def forward(self, HL):
         HL = self.hlnet_base(HL)
         out = self.top(HL)
+        return out
+
+
+class EFPNet(nn.Module):
+    def __init__(self, efpnet_base):
+        super(EFPNet, self).__init__()
+        self.efpnet_base = efpnet_base
+        self.top = nn.Linear(64, 6)
+
+    def forward(self, efps):
+        efps = self.efpnet_base(efps)
+        out = self.top(efps)
         return out
 
 
@@ -140,17 +194,21 @@ class HLefpNet(nn.Module):
 
 
 model_type = 'HLefpNet'
+print('building model:', model_type)
 if model_type == 'HLNet':
     model = HLNet(hlnet_base).to(device)
 elif model_type == 'HLefpNet':
     model = HLefpNet(hlnet_base, efpnet_base).to(device)
+elif model_type == 'EFPNet':
+    model = EFPNet(efpnet_base).to(device)
 
 model = nn.DataParallel(model)
 
 if load_pretrained:
-    cp = torch.load(root + exp_name + '/best_{}_merged_b_u.pt'.format(model_type))
+    print('load model from', result_dir)
+    cp = torch.load(result_dir + '/best_{}_merged_b_u.pt'.format(model_type)) # '/{}_merged_b_u_ep99.pt'.format(model_type))
     # cp = torch.load('/baldig/physicsprojects2/N_tagger/exp/20201203_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image/best_{}_merged_b_u.pt'.format(model_type))
-    model.load_state_dict(cp, strict=False)
+    model.load_state_dict(cp, strict=True)
 
 ################### training
 hl_param = []
@@ -160,10 +218,15 @@ for name, param in model.named_parameters():
         hl_param.append(param)
     else:
         other_param.append(param)
+
+print(model)
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+print(count_parameters(model))
 print('num of param in hl', len(hl_param), 'num of param in other', len(other_param))
 param_groups = [
-    {'params': hl_param, 'lr': 5e-3},
-    {'params': other_param, 'lr': 5e-3}
+    {'params': hl_param, 'lr': lr},
+    {'params': other_param, 'lr': lr}
 ]
 
 optimizer = optim.Adam(param_groups, weight_decay=0)
@@ -171,13 +234,14 @@ scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[20, 40, 
 loss_fn = nn.CrossEntropyLoss(reduction='none')
 
 
-def train(model, optimizer):
+def train(model, optimizer, epoch):
     model.train()
     for i in range(iterations):
         optimizer.zero_grad()
-        X, HL, target_long, weights = next(generator['train'])
+        X, HL, target_long, weights, _ = next(generator['train'])
         target = next(target_generator['train'])
         efps = next(efp_generator['train'])
+
         X, HL, target, target_long, weights, efps = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), \
                                  torch.tensor(target).float().to(device), torch.tensor(target_long).long().to(device), \
                                                     torch.tensor(weights).to(device), torch.tensor(efps).float().to(device)
@@ -186,10 +250,12 @@ def train(model, optimizer):
             pred = model(HL)
         elif model_type == 'HLefpNet':
             pred = model(HL, efps)
+        elif model_type == 'EFPNet':
+            pred = model(efps)
 
-        # loss = loss_fn(pred, target)
+        loss = loss_fn(pred, target_long)
+        # loss = - (F.log_softmax(target, dim=1).exp() * F.log_softmax(pred, dim=1)).sum(1)
         # loss = ((target - pred) ** 2).sum(1)
-        loss = - (F.log_softmax(target, dim=1).exp() * F.log_softmax(pred, dim=1)).sum(1)
         loss = loss.mean()
         loss.backward()
         optimizer.step()
@@ -197,49 +263,79 @@ def train(model, optimizer):
 
         if i % 50 == 0:
             print('train loss:', loss.item(), 'acc:', acc)
-    val_acc = test(model, 'val')
+            writer.add_scalar('Loss/train', loss.item(), epoch * iterations + i)
+            writer.add_scalar('Acc/train', acc, epoch * iterations + i)
+    val_acc, _, _ = test(model, 'val')
+    writer.add_scalar('Acc/val', val_acc, epoch)
     return val_acc, model
 
 
 def test(model, subset):
+    mass_range = [300, 700]
+    mass_bins = np.linspace(mass_range[0], mass_range[1], 11)
+    bin_len = mass_bins[1] - mass_bins[0]
+    pred_mass_list = []
+    pred_original_list = []
+
     model.eval()
     tmp = 0
     with torch.no_grad():
         for i in range(iter_test):
-            X, HL, target_long, weights = next(generator[subset])
+            X, HL, target_long, _, HL_unnorm = next(generator[subset])
             target = next(target_generator[subset])
             efps = next(efp_generator[subset])
-            X, HL, target, weights, efps = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), \
-                                          torch.tensor(target).float().to(device), torch.tensor(weights).to(device), \
-                                          torch.tensor(efps).float().to(device)
+
+            HL_unnorm = torch.tensor(HL_unnorm).float().to(device)
+            X, HL, target, efps = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), \
+                                          torch.tensor(target).float().to(device), torch.tensor(efps).float().to(device)
+
             target_long = torch.tensor(target_long).long().to(device)
             if model_type == 'HLNet':
                 pred = model(HL)
             elif model_type == 'HLefpNet':
                 pred = model(HL, efps)
-            pred = torch.argmax(pred, dim=1)
-            tmp += torch.sum(pred==target_long).item() / target.shape[0]
+            elif model_type == 'EFPNet':
+                pred = model(efps)
+            pred_armax = torch.argmax(pred, dim=1)
+            tmp += torch.sum(pred_armax==target_long).item() / target.shape[0]
+
+            mass = HL_unnorm[:, -1]
+            bin_idx = torch.floor((mass - mass_range[0]) / bin_len)
+            rslt = pred_armax == target_long
+            pred_mass_list.append(torch.stack([pred_armax.float(), target_long.float(), bin_idx, rslt.float(), mass]).cpu())
+            pred_original_list.append(pred.cpu())
+
     print(model_type, 'acc', tmp / iter_test)
-    return tmp / iter_test
+    return tmp / iter_test, pred_original_list, pred_mass_list
 
 
 def main(model):
     best_acc = 0
-    # testacc = test(model, 'test')
-    for i in range(epoch):
-        print('starting epoch', i)
-        val_acc, model = train(model, optimizer)
-        if val_acc > best_acc:
-            best_acc = val_acc
-            torch.save(model.state_dict(), root + exp_name + '/best_{}_merged_b_u.pt'.format(model_type))
-            print('model saved')
-        if (i+1) % 10 == 0:
-            torch.save(model.state_dict(),
-                       root + exp_name + '/{}_merged_b_u_ep{}.pt'.format(model_type, i))
-            print('model saved at epoch', i)
-    testacc = test(model, 'test')
-    print('test acc', testacc)
+    if stage == 'eval':
+        testacc, pred_original_list, pred_mass_list = test(model, 'test')
+        combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
+        combined_pred_only = torch.cat(pred_original_list, dim=0).numpy()
+        print(combined_pred.shape, combined_pred_only.shape, len(pred_mass_list))
+        with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/combined_pred.h5', 'a') as f:
+            del f['{}_tower'.format(model_type)]
+            f.create_dataset('{}_tower'.format(model_type), data=combined_pred)
+
+    else:
+        for i in range(epoch):
+            print('starting epoch', i)
+            val_acc, model = train(model, optimizer, epoch=i)
+            if val_acc > best_acc:
+                best_acc = val_acc
+                torch.save(model.state_dict(), result_dir + '/best_{}_merged_b_u.pt'.format(model_type))
+                print('model saved')
+            if (i+1) % 50 == 0:
+                torch.save(model.state_dict(),
+                           result_dir + '/{}_merged_b_u_ep{}.pt'.format(model_type, i))
+                print('model saved at epoch', i)
+        testacc = test(model, 'test')
+        print('test acc', testacc)
 
 
 if __name__ == '__main__':
     main(model)
+    writer.close()
