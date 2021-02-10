@@ -1,6 +1,6 @@
 # Author Yadong
 
-# 1. load data
+# 1. load data: HL shape = 2*num_HL + Pt + Mass + Ntowers + N_q + N_b + target = 22
 # 2. models: HLNet
 # 3. training
 # 4. evaluation
@@ -66,9 +66,10 @@ filename = '/baldig/physicsprojects2/N_tagger/merged/parsedTower_res1_res5_merge
 fn_target = '/baldig/physicsprojects2/N_tagger/exp/test/combined_pred_all.h5'
 tower_subset = 'parsed_Tower' # or tower_from_img parsed_Tower
 # ================ efps file
-# dv, nv = 7, 5
-# fn_efps = '/baldig/physicsprojects2/N_tagger/efp/20200202_{}_d{}_n{}/efpf_merge.h5'.format(tower_subset, dv, nv)
-fn_efps = '/baldig/physicsprojects2/N_tagger/efp/20200202_tower_d4/efp_merge.h5' # 20200201_tower_original 20200201_tower_img
+dv, nv = 7, 5
+fn_efps = '/baldig/physicsprojects2/N_tagger/efp/20200202_{}_d{}_n{}/efp_merge.h5'.format(tower_subset, dv, nv)
+# fn_efps = '/baldig/physicsprojects2/N_tagger/efp/20200201_tower_original/efp_merge.h5' # 20200201_tower_original 20200201_tower_img
+# fn_efps = '/baldig/physicsprojects2/N_tagger/efp/20200202_tower_d4/efp_merge.h5'
 
 with h5py.File(filename, 'r') as f:
     total_num_sample = f['target'].shape[0]
@@ -148,8 +149,8 @@ target_generator['test'] = target_data_generator(fn_target, batchsize, start=val
 ################### model
 inter_dim = args.inter_dim
 num_hidden = args.num_hidden
-hlnet_base = make_hlnet_base(input_dim=17, inter_dim=100, num_hidden=3)
-efpnet_base = make_hlnet_base(input_dim=126, inter_dim=100, num_hidden=3)  # 207 566
+hlnet_base = make_hlnet_base(input_dim=17, inter_dim=inter_dim, num_hidden=num_hidden)
+efpnet_base = make_hlnet_base(input_dim=566, inter_dim=inter_dim, num_hidden=num_hidden)  # 207 566 126
 
 
 class HLNet(nn.Module):

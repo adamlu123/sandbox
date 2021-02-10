@@ -11,7 +11,7 @@ import os
 phase = 'merge'
 subset = 'parsed_Tower' # or parsed_Tower
 
-dv, nv = 7, 5
+dv, nv = 10, 5
 save_dir = '/baldig/physicsprojects2/N_tagger/efp/20200202_{}_d{}_n{}'.format(subset, dv, nv)
 print('merge', phase, 'config', "d<{}".format(dv), "n<{}".format(nv), "p==1")
 
@@ -50,15 +50,16 @@ if phase == 'generate':
 
 elif phase == 'merge':
     col = 0
-    efp_merge = np.zeros((105540, len(graphs) * 9-1))
+    efp_merge = np.zeros((105540, len(graphs) * 9))
+
     for efp_ix, graph in enumerate(graphs):
         n, e, d, v, k, c, p, h = efpset.specs[efp_ix]
         print('efp_ix', efp_ix, 'ndk', n, d, k)
         for kappa in kappas:
             for beta in betas:
                 print(beta, kappa)
-                if 'n{}_d{}_k{}_kappa{}_beta{}'.format(n, d, k, kappa, beta) == 'n4_d6_k21_kappa1_beta2':
-                    continue
+                # if 'n{}_d{}_k{}_kappa{}_beta{}'.format(n, d, k, kappa, beta) == 'n4_d6_k21_kappa1_beta2':
+                #     continue
                 efp = np.load(save_dir + '/n{}_d{}_k{}_kappa{}_beta{}.npy'.format(n, d, k, kappa, beta))
                 efp_merge[:, col] = efp
                 col += 1

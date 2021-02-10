@@ -1,6 +1,6 @@
 # Author Yadong
 
-# 1. load data
+# 1. load data: HL shape = 2*num_HL + Pt + Mass + Ntowers + N_q + N_b + target = 22
 # 2. models: HLNet, JetImageNet, CombinedNet
 # 3. training
 # 4. evaluation
@@ -14,17 +14,17 @@ from torch import optim
 from resnet import resnet20base, make_hlnet_base, resnet110base, resnet56base, resnet18base, resnet50base
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"]="1, 2"
+os.environ["CUDA_VISIBLE_DEVICES"]="1,2"
 from shutil import copyfile
 
 
 ## load config
 device = 'cuda'
 batchsize = 128
-epoch = 100
-load_pretrained = True
+epoch = 1000
+load_pretrained = False
 root = '/baldig/physicsprojects2/N_tagger/exp'
-exp_name = '/2020122_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image_retrain_emphasis_4'
+exp_name = '/2020209_lr_1e-3_decay0.5_nowc_weighted_sample_corrected_image_HLNet'
 # exp_name = '/20201204_lr_5e-3_decay0.5_nowc_noweighted_sample_HL_original_witoutpt'
 if not os.path.exists(root + exp_name):
     os.makedirs(root + exp_name)
@@ -78,7 +78,8 @@ generator['test'] = data_generator(filename, batchsize, start=val_cut, stop=test
 resnetbase = resnet110base()
 # resnetbase = resnet110base()
 # resnetbase = resnet56base()
-hlnet_base = make_hlnet_base(input_dim=17)
+inter_dim, num_hidden = 400, 5
+hlnet_base = make_hlnet_base(input_dim=17, inter_dim=inter_dim, num_hidden=num_hidden)
 
 
 class JetImageNet(nn.Module):
@@ -154,7 +155,7 @@ class CombinedNet(nn.Module):
         return out
 
 
-model_type = 'JetImageMassNet'
+model_type = 'HLNet'
 if model_type == 'JetImageNet':
     model = JetImageNet(resnetbase).to(device)
 elif model_type == 'CombinedNet':
@@ -182,8 +183,8 @@ for name, param in model.named_parameters():
         other_param.append(param)
 print('num of param in hl', len(hl_param), 'num of param in other', len(other_param))
 param_groups = [
-    {'params': hl_param, 'lr': 5e-3},
-    {'params': other_param, 'lr': 5e-3}
+    {'params': hl_param, 'lr': 1e-3},
+    {'params': other_param, 'lr': 1e-3}
 ]
 
 optimizer = optim.Adam(param_groups, weight_decay=0)
@@ -263,7 +264,7 @@ def main(model):
             best_acc = val_acc
             torch.save(model.state_dict(), root + exp_name + '/best_{}_merged_b_u.pt'.format(model_type))
             print('model saved')
-        if (i+1) % 10 == 0:
+        if (i+1) % 100 == 0:
             torch.save(model.state_dict(),
                        root + exp_name + '/{}_merged_b_u_ep{}.pt'.format(model_type, i))
             print('model saved at epoch', i)

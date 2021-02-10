@@ -5,34 +5,32 @@ cd /extra/yadongl10/git_project/sandbox/multi_prongs
 source activate pytorch
 
 # hyperparemeters
-epochs=300
+epochs=1000
 stage='train'
-#sarm_fldr='/the_path_to_sarm_dir'
-#save_fldr='/the_path_to_save_result'
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
 exp_path='/baldig/physicsprojects2/N_tagger/exp/efps'
-exp_name='2020207_search_lr_1e-3_decay0.5_nowc_weighted_sample_corrected_image_noramed_efp_d5_hl_original'
+exp_name='2020208_search_lr_1e-3_decay0.5_nowc_weighted_sample_corrected_image_noramed_efp_d5_hl_original'
 exp_dir=${exp_path}/${exp_name}
 
-result_dir=${exp_path}/${exp_name}/${inter_dim}_${latent}_lr${lr}_batch_size${batch_size}
-mkdir -p ${result_dir}
-echo ${result_dir}
+#result_dir=${exp_path}/${exp_name}/efp566_${inter_dim}_${latent}_lr${lr}_batch_size${batch_size}
+#mkdir -p ${result_dir}
+#echo ${result_dir}
 
 # start running
-count=2
+count=0
 for batch_size in 128
     do
-    for inter_dim in 50 100
+    for inter_dim in 600 800
         do
-        GPU=${count}
-        ((count++))
-        for num_hidden in 3 5
+        for num_hidden in 5 7
             do
-            for lr in 1e-4
+            GPU=${count}
+            ((count++))
+            for lr in 1e-3
                 do
                 mkdir -p ${exp_dir}
                 cp ${multip_fldr}/run_efp_net.sh ${exp_dir}
-                result_dir=${exp_path}/${exp_name}/inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}
+                result_dir=${exp_path}/${exp_name}/efp566_inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}
                 mkdir -p ${result_fldr}
                 echo ${subsets}
                 echo ${result_dir}
