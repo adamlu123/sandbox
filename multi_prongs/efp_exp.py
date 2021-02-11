@@ -11,23 +11,29 @@ import numpy as np
 
 parser = argparse.ArgumentParser(description='Sparse Auto-regressive Model')
 parser.add_argument(
-    "--num_hidden", type=int, default=5,
-    help="number of latent layer in the flow"
+    "--strength", type=int, default=5,
+    help="regularization strength"
     )
 parser.add_argument(
-    "--inter_dim", type=int, default=100,
-    help="number of latent layer in the flow"
+    "--num_hidden", type=int, default=5,
+    help="number of latent layer"
+    )
+parser.add_argument(
+    "--inter_dim", type=int, default=800,
+    help="hidden layer dimension"
     )
 parser.add_argument(
     "--result_dir", type=str,
-    default="/baldig/physicsprojects2/N_tagger/exp/efps/2020207_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image_noramed_efp_hl_original"
+    default="/baldig/physicsprojects2/N_tagger/exp/efps/20200209_HLNet_inter_dim800_num_hidden5"
     )
 parser.add_argument('--stage', default='train', help='mode in [eval, train]')
-parser.add_argument('--batch_size', type=int, default=256, help='input batch size for training (default: 100)')
-parser.add_argument('--epochs', type=int, default=300, help='number of epochs to train (default: 1000)')
+parser.add_argument('--model_type', default='HLNet')
+parser.add_argument('--load_pretrained', action='store_true', default=False)
+parser.add_argument('--batch_size', type=int, default=128, help='input batch size for training (default: 100)')
+parser.add_argument('--epochs', type=int, default=1000, help='number of epochs to train (default: 1000)')
 parser.add_argument('--seed', type=int, default=123, help='random seed (default: 1)')
-parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 0.0001)')
-parser.add_argument("--GPU", type=str, default='0',help='GPU id')
+parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 0.001)')
+parser.add_argument("--GPU", type=str, default='3', help='GPU id')
 args = parser.parse_args()
 
 import os
@@ -42,7 +48,8 @@ from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter(args.result_dir)
 
 stage = args.stage
-load_pretrained = False
+load_pretrained = args.load_pretrained
+strength = args.strength
 
 ## I/O config
 device = 'cuda'
@@ -194,12 +201,43 @@ class HLefpNet(nn.Module):
         return out
 
 
-model_type = 'HLefpNet'
+class GatedHLefpNet(nn.Module):
+    def __init__(self, hlnet_base, efpnet_base):
+        super(GatedHLefpNet, self).__init__()
+        # self.logit_gates = nn.Parameter(data=torch.zeros(566))
+        self.gates = nn.Parameter(data=torch.randn(566))
+        self.hlnet_base = hlnet_base
+        self.efpnet_base = efpnet_base
+        self.top = nn.Linear(128, 6)
+        self.bn1 = nn.BatchNorm1d(64)
+        self.bn2 = nn.BatchNorm1d(64)
+
+    def path(self, HL, efps, gates):
+        efps = gates * efps
+        HL = self.hlnet_base(HL)
+        efps = self.efpnet_base(efps)
+        HL, efps = self.bn1(HL), self.bn2(efps)
+        out = self.top(torch.cat([HL, efps], dim=-1))
+        return out
+
+    def forward(self, HL, efps):
+        # efps = torch.sigmoid(self.logit_gates) * efps
+        out = self.path(HL, efps, self.gates)
+        if model.training:
+            return out, self.gates
+        else:
+            gates_clipped = torch.where(self.gates.abs() > 1e-2, self.gates, torch.zeros_like(self.gates))
+            out_clipped = self.path(HL, efps, gates_clipped)
+            return out, out_clipped, self.gates
+
+
+
+model_type = args.model_type
 print('building model:', model_type)
 if model_type == 'HLNet':
     model = HLNet(hlnet_base).to(device)
-elif model_type == 'HLefpNet':
-    model = HLefpNet(hlnet_base, efpnet_base).to(device)
+elif model_type in ['HLefpNet', 'GatedHLefpNet']:
+    model = eval(model_type)(hlnet_base, efpnet_base).to(device)
 elif model_type == 'EFPNet':
     model = EFPNet(efpnet_base).to(device)
 
@@ -209,7 +247,7 @@ if load_pretrained:
     print('load model from', result_dir)
     cp = torch.load(result_dir + '/best_{}_merged_b_u.pt'.format(model_type)) # '/{}_merged_b_u_ep99.pt'.format(model_type))
     # cp = torch.load('/baldig/physicsprojects2/N_tagger/exp/20201203_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image/best_{}_merged_b_u.pt'.format(model_type))
-    model.load_state_dict(cp, strict=True)
+    model.load_state_dict(cp, strict=False)
 
 ################### training
 hl_param = []
@@ -251,27 +289,34 @@ def train(model, optimizer, epoch):
             pred = model(HL)
         elif model_type == 'HLefpNet':
             pred = model(HL, efps)
+        elif model_type == 'GatedHLefpNet':
+            pred, gates = model(HL, efps)
         elif model_type == 'EFPNet':
             pred = model(efps)
 
         loss = loss_fn(pred, target_long)
         # loss = - (F.log_softmax(target, dim=1).exp() * F.log_softmax(pred, dim=1)).sum(1)
         # loss = ((target - pred) ** 2).sum(1)
-        loss = loss.mean()
+        if model_type == 'GatedHLefpNet':
+            gate_loss = strength * torch.abs(gates).mean() # (torch.abs(gates) > 1e-2).sum()
+            loss = loss.mean() + gate_loss
+        else:
+            gate_loss = 0.
+            loss = loss.mean()
         loss.backward()
         optimizer.step()
         acc = (torch.argmax(pred, dim=1) == target_long).sum().item() / target.shape[0]
 
         if i % 50 == 0:
-            print('train loss:', loss.item(), 'acc:', acc)
+            print('train loss:', loss.item(), 'gate loss', gate_loss, 'acc:', acc)
             writer.add_scalar('Loss/train', loss.item(), epoch * iterations + i)
             writer.add_scalar('Acc/train', acc, epoch * iterations + i)
-    val_acc, _, _ = test(model, 'val')
-    writer.add_scalar('Acc/val', val_acc, epoch)
+
+    val_acc, _, _ = test(model, 'val', epoch)
     return val_acc, model
 
 
-def test(model, subset):
+def test(model, subset, epoch):
     mass_range = [300, 700]
     mass_bins = np.linspace(mass_range[0], mass_range[1], 11)
     bin_len = mass_bins[1] - mass_bins[0]
@@ -280,6 +325,7 @@ def test(model, subset):
 
     model.eval()
     tmp = 0
+    tmp_clipped = 0
     with torch.no_grad():
         for i in range(iter_test):
             X, HL, target_long, _, HL_unnorm = next(generator[subset])
@@ -295,6 +341,10 @@ def test(model, subset):
                 pred = model(HL)
             elif model_type == 'HLefpNet':
                 pred = model(HL, efps)
+            elif model_type == 'GatedHLefpNet':
+                pred, pred_clipped, gates = model(HL, efps)
+                pred_armax_clipped = torch.argmax(pred_clipped, dim=1)
+                tmp_clipped += torch.sum(pred_armax_clipped == target_long).item() / target.shape[0]
             elif model_type == 'EFPNet':
                 pred = model(efps)
             pred_armax = torch.argmax(pred, dim=1)
@@ -306,20 +356,26 @@ def test(model, subset):
             pred_mass_list.append(torch.stack([pred_armax.float(), target_long.float(), bin_idx, rslt.float(), mass]).cpu())
             pred_original_list.append(pred.cpu())
 
-    print(model_type, 'acc', tmp / iter_test)
+    clipped_acc = tmp_clipped / iter_test if model_type == 'GatedHLefpNet' else 0.
+    num_remaining_efps = ((gates).abs() > 1e-2).sum().tolist() if model_type == 'GatedHLefpNet' else 0.
+    print(model_type, 'acc', tmp / iter_test, 'clipped acc', clipped_acc, 'num remaining:', num_remaining_efps)
+    writer.add_scalar('Acc/val', tmp / iter_test, epoch)
+    writer.add_scalar('Acc_clipped/val', clipped_acc, epoch)
+    writer.add_scalar('num_remaining_efps', num_remaining_efps, epoch)
+
     return tmp / iter_test, pred_original_list, pred_mass_list
 
 
 def main(model):
     best_acc = 0
     if stage == 'eval':
-        testacc, pred_original_list, pred_mass_list = test(model, 'test')
+        testacc, pred_original_list, pred_mass_list = test(model,'test',None)
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
         combined_pred_only = torch.cat(pred_original_list, dim=0).numpy()
         print(combined_pred.shape, combined_pred_only.shape, len(pred_mass_list))
-        with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/combined_pred.h5', 'a') as f:
-            del f['{}_tower'.format(model_type)]
-            f.create_dataset('{}_tower'.format(model_type), data=combined_pred)
+        # with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/combined_pred.h5', 'a') as f:
+        #     del f['{}_tower'.format(model_type)]
+        #     f.create_dataset('{}_tower'.format(model_type), data=combined_pred)
 
     else:
         for i in range(epoch):
