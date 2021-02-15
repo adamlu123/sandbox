@@ -5,6 +5,7 @@ cd /extra/yadongl10/git_project/sandbox/multi_prongs
 source activate pytorch
 
 # hyperparemeters
+model_type='GatedHLefpNet'
 epochs=1000
 stage='train'
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
@@ -37,7 +38,7 @@ for strength in 2 3 4 6 #1 5 7 10
                     mkdir -p ${result_fldr}
                     echo ${subsets}
                     echo ${result_dir}
-                    python efp_exp.py --inter_dim ${inter_dim} --num_hidden ${num_hidden} --strength ${strength}\
+                    python efp_exp.py --inter_dim ${inter_dim} --num_hidden ${num_hidden} --strength ${strength} --model_type ${model_type}\
                     --stage ${stage} --lr ${lr}  --batch_size ${batch_size} --result_dir ${result_dir} --GPU ${GPU} --epochs ${epochs} &
                 done
             done

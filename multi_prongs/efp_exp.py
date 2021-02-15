@@ -26,7 +26,7 @@ parser.add_argument(
     "--result_dir", type=str,
     default="/baldig/physicsprojects2/N_tagger/exp/efps/20200209_HLNet_inter_dim800_num_hidden5"
     )
-parser.add_argument('--stage', default='train', help='mode in [eval, train]')
+parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
 parser.add_argument('--model_type', default='HLNet')
 parser.add_argument('--load_pretrained', action='store_true', default=False)
 parser.add_argument('--batch_size', type=int, default=128, help='input batch size for training (default: 100)')
@@ -231,7 +231,6 @@ class GatedHLefpNet(nn.Module):
             return out, out_clipped, self.gates
 
 
-
 model_type = args.model_type
 print('building model:', model_type)
 if model_type == 'HLNet':
@@ -246,6 +245,7 @@ model = nn.DataParallel(model)
 if load_pretrained:
     print('load model from', result_dir)
     cp = torch.load(result_dir + '/best_{}_merged_b_u.pt'.format(model_type)) # '/{}_merged_b_u_ep99.pt'.format(model_type))
+    # cp = torch.load(result_dir + '/{}_merged_b_u_ep{}.pt'.format(model_type, epoch-1))
     # cp = torch.load('/baldig/physicsprojects2/N_tagger/exp/20201203_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image/best_{}_merged_b_u.pt'.format(model_type))
     model.load_state_dict(cp, strict=False)
 
@@ -312,8 +312,8 @@ def train(model, optimizer, epoch):
             writer.add_scalar('Loss/train', loss.item(), epoch * iterations + i)
             writer.add_scalar('Acc/train', acc, epoch * iterations + i)
 
-    val_acc, _, _ = test(model, 'val', epoch)
-    return val_acc, model
+    val_acc, val_clipped_acc, _, _, _ = test(model, 'val', epoch)
+    return val_acc, val_clipped_acc, model
 
 
 def test(model, subset, epoch):
@@ -326,6 +326,7 @@ def test(model, subset, epoch):
     model.eval()
     tmp = 0
     tmp_clipped = 0
+    gates = torch.tensor([0])
     with torch.no_grad():
         for i in range(iter_test):
             X, HL, target_long, _, HL_unnorm = next(generator[subset])
@@ -358,29 +359,38 @@ def test(model, subset, epoch):
 
     clipped_acc = tmp_clipped / iter_test if model_type == 'GatedHLefpNet' else 0.
     num_remaining_efps = ((gates).abs() > 1e-2).sum().tolist() if model_type == 'GatedHLefpNet' else 0.
-    print(model_type, 'acc', tmp / iter_test, 'clipped acc', clipped_acc, 'num remaining:', num_remaining_efps)
-    writer.add_scalar('Acc/val', tmp / iter_test, epoch)
-    writer.add_scalar('Acc_clipped/val', clipped_acc, epoch)
-    writer.add_scalar('num_remaining_efps', num_remaining_efps, epoch)
 
-    return tmp / iter_test, pred_original_list, pred_mass_list
+    print(model_type, 'acc', tmp / iter_test, 'clipped acc', clipped_acc, 'num remaining:', num_remaining_efps)
+    if stage != 'eval':
+        print('write to tensorboard ...')
+        writer.add_scalar('Acc/val', tmp / iter_test, epoch)
+        writer.add_scalar('Acc_clipped/val', clipped_acc, epoch)
+        writer.add_scalar('num_remaining_efps', num_remaining_efps, epoch)
+
+    return tmp / iter_test, clipped_acc, pred_original_list, pred_mass_list, gates.detach().cpu().numpy()
 
 
 def main(model):
     best_acc = 0
     if stage == 'eval':
-        testacc, pred_original_list, pred_mass_list = test(model,'test',None)
+        testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', None)
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
         combined_pred_only = torch.cat(pred_original_list, dim=0).numpy()
         print(combined_pred.shape, combined_pred_only.shape, len(pred_mass_list))
-        # with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/combined_pred.h5', 'a') as f:
+        with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/efp566/combined_pred_efps566_inter_dim800_num_hidden5.h5', 'a') as f:
+            f.create_dataset('{}_best'.format(model_type), data=combined_pred)
+        # with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/efp566/combined_pred_efps566_inter_dim800_num_hidden5_epoch{}.h5'.format(epoch-1), 'a') as f:
         #     del f['{}_tower'.format(model_type)]
-        #     f.create_dataset('{}_tower'.format(model_type), data=combined_pred)
+            # f.create_dataset('{}_strength{}_best'.format(model_type, strength), data=combined_pred)
+            # f.create_dataset('{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
+            # f.create_dataset('{}_strength{}_gates'.format(model_type, strength), data=gates)
+
+        print('saving finished!')
 
     else:
         for i in range(epoch):
             print('starting epoch', i)
-            val_acc, model = train(model, optimizer, epoch=i)
+            val_acc, val_clipped_acc, model = train(model, optimizer, epoch=i)
             if val_acc > best_acc:
                 best_acc = val_acc
                 torch.save(model.state_dict(), result_dir + '/best_{}_merged_b_u.pt'.format(model_type))
@@ -389,8 +399,8 @@ def main(model):
                 torch.save(model.state_dict(),
                            result_dir + '/{}_merged_b_u_ep{}.pt'.format(model_type, i))
                 print('model saved at epoch', i)
-        testacc = test(model, 'test')
-        print('test acc', testacc)
+        # testacc = test(model, 'test')
+        # print('test acc', testacc)
 
 
 if __name__ == '__main__':

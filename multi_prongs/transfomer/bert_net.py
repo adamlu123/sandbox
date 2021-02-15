@@ -1,25 +1,52 @@
 from transformers import *
 
+import argparse
+
+
+parser = argparse.ArgumentParser(description='Sparse Auto-regressive Model')
+parser.add_argument(
+    "--strength", type=int, default=5,
+    help="regularization strength"
+    )
+parser.add_argument(
+    "--num_hidden", type=int, default=5,
+    help="number of latent layer"
+    )
+parser.add_argument(
+    "--inter_dim", type=int, default=800,
+    help="hidden layer dimension"
+    )
+parser.add_argument(
+    "--result_dir", type=str,
+    default="/baldig/physicsprojects2/N_tagger/exp/efps/20200209_HLNet_inter_dim800_num_hidden5"
+    )
+parser.add_argument('--stage', default='train', help='mode in [eval, train]')
+parser.add_argument('--model_type', default='HLNet')
+parser.add_argument('--load_pretrained', action='store_true', default=False)
+parser.add_argument('--batch_size', type=int, default=128, help='input batch size for training (default: 100)')
+parser.add_argument('--epochs', type=int, default=1000, help='number of epochs to train (default: 1000)')
+parser.add_argument('--seed', type=int, default=123, help='random seed (default: 1)')
+parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 0.001)')
+parser.add_argument("--GPU", type=str, default='3', help='GPU id')
+args = parser.parse_args()
+
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = args.GPU
+print('training using GPU:', args.GPU)
+
 import h5py
 import numpy as np
 import torch
 import torch.nn as nn
 from torch import optim
 import torch.nn.functional as F
-import os
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"  # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 from bert import BertForSequenceClassification
 from shutil import copyfile
 
-import sys
-sys.path.append('/extra/yadongl10/git_project/pytorch-lamb')
-from pytorch_lamb import Lamb
-
 ## load config
 device = 'cuda'
-batchsize = 256
-epoch = 500
+batchsize = args.batchsize
+epoch = args.epoch
 load_pretrained = True
 root = '/baldig/physicsprojects2/N_tagger/exp'
 exp_name = '/20201228_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed512_hidden6_head8'
