@@ -2,12 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e44c722f-3e28-4a47-9abe-72e45a577b99" name="Default Changelist" comment="minor">
-      <change afterPath="$PROJECT_DIR$/multi_prongs/eval_HLNet.sh" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/multi_prongs/eval_efp_gated_net.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/multi_prongs/efp_exp.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/efp_exp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/eval_HLNet.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/eval_HLNet.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/multi_prongs/eval_efp_net.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/eval_efp_net.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/multi_prongs/run_efp_net.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/run_efp_net.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/transfomer/bert_net.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/transfomer/bert_net.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -17,11 +17,26 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/multi_prongs/efp_exp.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="126">
-              <caret line="7" column="11" lean-forward="true" selection-start-line="7" selection-start-column="11" selection-end-line="7" selection-end-column="11" />
+            <state relative-caret-position="98">
+              <caret line="342" column="38" selection-start-line="342" selection-start-column="32" selection-end-line="342" selection-end-column="38" />
+              <folding>
+                <element signature="e#150#165#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/multi_prongs/run_efp_net.sh">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="279">
+              <caret line="16" column="31" lean-forward="true" selection-start-line="16" selection-start-column="31" selection-end-line="16" selection-end-column="31" />
+              <folding>
+                <marker date="1613521180937" expanded="true" signature="793:911" ph="..." />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -29,20 +44,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/multi_prongs/eval_efp_net.sh">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="198">
-              <caret line="11" column="53" lean-forward="true" selection-start-line="11" selection-start-column="53" selection-end-line="11" selection-end-column="53" />
+            <state relative-caret-position="455">
+              <caret line="31" column="35" selection-start-line="31" selection-start-column="35" selection-end-line="31" selection-end-column="35" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/multi_prongs/run_efp_net.sh">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/multi_prongs/eval_efp_gated_net.sh">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="170">
-              <caret line="15" lean-forward="true" selection-start-line="15" selection-end-line="15" />
-              <folding>
-                <marker date="1613074959818" expanded="true" signature="604:722" ph="..." />
-              </folding>
+            <state relative-caret-position="468">
+              <caret line="26" column="12" selection-start-line="26" selection-start-column="12" selection-end-line="26" selection-end-column="12" />
             </state>
           </provider>
         </entry>
@@ -50,8 +62,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/multi_prongs/eval_HLNet.sh">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="216">
-              <caret line="12" column="31" lean-forward="true" selection-start-line="12" selection-start-column="31" selection-end-line="12" selection-end-column="31" />
+            <state relative-caret-position="135">
+              <caret line="11" column="51" lean-forward="true" selection-start-line="11" selection-start-column="51" selection-end-line="11" selection-end-column="51" />
             </state>
           </provider>
         </entry>
@@ -59,8 +71,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/multi_prongs/train.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="248">
-              <caret line="261" column="48" lean-forward="true" selection-start-line="261" selection-start-column="48" selection-end-line="261" selection-end-column="48" />
+            <state relative-caret-position="14">
+              <caret line="102" column="34" lean-forward="true" selection-start-line="102" selection-start-column="34" selection-end-line="102" selection-end-column="34" />
               <folding>
                 <element signature="e#177#188#0" expanded="true" />
               </folding>
@@ -92,23 +104,10 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>25</find>
-      <find>make_hlnet_base</find>
-      <find>566</find>
-      <find>GatedHLefpNet</find>
-      <find>torch.save</find>
-      <find>os.</find>
-      <find>subsets</find>
-      <find>result_dir</find>
-      <find>num_remaining_efps</find>
-      <find>.save</find>
       <find>BertForSequenceClassification</find>
       <find>input_dim</find>
       <find>embedding_linear</find>
-      <find>model_type</find>
       <find>eval'</find>
-      <find>strength</find>
-      <find>mkdir</find>
       <find>train(</find>
       <find>torch.load</find>
       <find>print(m</find>
@@ -118,10 +117,23 @@
       <find>remaining_efps</find>
       <find>test(</find>
       <find>.numpy</find>
-      <find>.create</find>
-      <find>.load(</find>
-      <find>gates</find>
       <find>exp_path</find>
+      <find>HLefpNet</find>
+      <find>base</find>
+      <find>hlnet_base</find>
+      <find>strength</find>
+      <find>gate_loss</find>
+      <find>print(</find>
+      <find>Data</find>
+      <find>.save</find>
+      <find>mkdir</find>
+      <find>&amp;</find>
+      <find>gates</find>
+      <find>.load(</find>
+      <find>model_type</find>
+      <find>iter_test</find>
+      <find>.create</find>
+      <find>create_dataset</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -130,8 +142,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/NeuReparam/beta-gamma-MF.py" />
-        <option value="$PROJECT_DIR$/NeuReparam/beta-gamma-MF-2stage.py" />
         <option value="$PROJECT_DIR$/NeuReparam/vae.py" />
         <option value="$PROJECT_DIR$/NeuReparam/vae_bayes_update.py" />
         <option value="$PROJECT_DIR$/NeuReparam/vae_repar.py" />
@@ -178,8 +188,10 @@
         <option value="$PROJECT_DIR$/multi_prongs/train.py" />
         <option value="$PROJECT_DIR$/multi_prongs/transfomer/bert_net.py" />
         <option value="$PROJECT_DIR$/multi_prongs/run_efp_net.sh" />
+        <option value="$PROJECT_DIR$/eval_efp_gated_net.sh" />
         <option value="$PROJECT_DIR$/multi_prongs/eval_HLNet.sh" />
         <option value="$PROJECT_DIR$/multi_prongs/eval_efp_net.sh" />
+        <option value="$PROJECT_DIR$/multi_prongs/eval_efp_gated_net.sh" />
         <option value="$PROJECT_DIR$/multi_prongs/efp_exp.py" />
       </list>
     </option>
@@ -247,6 +259,7 @@
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/multi_prongs" />
       <recent name="$PROJECT_DIR$/multi_prongs/data_preproc" />
       <recent name="$PROJECT_DIR$/multi_prongs/process_data" />
       <recent name="$PROJECT_DIR$/multi_prongs/side_exp" />
@@ -433,12 +446,12 @@
       <workItem from="1609459090647" duration="526000" />
       <workItem from="1609547863452" duration="18154000" />
       <workItem from="1612209245773" duration="59027000" />
-      <workItem from="1612894957211" duration="23494000" />
+      <workItem from="1612894957211" duration="36153000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="985684000" />
+    <option name="totallyTimeSpent" value="998343000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -458,14 +471,14 @@
       <window_info id="Structure" order="2" sideWeight="0.50124687" side_tool="true" weight="0.23962805" />
       <window_info anchor="bottom" id="Concurrent Activities Diagram" order="0" weight="0.32790223" />
       <window_info anchor="bottom" id="Database Changes" order="1" />
-      <window_info anchor="bottom" id="Terminal" order="2" weight="0.3268839" />
+      <window_info anchor="bottom" id="Terminal" order="2" visible="true" weight="0.3268839" />
       <window_info anchor="bottom" id="Event Log" order="3" sideWeight="0.5005325" side_tool="true" weight="0.30973452" />
       <window_info anchor="bottom" id="Version Control" order="4" weight="0.32891566" />
       <window_info anchor="bottom" id="File Transfer" order="5" sideWeight="0.49946752" weight="0.23421589" />
       <window_info anchor="bottom" id="Python Console" order="6" sideWeight="0.49946752" weight="0.32790223" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="bottom" id="Message" order="8" />
-      <window_info anchor="bottom" id="Find" order="9" visible="true" weight="0.3268839" />
+      <window_info anchor="bottom" id="Find" order="9" weight="0.3268839" />
       <window_info anchor="bottom" id="Run" order="10" sideWeight="0.49946752" weight="0.36252546" />
       <window_info anchor="bottom" id="Debug" order="11" sideWeight="0.49946752" weight="0.37576374" />
       <window_info anchor="bottom" id="Cvs" order="12" weight="0.25" />
@@ -693,17 +706,17 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/multi_prongs/efp_exp.py</url>
-          <line>304</line>
+          <line>298</line>
           <option name="timeStamp" value="631" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/multi_prongs/efp_exp.py</url>
-          <line>359</line>
+          <line>353</line>
           <option name="timeStamp" value="634" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/multi_prongs/efp_exp.py</url>
-          <line>381</line>
+          <line>376</line>
           <option name="timeStamp" value="635" />
         </line-breakpoint>
       </breakpoints>
@@ -891,16 +904,6 @@ model(X[:, idx, :])</expression-string>
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/nonlocal_vae/tetrode_select_lasso.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="19" column="71" selection-start-line="19" selection-start-column="71" selection-end-line="19" selection-end-column="71" />
-          <folding>
-            <element signature="e#0#15#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/nonlocal_vae/non_local_vae.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="201">
@@ -1263,10 +1266,17 @@ model(X[:, idx, :])</expression-string>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/multi_prongs/eval_efp_gated_net.sh">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="468">
+          <caret line="26" column="12" selection-start-line="26" selection-start-column="12" selection-end-line="26" selection-end-column="12" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/multi_prongs/train.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="248">
-          <caret line="261" column="48" lean-forward="true" selection-start-line="261" selection-start-column="48" selection-end-line="261" selection-end-column="48" />
+        <state relative-caret-position="14">
+          <caret line="102" column="34" lean-forward="true" selection-start-line="102" selection-start-column="34" selection-end-line="102" selection-end-column="34" />
           <folding>
             <element signature="e#177#188#0" expanded="true" />
           </folding>
@@ -1275,31 +1285,34 @@ model(X[:, idx, :])</expression-string>
     </entry>
     <entry file="file://$PROJECT_DIR$/multi_prongs/eval_HLNet.sh">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="216">
-          <caret line="12" column="31" lean-forward="true" selection-start-line="12" selection-start-column="31" selection-end-line="12" selection-end-column="31" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/multi_prongs/efp_exp.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="126">
-          <caret line="7" column="11" lean-forward="true" selection-start-line="7" selection-start-column="11" selection-end-line="7" selection-end-column="11" />
+        <state relative-caret-position="135">
+          <caret line="11" column="51" lean-forward="true" selection-start-line="11" selection-start-column="51" selection-end-line="11" selection-end-column="51" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/multi_prongs/eval_efp_net.sh">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="198">
-          <caret line="11" column="53" lean-forward="true" selection-start-line="11" selection-start-column="53" selection-end-line="11" selection-end-column="53" />
+        <state relative-caret-position="455">
+          <caret line="31" column="35" selection-start-line="31" selection-start-column="35" selection-end-line="31" selection-end-column="35" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/multi_prongs/run_efp_net.sh">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="170">
-          <caret line="15" lean-forward="true" selection-start-line="15" selection-end-line="15" />
+        <state relative-caret-position="279">
+          <caret line="16" column="31" lean-forward="true" selection-start-line="16" selection-start-column="31" selection-end-line="16" selection-end-column="31" />
           <folding>
-            <marker date="1613074959818" expanded="true" signature="604:722" ph="..." />
+            <marker date="1613521180937" expanded="true" signature="793:911" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/multi_prongs/efp_exp.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="98">
+          <caret line="342" column="38" selection-start-line="342" selection-start-column="32" selection-end-line="342" selection-end-column="38" />
+          <folding>
+            <element signature="e#150#165#0" expanded="true" />
           </folding>
         </state>
       </provider>

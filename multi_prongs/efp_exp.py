@@ -58,14 +58,6 @@ batchsize = args.batch_size
 epoch = args.epochs
 result_dir = args.result_dir
 
-# from shutil import copyfile
-# root = '/baldig/physicsprojects2/N_tagger/exp/efps'
-# exp_name = '/2020201_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image_efp'
-# exp_name = '/2020207_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image_noramed_efp_hl_original'
-# exp_name = '/2020201_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image_normed_efp_only_d7_n5_parsed_tower'
-#     os.makedirs(root + exp_name)
-#     copyfile('/extra/yadongl10/git_project/sandbox/multi_prongs/efp_exp.py', root + exp_name + '/efp_exp.py')
-
 ## loging:
 # ================ HL+mass file
 filename = '/baldig/physicsprojects2/N_tagger/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
@@ -95,11 +87,13 @@ def data_generator(filename, batchsize, start, stop=None, weighted=False):
             batch = slice(iexample, iexample + batchsize)
             X = f['image_corrected'][batch, :, :]
             HL_unnorm = f['HL'][batch, :-4]
-
+            # TODO: mass + HL from img --> shape=(-1, 17)
             # HL = f['HL_from_img_normalized'][batch]
-            HL = f['HL_normalized'][batch, :-4]
-            HL = np.delete(HL, -2, 1)  # delete pt TODO  mass: -1: mass, -2: pt
-            # HL = HL / HL.std(0)
+            # TODO: mass + HL from tower --> shape=(-1, 17)
+            # HL = f['HL_normalized'][batch, :-4]
+            # HL = np.delete(HL, -2, 1)  # delete pt TODO  mass: -1: mass, -2: pt
+            # TODO: mass + HL3 from tower --> shape=(-1, 25)
+            HL = f['HL3_normalized'][batch, :-1]
             target = f['target'][batch]
             if weighted:
                 weights = f['weights'][batch]
@@ -156,7 +150,7 @@ target_generator['test'] = target_data_generator(fn_target, batchsize, start=val
 ################### model
 inter_dim = args.inter_dim
 num_hidden = args.num_hidden
-hlnet_base = make_hlnet_base(input_dim=17, inter_dim=inter_dim, num_hidden=num_hidden)
+hlnet_base = make_hlnet_base(input_dim=25, inter_dim=inter_dim, num_hidden=num_hidden)
 efpnet_base = make_hlnet_base(input_dim=566, inter_dim=inter_dim, num_hidden=num_hidden)  # 207 566 126
 
 
@@ -246,8 +240,7 @@ if load_pretrained:
     print('load model from', result_dir)
     cp = torch.load(result_dir + '/best_{}_merged_b_u.pt'.format(model_type)) # '/{}_merged_b_u_ep99.pt'.format(model_type))
     # cp = torch.load(result_dir + '/{}_merged_b_u_ep{}.pt'.format(model_type, epoch-1))
-    # cp = torch.load('/baldig/physicsprojects2/N_tagger/exp/20201203_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image/best_{}_merged_b_u.pt'.format(model_type))
-    model.load_state_dict(cp, strict=False)
+    model.load_state_dict(cp, strict=True)
 
 ################### training
 hl_param = []
@@ -259,6 +252,7 @@ for name, param in model.named_parameters():
         other_param.append(param)
 
 print(model)
+print(torch.__version__)
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 print(count_parameters(model))
@@ -377,13 +371,17 @@ def main(model):
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
         combined_pred_only = torch.cat(pred_original_list, dim=0).numpy()
         print(combined_pred.shape, combined_pred_only.shape, len(pred_mass_list))
-        with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/efp566/combined_pred_efps566_inter_dim800_num_hidden5.h5', 'a') as f:
-            f.create_dataset('{}_best'.format(model_type), data=combined_pred)
-        # with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/efp566/combined_pred_efps566_inter_dim800_num_hidden5_epoch{}.h5'.format(epoch-1), 'a') as f:
-        #     del f['{}_tower'.format(model_type)]
-            # f.create_dataset('{}_strength{}_best'.format(model_type, strength), data=combined_pred)
-            # f.create_dataset('{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
-            # f.create_dataset('{}_strength{}_gates'.format(model_type, strength), data=gates)
+        num_remaining_efps = (gates> 1e-2).sum().tolist() if model_type == 'GatedHLefpNet' else 0.
+
+        if model_type == 'GatedHLefpNet':
+            with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/efp566/combined_pred_hl3_efps566_inter_dim800_num_hidden5.h5', 'a') as f:
+                f.create_dataset('savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
+                f.create_dataset('savewoclip_{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
+                f.create_dataset('savewoclip_{}_strength{}_gates'.format(model_type, strength), data=gates)
+        else:
+            with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/efp566/combined_pred_hl3_efps566_inter_dim800_num_hidden5.h5', 'a') as f:
+                # del f['{}_best'.format(model_type)]
+                f.create_dataset('{}_best'.format(model_type), data=combined_pred)
 
         print('saving finished!')
 
@@ -391,8 +389,8 @@ def main(model):
         for i in range(epoch):
             print('starting epoch', i)
             val_acc, val_clipped_acc, model = train(model, optimizer, epoch=i)
-            if val_acc > best_acc:
-                best_acc = val_acc
+            if val_clipped_acc > best_acc:
+                best_acc = val_clipped_acc
                 torch.save(model.state_dict(), result_dir + '/best_{}_merged_b_u.pt'.format(model_type))
                 print('model saved')
             if (i+1) % 50 == 0:
@@ -406,3 +404,12 @@ def main(model):
 if __name__ == '__main__':
     main(model)
     writer.close()
+
+
+# from shutil import copyfile
+# root = '/baldig/physicsprojects2/N_tagger/exp/efps'
+# exp_name = '/2020201_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image_efp'
+# exp_name = '/2020207_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image_noramed_efp_hl_original'
+# exp_name = '/2020201_lr_5e-3_decay0.5_nowc_weighted_sample_corrected_image_normed_efp_only_d7_n5_parsed_tower'
+#     os.makedirs(root + exp_name)
+#     copyfile('/extra/yadongl10/git_project/sandbox/multi_prongs/efp_exp.py', root + exp_name + '/efp_exp.py')
