@@ -37,7 +37,7 @@ count=0
 #                    mkdir -p ${exp_dir}
 #                    cp ${multip_fldr}/run_efp_net.sh ${exp_dir}
 #                    result_dir=${exp_path}/${exp_name}/efp566_model${model_type}_strength${strength}_inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}
-#                    mkdir -p ${result_fldr}
+#                    mkdir -p ${result_dir}
 #                    echo ${subsets}
 #                    echo ${result_dir}
 #                    python efp_exp.py --inter_dim ${inter_dim} --num_hidden ${num_hidden} --strength ${strength} --model_type ${model_type}\
@@ -64,7 +64,7 @@ for strength in 6 5 7 10 #1 2 3 4 #
                     mkdir -p ${exp_dir}
                     cp ${multip_fldr}/run_efp_net.sh ${exp_dir}
                     result_dir=${exp_path}/${exp_name}/efp566_model${model_type}_strength${strength}_inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}
-                    mkdir -p ${result_fldr}
+                    mkdir -p ${result_dir}
                     echo ${subsets}
                     echo ${result_dir}
                     python efp_exp.py --inter_dim ${inter_dim} --num_hidden ${num_hidden} --strength ${strength} --model_type ${model_type}\
