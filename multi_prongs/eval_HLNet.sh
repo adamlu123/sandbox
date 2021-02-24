@@ -9,7 +9,8 @@ stage='eval'
 model_type='HLNet'
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
 exp_path='/baldig/physicsprojects2/N_tagger/exp/efps'
-exp_name='2020214_search_HLNet_hl3/efp566_strength0_inter_dim800_num_hidden5_lr1e-3_batch_size128' # '/20200209_HLNet_inter_dim800_num_hidden5'
+#exp_name='2020214_search_HLNet_hl3/efp566_strength0_inter_dim800_num_hidden5_lr1e-3_batch_size128' #
+exp_name='/20200209_HLNet_inter_dim800_num_hidden5'
 exp_dir=${exp_path}/${exp_name}
 
 # start running

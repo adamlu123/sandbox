@@ -88,12 +88,12 @@ def data_generator(filename, batchsize, start, stop=None, weighted=False):
             X = f['image_corrected'][batch, :, :]
             HL_unnorm = f['HL'][batch, :-4]
             # TODO: mass + HL from img --> shape=(-1, 17)
-            # HL = f['HL_from_img_normalized'][batch]
+            HL = f['HL_from_img_normalized'][batch]
             # TODO: mass + HL from tower --> shape=(-1, 17)
-            # HL = f['HL_normalized'][batch, :-4]
-            # HL = np.delete(HL, -2, 1)  # delete pt TODO  mass: -1: mass, -2: pt
+            HL = f['HL_normalized'][batch, :-4]
+            HL = np.delete(HL, -2, 1)  # delete pt TODO  mass: -1: mass, -2: pt
             # TODO: mass + HL3 from tower --> shape=(-1, 25)
-            HL = f['HL3_normalized'][batch, :-1]
+            # HL = f['HL3_normalized'][batch, :-1]
             target = f['target'][batch]
             if weighted:
                 weights = f['weights'][batch]
@@ -150,7 +150,7 @@ target_generator['test'] = target_data_generator(fn_target, batchsize, start=val
 ################### model
 inter_dim = args.inter_dim
 num_hidden = args.num_hidden
-hlnet_base = make_hlnet_base(input_dim=25, inter_dim=inter_dim, num_hidden=num_hidden)
+hlnet_base = make_hlnet_base(input_dim=17, inter_dim=inter_dim, num_hidden=num_hidden) # 25 for HL3 version
 efpnet_base = make_hlnet_base(input_dim=566, inter_dim=inter_dim, num_hidden=num_hidden)  # 207 566 126
 
 
@@ -332,6 +332,7 @@ def test(model, subset, epoch):
                                           torch.tensor(target).float().to(device), torch.tensor(efps).float().to(device)
 
             target_long = torch.tensor(target_long).long().to(device)
+            pred_armax_clipped = torch.zeros_like(target_long)
             if model_type == 'HLNet':
                 pred = model(HL)
             elif model_type == 'HLefpNet':
@@ -348,7 +349,8 @@ def test(model, subset, epoch):
             mass = HL_unnorm[:, -1]
             bin_idx = torch.floor((mass - mass_range[0]) / bin_len)
             rslt = pred_armax == target_long
-            pred_mass_list.append(torch.stack([pred_armax.float(), target_long.float(), bin_idx, rslt.float(), mass]).cpu())
+            rslt_clipped = pred_armax_clipped == target_long
+            pred_mass_list.append(torch.stack([pred_armax.float(), target_long.float(), bin_idx, rslt.float(), mass, rslt_clipped.float()]).cpu())
             pred_original_list.append(pred.cpu())
 
     clipped_acc = tmp_clipped / iter_test if model_type == 'GatedHLefpNet' else 0.
@@ -371,19 +373,20 @@ def main(model):
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
         combined_pred_only = torch.cat(pred_original_list, dim=0).numpy()
         print(combined_pred.shape, combined_pred_only.shape, len(pred_mass_list))
+        print('acc', combined_pred[-3,:].sum()/combined_pred.shape[1], 'cliped acc', combined_pred[-1,:].sum()/combined_pred.shape[1])
+        print('gates>0.01', np.where(gates > 1e-2))
         num_remaining_efps = (gates> 1e-2).sum().tolist() if model_type == 'GatedHLefpNet' else 0.
 
-        if model_type == 'GatedHLefpNet':
-            with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/efp566/combined_pred_hl3_efps566_inter_dim800_num_hidden5.h5', 'a') as f:
-                f.create_dataset('savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
-                f.create_dataset('savewoclip_{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
-                f.create_dataset('savewoclip_{}_strength{}_gates'.format(model_type, strength), data=gates)
-        else:
-            with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/efp566/combined_pred_hl3_efps566_inter_dim800_num_hidden5.h5', 'a') as f:
-                # del f['{}_best'.format(model_type)]
-                f.create_dataset('{}_best'.format(model_type), data=combined_pred)
-
-        print('saving finished!')
+        # if model_type == 'GatedHLefpNet':
+        #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/efp566/combined_pred_hl3_efps566_inter_dim800_num_hidden5.h5', 'a') as f:
+        #         f.create_dataset('savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
+        #         f.create_dataset('savewoclip_{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
+        #         f.create_dataset('savewoclip_{}_strength{}_gates'.format(model_type, strength), data=gates)
+        # else:
+        #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/efp566/combined_pred_hl3_efps566_inter_dim800_num_hidden5.h5', 'a') as f:
+        #         # del f['{}_best'.format(model_type)]
+        #         f.create_dataset('{}_best'.format(model_type), data=combined_pred)
+        # print('saving finished!')
 
     else:
         for i in range(epoch):
