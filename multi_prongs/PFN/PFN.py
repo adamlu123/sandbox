@@ -16,6 +16,10 @@ parser.add_argument(
     help="hidden layer dimension"
     )
 parser.add_argument(
+    "--dropout", type=float, default=1e-1,
+    help="dropout ratio"
+    )
+parser.add_argument(
     "--result_dir", type=str,
     default=None
     )
@@ -44,7 +48,7 @@ config.gpu_options.allow_growth = True
 tf.keras.backend.set_session(tf.Session(config=config))
 
 
-import energyflow as ef
+# import energyflow as ef
 from energyflow.archs import PFN
 from energyflow.utils import data_split, remap_pids, to_categorical
 import h5py
@@ -75,19 +79,26 @@ X_train, X_val, X_test = X[:train_cut], X[train_cut:val_cut], X[val_cut:]
 Y_train, Y_val, Y_test = Y[:train_cut], Y[train_cut:val_cut], Y[val_cut:]
 mass_test = mass[val_cut:]
 print('Done train/val/test split', X_train.shape, X_val.shape, X_test.shape)
-
+print(args.result_dir)
 # build architecture
 num_hidden = args.num_hidden
 psize, fsize = args.psize, args.fsize
 
-Phi_sizes, F_sizes = (psize,)*num_hidden, (fsize,)*num_hidden
+Phi_sizes, F_sizes = (128, ) * 2, (fsize,)*num_hidden # (psize,)*num_hidden,
 batch_size = args.batch_size
 print(Phi_sizes)
-pfn = PFN(input_dim=X.shape[-1], output_dim=6, Phi_sizes=Phi_sizes, F_sizes=F_sizes)
+# pfn = PFN(input_dim=X.shape[-1], output_dim=6, Phi_sizes=Phi_sizes, F_sizes=F_sizes)
+pfn = PFN(input_dim=X.shape[-1], output_dim=6, Phi_sizes=Phi_sizes, F_sizes=F_sizes, F_dropouts=args.dropout)
 
                                                                    #num_hidden{}_psize{}_fsize{}_batchsize{}_ep{}
-log_dir="/baldig/physicsprojects2/N_tagger/exp/20210223_PFN_search/num_hidden{}_psize{}_fsize{}_batchsize{}_ep{}".format(num_hidden, psize, fsize, batch_size, args.epochs)
-tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=args.result_dir, histogram_freq=1)
+# log_dir="/baldig/physicsprojects2/N_tagger/exp/20210223_PFN_search/num_hidden{}_psize{}_fsize{}_batchsize{}_ep{}".format(num_hidden, psize, fsize, batch_size, args.epochs)
+tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=args.result_dir, histogram_freq=0)
+model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+    filepath=args.result_dir + '/best',
+    save_weights_only=True,
+    monitor='val_acc',
+    mode='max',
+    save_best_only=True)
 
 # train model
 pfn.fit(X_train, Y_train,
@@ -95,8 +106,8 @@ pfn.fit(X_train, Y_train,
         batch_size=batch_size,
         validation_data=(X_val, Y_val),
         verbose=1,
-        callbacks=[tensorboard_callback])
+        callbacks=[tensorboard_callback, model_checkpoint_callback])
 
 
 # save model
-# pfn.save("/baldig/physicsprojects2/N_tagger/exp/20210223_PFN_search/PFN_psize{}_fsize{}_ep{}".format(psize, fsize, args.epochs))
+# pfn.save(args.result_dir)

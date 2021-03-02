@@ -1,42 +1,45 @@
 #!/usr/bin/env bash
 # It is recommend to run the bash file in a screen session
+source ~/.bash_profile
 cd /extra/yadongl10/git_project/sandbox/multi_prongs/PFN
 source activate tf180
 
 # hyperparemeters
-epochs=1500
+epochs=1000
 stage='train'
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
 exp_path='/baldig/physicsprojects2/N_tagger/exp'
-exp_name='20210223_PFN_search'
+exp_name='20210228_PFN_search_batch256'
 exp_dir=${exp_path}/${exp_name}
+mkdir -p exp_dir
+lr=1e-3
 
 # start running
 count=0
-for psize in 100 #200 300
+for num_hidden in 4 # 3 7 9
     do
-    fsize=${psize}
-    for num_hidden in 3 #5
+    for psize in 1024 #140 160 170  #128 #50 100 150 200
         do
-        GPU=${count}
-        ((count++))
-        for batch_size in 128
+        fsize=${psize}
+        for batch_size in 512
             do
-            for lr in 1e-3
+            for dropout in 1e-1 2e-1 25e-2 3e-1 #5e-1 7e-1
                 do
+                GPU=${count}
+                ((count++))
                 mkdir -p ${exp_dir}
                 cp ${multip_fldr}/PFN/run_pfn.sh ${exp_dir}
-                result_dir=${exp_path}/${exp_name}/num_hidden${num_hidden}_psize${psize}_fsize${fsize}_batchsize${batch_size}_ep${epochs}
+                result_dir=${exp_path}/${exp_name}/do${dropout}_num_hidden${num_hidden}_psize${psize}_fsize${fsize}_batchsize${batch_size}_ep${epochs}
                 mkdir -p ${result_dir}
-                echo ${result_dir}
-                python PFN.py --num_hidden ${num_hidden} --psize ${psize} --fsize ${fsize} \
+                echo ${GPU}
+                python PFN.py --num_hidden ${num_hidden} --psize ${psize} --fsize ${fsize} --dropout ${dropout}\
                 --stage ${stage} --lr ${lr}  --batch_size ${batch_size} --result_dir ${result_dir} --GPU ${GPU} --epochs ${epochs} &
             done
         done
     done
 done
 
-
+# cd /baldig/physicsprojects2/N_tagger/exp/20210223_PFN_search_v2
 
 #result_dir=${exp_path}/${exp_name}/efp566_${inter_dim}_${latent}_lr${lr}_batch_size${batch_size}
 #mkdir -p ${result_dir}
