@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="arcus-5.ics.uci.edu">
+  <component name="PublishConfigData" autoUpload="Always" serverName="yadongl1@arcus-9.ics.uci.edu:22 agent">
     <serverData>
-      <paths name="arcus-5.ics.uci.edu">
+      <paths name="yadongl1@arcus-9.ics.uci.edu:22 agent">
         <serverdata>
           <mappings>
-            <mapping deploy="/extra/yadongl10/git_project/sandbox" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/extra/yadongl10/git_project/sandbox" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>

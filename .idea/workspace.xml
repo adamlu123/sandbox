@@ -2,11 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e44c722f-3e28-4a47-9abe-72e45a577b99" name="Default Changelist" comment="minor">
+      <change afterPath="$PROJECT_DIR$/multi_prongs/test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/deployment.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/deployment.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/sandbox.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sandbox.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/PFN/PFN.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/PFN/PFN.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/PFN/run_pfn.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/PFN/run_pfn.sh" afterDir="false" />
     </list>
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -178,6 +179,7 @@
     <option name="width" value="1920" />
     <option name="height" value="1080" />
   </component>
+  <component name="ProjectId" id="1pDFMsvSbq8ZLstXBkc8wLwblvb" />
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
   </component>
@@ -229,10 +231,17 @@
       </pane>
     </panes>
   </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
   <component name="PropertiesComponent">
     <property name="ASKED_SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="true" />
+    <property name="credentialsType com.jetbrains.python.remote.PyCreateRemoteInterpreterDialog$PyCreateRemoteSdkForm" value="Web Deployment" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
@@ -248,19 +257,7 @@
       <recent name="$PROJECT_DIR$/multi_prongs/side_exp" />
     </key>
   </component>
-  <component name="RunDashboard">
-    <option name="ruleStates">
-      <list>
-        <RuleState>
-          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
-        </RuleState>
-        <RuleState>
-          <option name="name" value="StatusDashboardGroupingRule" />
-        </RuleState>
-      </list>
-    </option>
-  </component>
-  <component name="RunManager" selected="Python.PFN">
+  <component name="RunManager" selected="Python.test">
     <configuration name="PFN" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="sandbox" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -327,7 +324,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="sequence_net" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="test" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="sandbox" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -340,7 +337,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/multi_prongs/side_exp/sequence_net.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/multi_prongs/test.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -373,21 +370,22 @@
     </configuration>
     <list>
       <item itemvalue="Python.train" />
-      <item itemvalue="Python.sequence_net" />
       <item itemvalue="Python.bert_net" />
       <item itemvalue="Python.efp_exp" />
       <item itemvalue="Python.PFN" />
+      <item itemvalue="Python.test" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.test" />
         <item itemvalue="Python.PFN" />
         <item itemvalue="Python.efp_exp" />
         <item itemvalue="Python.train" />
         <item itemvalue="Python.bert_net" />
-        <item itemvalue="Python.sequence_net" />
       </list>
     </recent_temporary>
   </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="StructureViewFactory">
     <option name="ACTIVE_ACTIONS" value=",ALPHA_COMPARATOR" />
   </component>
@@ -430,6 +428,7 @@
       <workItem from="1612209245773" duration="59027000" />
       <workItem from="1612894957211" duration="54490000" />
       <workItem from="1614290778439" duration="3128000" />
+      <workItem from="1614709713975" duration="2826000" />
     </task>
     <servers />
   </component>
@@ -508,7 +507,19 @@
     </layout-to-restore>
   </component>
   <component name="TypeScriptGeneratedFilesManager">
-    <option name="version" value="1" />
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="minor" />
@@ -713,38 +724,39 @@
     </watches-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/sandbox$LinearRegression.coverage" NAME="LinearRegression Coverage Results" MODIFIED="1572459211839" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GammaDistributionLearning" />
-    <SUITE FILE_PATH="coverage/sandbox$beta_gamma_MF.coverage" NAME="beta-gamma-MF Coverage Results" MODIFIED="1572802274423" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
-    <SUITE FILE_PATH="coverage/sandbox$vae_repar.coverage" NAME="vae_repar Coverage Results" MODIFIED="1579467225239" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
-    <SUITE FILE_PATH="coverage/sandbox$LinearRegression__1_.coverage" NAME="LinearRegression (1) Coverage Results" MODIFIED="1572562495040" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
-    <SUITE FILE_PATH="coverage/sandbox$sequence_net.coverage" NAME="sequence_net Coverage Results" MODIFIED="1608524578472" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
-    <SUITE FILE_PATH="coverage/sandbox$LinearRegressionDDM.coverage" NAME="LinearRegressionDDM Coverage Results" MODIFIED="1570666436852" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GammaDistributionLearning" />
-    <SUITE FILE_PATH="coverage/sandbox$bert_net.coverage" NAME="bert_net Coverage Results" MODIFIED="1609821396317" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
+    <SUITE FILE_PATH="coverage/sandbox$ContLearn_VAE.coverage" NAME="ContLearn_VAE Coverage Results" MODIFIED="1581011320761" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
+    <SUITE FILE_PATH="coverage/sandbox$tetrode_selection.coverage" NAME="tetrode_selection Coverage Results" MODIFIED="1582222659593" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
+    <SUITE FILE_PATH="coverage/sandbox$utils.coverage" NAME="utils Coverage Results" MODIFIED="1578382286386" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
     <SUITE FILE_PATH="coverage/sandbox$MicrobioCountData.coverage" NAME="MicrobioCountData Coverage Results" MODIFIED="1578898230834" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
     <SUITE FILE_PATH="coverage/sandbox$model.coverage" NAME="model Coverage Results" MODIFIED="1570558744789" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GammaDistributionLearning" />
-    <SUITE FILE_PATH="coverage/sandbox$Oracle.coverage" NAME="Oracle Coverage Results" MODIFIED="1570656177344" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GammaDistributionLearning" />
-    <SUITE FILE_PATH="coverage/sandbox$particle_net.coverage" NAME="particle_net Coverage Results" MODIFIED="1608523642871" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
-    <SUITE FILE_PATH="coverage/sandbox$single_thres_gate.coverage" NAME="single_thres_gate Coverage Results" MODIFIED="1579913613168" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/phase_transit" />
-    <SUITE FILE_PATH="coverage/sandbox$tetrode_selection.coverage" NAME="tetrode_selection Coverage Results" MODIFIED="1582222659593" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
-    <SUITE FILE_PATH="coverage/sandbox$main.coverage" NAME="main Coverage Results" MODIFIED="1579479138471" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/code_vae" />
-    <SUITE FILE_PATH="coverage/sandbox$process_data.coverage" NAME="process_data Coverage Results" MODIFIED="1606590286810" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
-    <SUITE FILE_PATH="coverage/sandbox$feature_selection_rat.coverage" NAME="feature_selection_rat Coverage Results" MODIFIED="1580877801824" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
-    <SUITE FILE_PATH="coverage/sandbox$beta_gamma_MF_2stage.coverage" NAME="beta-gamma-MF-2stage Coverage Results" MODIFIED="1572830613681" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
-    <SUITE FILE_PATH="coverage/sandbox$PFN.coverage" NAME="PFN Coverage Results" MODIFIED="1614129325819" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs/PFN" />
-    <SUITE FILE_PATH="coverage/sandbox$LinearRegressionFlow.coverage" NAME="LinearRegressionFlow Coverage Results" MODIFIED="1602790878660" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vi" />
     <SUITE FILE_PATH="coverage/sandbox$vae_bayes_update.coverage" NAME="vae_bayes_update Coverage Results" MODIFIED="1572893815757" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
-    <SUITE FILE_PATH="coverage/sandbox$resnet.coverage" NAME="resnet Coverage Results" MODIFIED="1606504842307" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
-    <SUITE FILE_PATH="coverage/sandbox$utils.coverage" NAME="utils Coverage Results" MODIFIED="1578382286386" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
-    <SUITE FILE_PATH="coverage/sandbox$simple_vae.coverage" NAME="simple_vae Coverage Results" MODIFIED="1581969987263" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
-    <SUITE FILE_PATH="coverage/sandbox$non_local_vae.coverage" NAME="non_local_vae Coverage Results" MODIFIED="1582129159430" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
-    <SUITE FILE_PATH="coverage/sandbox$superchris_latent.coverage" NAME="superchris_latent Coverage Results" MODIFIED="1580341718493" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
-    <SUITE FILE_PATH="coverage/sandbox$bert.coverage" NAME="bert Coverage Results" MODIFIED="1607707930356" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
-    <SUITE FILE_PATH="coverage/sandbox$mass_regression.coverage" NAME="mass_regression Coverage Results" MODIFIED="1604698891395" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
-    <SUITE FILE_PATH="coverage/sandbox$vae.coverage" NAME="vae Coverage Results" MODIFIED="1572893206444" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
-    <SUITE FILE_PATH="coverage/sandbox$LinearRegressionLognorm.coverage" NAME="LinearRegressionLognorm Coverage Results" MODIFIED="1577692877871" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
-    <SUITE FILE_PATH="coverage/sandbox$ContLearn_VAE.coverage" NAME="ContLearn_VAE Coverage Results" MODIFIED="1581011320761" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
+    <SUITE FILE_PATH="coverage/sandbox$Oracle.coverage" NAME="Oracle Coverage Results" MODIFIED="1570656177344" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GammaDistributionLearning" />
+    <SUITE FILE_PATH="coverage/sandbox$PFN.coverage" NAME="PFN Coverage Results" MODIFIED="1614724477947" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs/PFN" />
+    <SUITE FILE_PATH="coverage/sandbox$particle_net.coverage" NAME="particle_net Coverage Results" MODIFIED="1608523642871" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
     <SUITE FILE_PATH="coverage/sandbox$efp_exp.coverage" NAME="efp_exp Coverage Results" MODIFIED="1614129268883" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
+    <SUITE FILE_PATH="coverage/sandbox$feature_selection_rat.coverage" NAME="feature_selection_rat Coverage Results" MODIFIED="1580877801824" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
+    <SUITE FILE_PATH="coverage/sandbox$simple_vae.coverage" NAME="simple_vae Coverage Results" MODIFIED="1581969987263" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
+    <SUITE FILE_PATH="coverage/sandbox$sequence_net.coverage" NAME="sequence_net Coverage Results" MODIFIED="1608524578472" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
+    <SUITE FILE_PATH="coverage/sandbox$single_thres_gate.coverage" NAME="single_thres_gate Coverage Results" MODIFIED="1579913613168" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/phase_transit" />
+    <SUITE FILE_PATH="coverage/sandbox$LinearRegression__1_.coverage" NAME="LinearRegression (1) Coverage Results" MODIFIED="1572562495040" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
+    <SUITE FILE_PATH="coverage/sandbox$main.coverage" NAME="main Coverage Results" MODIFIED="1579479138471" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/code_vae" />
+    <SUITE FILE_PATH="coverage/sandbox$bert_net.coverage" NAME="bert_net Coverage Results" MODIFIED="1609821396317" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
+    <SUITE FILE_PATH="coverage/sandbox$vae.coverage" NAME="vae Coverage Results" MODIFIED="1572893206444" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
+    <SUITE FILE_PATH="coverage/sandbox$non_local_vae.coverage" NAME="non_local_vae Coverage Results" MODIFIED="1582129159430" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
+    <SUITE FILE_PATH="coverage/sandbox$LinearRegressionDDM.coverage" NAME="LinearRegressionDDM Coverage Results" MODIFIED="1570666436852" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GammaDistributionLearning" />
     <SUITE FILE_PATH="coverage/sandbox$train.coverage" NAME="train Coverage Results" MODIFIED="1612996801188" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
+    <SUITE FILE_PATH="coverage/sandbox$bert.coverage" NAME="bert Coverage Results" MODIFIED="1607707930356" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
+    <SUITE FILE_PATH="coverage/sandbox$test.coverage" NAME="test Coverage Results" MODIFIED="1614724522171" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
+    <SUITE FILE_PATH="coverage/sandbox$process_data.coverage" NAME="process_data Coverage Results" MODIFIED="1606590286810" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
+    <SUITE FILE_PATH="coverage/sandbox$mass_regression.coverage" NAME="mass_regression Coverage Results" MODIFIED="1604698891395" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
+    <SUITE FILE_PATH="coverage/sandbox$resnet.coverage" NAME="resnet Coverage Results" MODIFIED="1606504842307" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/multi_prongs" />
+    <SUITE FILE_PATH="coverage/sandbox$beta_gamma_MF.coverage" NAME="beta-gamma-MF Coverage Results" MODIFIED="1572802274423" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
+    <SUITE FILE_PATH="coverage/sandbox$vae_repar.coverage" NAME="vae_repar Coverage Results" MODIFIED="1579467225239" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
+    <SUITE FILE_PATH="coverage/sandbox$beta_gamma_MF_2stage.coverage" NAME="beta-gamma-MF-2stage Coverage Results" MODIFIED="1572830613681" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NeuReparam" />
+    <SUITE FILE_PATH="coverage/sandbox$LinearRegressionFlow.coverage" NAME="LinearRegressionFlow Coverage Results" MODIFIED="1602790878660" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vi" />
+    <SUITE FILE_PATH="coverage/sandbox$LinearRegressionLognorm.coverage" NAME="LinearRegressionLognorm Coverage Results" MODIFIED="1577692877871" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/NonLocalPrior" />
+    <SUITE FILE_PATH="coverage/sandbox$superchris_latent.coverage" NAME="superchris_latent Coverage Results" MODIFIED="1580341718493" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/nonlocal_vae" />
+    <SUITE FILE_PATH="coverage/sandbox$LinearRegression.coverage" NAME="LinearRegression Coverage Results" MODIFIED="1572459211839" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GammaDistributionLearning" />
   </component>
   <component name="debuggerHistoryManager">
     <expressions id="evaluateCodeFragment">
