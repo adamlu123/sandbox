@@ -2,10 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="e44c722f-3e28-4a47-9abe-72e45a577b99" name="Default Changelist" comment="minor">
-      <change afterPath="$PROJECT_DIR$/multi_prongs/test.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/deployment.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/deployment.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/sandbox.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sandbox.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -257,7 +253,7 @@
       <recent name="$PROJECT_DIR$/multi_prongs/side_exp" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.test">
+  <component name="RunManager" selected="Python.test_env">
     <configuration name="PFN" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="sandbox" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -324,7 +320,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="test" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="test_env" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="sandbox" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -337,7 +333,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/multi_prongs/test.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/multi_prongs/test_env.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -373,11 +369,11 @@
       <item itemvalue="Python.bert_net" />
       <item itemvalue="Python.efp_exp" />
       <item itemvalue="Python.PFN" />
-      <item itemvalue="Python.test" />
+      <item itemvalue="Python.test_env" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.test" />
+        <item itemvalue="Python.test_env" />
         <item itemvalue="Python.PFN" />
         <item itemvalue="Python.efp_exp" />
         <item itemvalue="Python.train" />
@@ -428,7 +424,7 @@
       <workItem from="1612209245773" duration="59027000" />
       <workItem from="1612894957211" duration="54490000" />
       <workItem from="1614290778439" duration="3128000" />
-      <workItem from="1614709713975" duration="2826000" />
+      <workItem from="1614709713975" duration="3299000" />
     </task>
     <servers />
   </component>
