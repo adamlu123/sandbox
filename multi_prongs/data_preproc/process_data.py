@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import h5py
 import seaborn as sns
 import glob
+import pickle as pkl
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -11,6 +12,7 @@ parser.add_argument(
     type=str,
     default='res1')
 args = parser.parse_args()
+
 
 def get_files():
     files = glob.glob(data_dir)
@@ -22,7 +24,7 @@ def get_files():
             name_dict[2].append(file)
         elif 'aug_ztt_homog' in file:
             name_dict[3].append(file)
-        elif 'aug_ghha_a1000' in file:
+        elif 'aug_ghha_a1000' or 'aug_zwwa' in file:
             name_dict[4].append(file)
         elif 'aug_gtta_u_homog' in file:
             name_dict[6].append(file)
@@ -50,7 +52,7 @@ def process_tower(towerslines_by_jet):
     return towerslist_by_jet
 
 
-def parser(file, N, mass_range):
+def parser(file, N):
     HL = []
     Tower = []
     towerslines_by_jet = []
@@ -70,10 +72,19 @@ def parser(file, N, mass_range):
                 ### process HL for new jet
             cnt += 1
             processed = process_HL(file[i:i + 3], N)
-            if processed[-3] + processed[-2] == N and (processed[-5] > mass_range[0] and processed[-5] < mass_range[1]):
-                matched_cnt += 1
-                HL.append(processed)
-                match = True
+            if processed[-3] + processed[-2] == N: #and (processed[-5] > mass_range[0] and processed[-5] < mass_range[1]):
+                if args.subset == 'res6':
+                    Nq, Nb = processed[-3], processed[-2]
+                    if Nq == 4 and Nb == 0:
+                        matched_cnt += 1
+                        HL.append(processed)
+                        match = True
+                    else:
+                        match = False
+                else:
+                    matched_cnt += 1
+                    HL.append(processed)
+                    match = True
             else:
                 match = False
 
@@ -128,9 +139,9 @@ def save_h5(seed=123, HL_only=True):
                 if len(HL) != len(Tower):
                     print(len(HL), len(Tower))
                     raise ValueError('len of HL must equal to len of Tower!')
-                parsed_Tower = parsed_Tower + Tower
+                parsed_Tower = parsed_Tower + Tower if len(Tower) > 0 else parsed_Tower
             print(np.array(HL)[:, -4].max())
-            parsed_HL = parsed_HL + HL
+            parsed_HL = parsed_HL + HL if len(HL) > 0 else parsed_HL
             target = target + [N] * len(HL)
 
     idx = np.random.permutation(len(target))
@@ -158,6 +169,7 @@ def get_transform_target(target):
     trasformed_target = np.array(trasformed_target)
     return trasformed_target
 
+
 ############ start main
 subset = args.subset
 data_dir= "/baldig/physicsprojects2/N_tagger/{}/*.txt".format(subset)
@@ -168,12 +180,14 @@ name_dict = get_files()
 parsed_HL, parsed_Tower, target = save_h5(HL_only=False)
 trasformed_target = get_transform_target(target)
 
-with h5py.File('/baldig/physicsprojects2/N_tagger/v20200302_data/{}_all_parsedTower.h5'.format(subset), 'a') as f:
+with h5py.File('/baldig/physicsprojects2/N_tagger/v20200302_data/{}_all_HL_target.h5'.format(subset), 'a') as f:
     f.create_dataset('HL', data=parsed_HL)
-    f.create_dataset('parsed_Tower', data=parsed_Tower)
     f.create_dataset('target', data=target)
     f.create_dataset('trasformed_target', data=trasformed_target)
+    # f.create_dataset('parsed_Tower', data=parsed_Tower)
 
+with open('/baldig/physicsprojects2/N_tagger/v20200302_data/{}_all_parsedTower.h5'.format(subset), 'wb') as f:
+    pkl.dump(parsed_Tower, f)
 
 
 
@@ -216,3 +230,13 @@ if perform_balancing:
         f.create_dataset('target', data=trasformed_target[b_and_u_subset_idx.reshape(-1)])
         f.create_dataset('parsed_Tower', data=padded_tower)
     print('finish saving!', subset)
+
+
+# cd /extra/yadongl10/git_project/sandbox/multi_prongs/data_preproc
+
+# ('Proc ', 'uu', ' nq ', 1, ' count = ', 12560, ' jdone = ', 19)
+# ('Proc ', 'zww', ' nq ', 2, ' count = ', 89359, ' jdone = ', 57)
+# ('Proc ', 'ztt', ' nq ', 3, ' count = ', 87989, ' jdone = ', 57)
+# ('Proc ', 'ghha', ' nq ', 4, ' count = ', 96213, ' jdone = ', 171)
+# ('Proc ', 'gtta', ' nq ', 6, ' count = ', 71060, ' jdone = ', 114)
+# ('Proc ', 'atthu', ' nq ', 8, ' count = ', 59934, ' jdone = ', 304)
