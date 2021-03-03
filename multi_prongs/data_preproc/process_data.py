@@ -72,7 +72,10 @@ def parser(file, N):
                 ### process HL for new jet
             cnt += 1
             processed = process_HL(file[i:i + 3], N)
-            if processed[-3] + processed[-2] == N: #and (processed[-5] > mass_range[0] and processed[-5] < mass_range[1]):
+            # if len(processed) != 22:
+                # print(file[i:i + 3])
+                # raise ValueError('len(processed)', len(processed))
+            if processed[-3] + processed[-2] == N and len(processed) == 22: #and (processed[-5] > mass_range[0] and processed[-5] < mass_range[1]):
                 if args.subset == 'res6':
                     Nq, Nb = processed[-3], processed[-2]
                     if Nq == 4 and Nb == 0:
@@ -139,9 +142,9 @@ def save_h5(seed=123, HL_only=True):
                 if len(HL) != len(Tower):
                     print(len(HL), len(Tower))
                     raise ValueError('len of HL must equal to len of Tower!')
-                parsed_Tower = parsed_Tower + Tower if len(Tower) > 0 else parsed_Tower
-            print(np.array(HL)[:, -4].max())
-            parsed_HL = parsed_HL + HL if len(HL) > 0 else parsed_HL
+                parsed_Tower = parsed_Tower + Tower
+            # print(np.array(HL)[:, -4].max())
+            parsed_HL = parsed_HL + HL
             target = target + [N] * len(HL)
 
     idx = np.random.permutation(len(target))
@@ -179,6 +182,7 @@ name_dict = get_files()
 
 parsed_HL, parsed_Tower, target = save_h5(HL_only=False)
 trasformed_target = get_transform_target(target)
+print(parsed_HL, type(parsed_HL), parsed_HL.shape)
 
 with h5py.File('/baldig/physicsprojects2/N_tagger/v20200302_data/{}_all_HL_target.h5'.format(subset), 'a') as f:
     f.create_dataset('HL', data=parsed_HL)
