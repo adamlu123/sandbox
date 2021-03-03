@@ -3,7 +3,12 @@
   <component name="ChangeListManager">
     <list default="true" id="e44c722f-3e28-4a47-9abe-72e45a577b99" name="Default Changelist" comment="minor">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/data_preproc/process_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/data_preproc/process_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/eval_HLNet.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/run_scripts/eval_HLNet.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/eval_efp_gated_net.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/run_scripts/eval_efp_gated_net.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/eval_efp_net.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/run_scripts/eval_efp_net.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/run_efp_net.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/run_scripts/run_efp_net.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/sherpa.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/run_scripts/sherpa.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/train.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/cnn_exp.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -258,11 +263,11 @@
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/multi_prongs/run_scripts" />
       <recent name="$PROJECT_DIR$/multi_prongs/PFN" />
       <recent name="$PROJECT_DIR$/multi_prongs" />
       <recent name="$PROJECT_DIR$/multi_prongs/data_preproc" />
       <recent name="$PROJECT_DIR$/multi_prongs/process_data" />
-      <recent name="$PROJECT_DIR$/multi_prongs/side_exp" />
     </key>
   </component>
   <component name="RunManager" selected="Python.test_env">
@@ -367,7 +372,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/multi_prongs/train.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/multi_prongs/cnn_exp.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -438,7 +443,7 @@
       <workItem from="1614290778439" duration="3128000" />
       <workItem from="1614709713975" duration="9232000" />
       <workItem from="1614731746221" duration="10548000" />
-      <workItem from="1614811017672" duration="352000" />
+      <workItem from="1614811017672" duration="1181000" />
     </task>
     <servers />
   </component>
@@ -704,7 +709,7 @@
           <option name="timeStamp" value="591" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/multi_prongs/train.py</url>
+          <url>file://$PROJECT_DIR$/multi_prongs/cnn_exp.py</url>
           <line>212</line>
           <option name="timeStamp" value="609" />
         </line-breakpoint>

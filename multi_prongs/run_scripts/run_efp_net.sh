@@ -62,7 +62,7 @@ for strength in 6 5 7 10 #1 2 3 4 #
                 for lr in 1e-3
                     do
                     mkdir -p ${exp_dir}
-                    cp ${multip_fldr}/run_efp_net.sh ${exp_dir}
+                    cp ${multip_fldr}/run_scripts/run_efp_net.sh ${exp_dir}
                     result_dir=${exp_path}/${exp_name}/efp566_model${model_type}_strength${strength}_inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}
                     mkdir -p ${result_dir}
                     echo ${subsets}

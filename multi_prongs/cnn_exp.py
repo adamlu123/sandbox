@@ -29,7 +29,7 @@ exp_name = '/2020209_lr_1e-3_decay0.5_nowc_weighted_sample_corrected_image_HLNet
 if not os.path.exists(root + exp_name):
     os.makedirs(root + exp_name)
 ## loging:
-copyfile('/extra/yadongl10/git_project/sandbox/multi_prongs/train.py', root+exp_name+'/train.py')
+copyfile('/extra/yadongl10/git_project/sandbox/multi_prongs/cnn_exp.py', root+exp_name+'/cnn_exp.py')
 
 # filename = '/extra/yadongl10/data/N-tagger/combined_1103.h5'
 # total_num_sample = 215630
