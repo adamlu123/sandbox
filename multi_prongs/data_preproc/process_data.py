@@ -18,13 +18,13 @@ def get_files():
     files = glob.glob(data_dir)
     name_dict = {N:[] for N in [1,2,3,4,6,8]}
     for file in files:
-        if 'aug_uu_homog' in file:
+        if 'aug_uu' in file:  # aug_uu_homog
             name_dict[1].append(file)
         elif 'aug_zww_homog' in file:
             name_dict[2].append(file)
         elif 'aug_ztt_homog' in file:
             name_dict[3].append(file)
-        elif 'aug_ghha_a1000' or 'aug_zwwa' in file:
+        elif 'aug_ghha_a1000' in file or 'aug_zwwa' in file:
             name_dict[4].append(file)
         elif 'aug_gtta_u_homog' in file:
             name_dict[6].append(file)
@@ -175,22 +175,23 @@ def get_transform_target(target):
 
 ############ start main
 subset = args.subset
-data_dir= "/baldig/physicsprojects2/N_tagger/{}/*.txt".format(subset)
+data_dir= "/baldig/physicsprojects2/N_tagger/raw_data/{}/*.txt".format(subset)
 files = glob.glob(data_dir)
 print(len(files))
 name_dict = get_files()
+print([v[:5] for k, v in name_dict.items()])
 
 parsed_HL, parsed_Tower, target = save_h5(HL_only=False)
 trasformed_target = get_transform_target(target)
 print(parsed_HL, type(parsed_HL), parsed_HL.shape)
 
-with h5py.File('/baldig/physicsprojects2/N_tagger/v20200302_data/{}_all_HL_target.h5'.format(subset), 'a') as f:
+with h5py.File('/baldig/physicsprojects2/N_tagger/data/v20200302_data/{}_all_HL_target.h5'.format(subset), 'a') as f:
     f.create_dataset('HL', data=parsed_HL)
     f.create_dataset('target', data=target)
     f.create_dataset('trasformed_target', data=trasformed_target)
     # f.create_dataset('parsed_Tower', data=parsed_Tower)
 
-with open('/baldig/physicsprojects2/N_tagger/v20200302_data/{}_all_parsedTower.h5'.format(subset), 'wb') as f:
+with open('/baldig/physicsprojects2/N_tagger/data/v20200302_data/{}_all_parsedTower.pkl'.format(subset), 'wb') as f:
     pkl.dump(parsed_Tower, f)
 
 

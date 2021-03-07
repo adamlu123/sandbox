@@ -24,11 +24,11 @@ parser.add_argument(
     )
 parser.add_argument(
     "--result_dir", type=str,
-    default="/baldig/physicsprojects2/N_tagger/exp/efps/20200209_HLNet_inter_dim800_num_hidden5"
+    default="/baldig/physicsprojects2/N_tagger/exp/exp_no_ptcut/efps/20200209_HLNet_inter_dim800_num_hidden5"
     )
 parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
 parser.add_argument('--model_type', default='HLNet')
-parser.add_argument('--load_pretrained', action='store_true', default=False)
+parser.add_argument('--load_pretrained', action='store_true', default=True)
 parser.add_argument('--batch_size', type=int, default=128, help='input batch size for training (default: 100)')
 parser.add_argument('--epochs', type=int, default=1000, help='number of epochs to train (default: 1000)')
 parser.add_argument('--seed', type=int, default=123, help='random seed (default: 1)')
@@ -45,9 +45,10 @@ import torch.nn as nn
 from torch import optim
 from resnet import make_hlnet_base
 from torch.utils.tensorboard import SummaryWriter
-writer = SummaryWriter(args.result_dir)
 
 stage = args.stage
+
+writer = SummaryWriter(args.result_dir) if stage != 'eval' else None
 load_pretrained = args.load_pretrained
 strength = args.strength
 
@@ -60,13 +61,14 @@ result_dir = args.result_dir
 
 ## loging:
 # ================ HL+mass file
-filename = '/baldig/physicsprojects2/N_tagger/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
+filename = '/baldig/physicsprojects2/N_tagger/data/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
+# filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/res8_all_HL_target_cutted.h5'
 # ================ target file
-fn_target = '/baldig/physicsprojects2/N_tagger/exp/test/combined_pred_all.h5'
+fn_target = '/baldig/physicsprojects2/N_tagger/exp/exp_no_ptcut/test/combined_pred_all.h5'
 tower_subset = 'parsed_Tower' # or tower_from_img parsed_Tower
 # ================ efps file
 dv, nv = 7, 5
-fn_efps = '/baldig/physicsprojects2/N_tagger/efp/20200202_{}_d{}_n{}/efp_merge.h5'.format(tower_subset, dv, nv)
+fn_efps = '/baldig/physicsprojects2/N_tagger/data/efp/20200202_{}_d{}_n{}/efp_merge.h5'.format(tower_subset, dv, nv)
 # fn_efps = '/baldig/physicsprojects2/N_tagger/efp/20200201_tower_original/efp_merge.h5' # 20200201_tower_original 20200201_tower_img
 # fn_efps = '/baldig/physicsprojects2/N_tagger/efp/20200202_tower_d4/efp_merge.h5'
 
@@ -75,7 +77,7 @@ with h5py.File(filename, 'r') as f:
 train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
 
 iterations = int(train_cut / batchsize)
-iter_test = int((val_cut - train_cut) / batchsize)
+iter_test = int((total_num_sample - val_cut) / batchsize)
 print('total number samples, train iter and test iter', total_num_sample, iterations, iter_test)
 
 
@@ -85,10 +87,9 @@ def data_generator(filename, batchsize, start, stop=None, weighted=False):
     with h5py.File(filename, 'r') as f:
         while True:
             batch = slice(iexample, iexample + batchsize)
-            X = f['image_corrected'][batch, :, :]
             HL_unnorm = f['HL'][batch, :-4]
             # TODO: mass + HL from img --> shape=(-1, 17)
-            HL = f['HL_from_img_normalized'][batch]
+            # HL = f['HL_from_img_normalized'][batch]
             # TODO: mass + HL from tower --> shape=(-1, 17)
             HL = f['HL_normalized'][batch, :-4]
             HL = np.delete(HL, -2, 1)  # delete pt TODO  mass: -1: mass, -2: pt
@@ -97,9 +98,9 @@ def data_generator(filename, batchsize, start, stop=None, weighted=False):
             target = f['target'][batch]
             if weighted:
                 weights = f['weights'][batch]
-                yield X, HL, target, weights, HL_unnorm
+                yield HL, target, weights, HL_unnorm
             else:
-                yield X, HL, target, HL_unnorm
+                yield HL, target, HL_unnorm
             iexample += batchsize
             if iexample + batchsize >= stop:
                 iexample = start
@@ -133,9 +134,9 @@ def target_data_generator(filename, batchsize, start, stop=None):
 
 
 generator = {}
-generator['train'] = data_generator(filename, batchsize, start=0, stop=train_cut, weighted=True)
-generator['val'] = data_generator(filename, batchsize, start=train_cut, stop=val_cut, weighted=True)
-generator['test'] = data_generator(filename, batchsize, start=val_cut, stop=test_cut, weighted=True)
+generator['train'] = data_generator(filename, batchsize, start=0, stop=train_cut, weighted=False)
+generator['val'] = data_generator(filename, batchsize, start=train_cut, stop=val_cut, weighted=False)
+generator['test'] = data_generator(filename, batchsize, start=val_cut, stop=test_cut, weighted=False)
 
 efp_generator = {}
 efp_generator['train'] = efp_data_generator(fn_efps, batchsize, start=0, stop=train_cut)
@@ -271,11 +272,11 @@ def train(model, optimizer, epoch):
     model.train()
     for i in range(iterations):
         optimizer.zero_grad()
-        X, HL, target_long, weights, _ = next(generator['train'])
+        HL, target_long, _ = next(generator['train'])
         target = next(target_generator['train'])
         efps = next(efp_generator['train'])
 
-        X, HL, target, target_long, weights, efps = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), \
+        HL, target, target_long, weights, efps = torch.tensor(HL).float().to(device), \
                                  torch.tensor(target).float().to(device), torch.tensor(target_long).long().to(device), \
                                                     torch.tensor(weights).to(device), torch.tensor(efps).float().to(device)
 
@@ -299,7 +300,7 @@ def train(model, optimizer, epoch):
             loss = loss.mean()
         loss.backward()
         optimizer.step()
-        acc = (torch.argmax(pred, dim=1) == target_long).sum().item() / target.shape[0]
+        acc = (torch.argmax(pred, dim=1) == target_long).sum().item() / target_long.shape[0]
 
         if i % 50 == 0:
             print('train loss:', loss.item(), 'gate loss', gate_loss, 'acc:', acc)
@@ -323,12 +324,12 @@ def test(model, subset, epoch):
     gates = torch.tensor([0])
     with torch.no_grad():
         for i in range(iter_test):
-            X, HL, target_long, _, HL_unnorm = next(generator[subset])
+            HL, target_long, HL_unnorm = next(generator[subset])
             target = next(target_generator[subset])
             efps = next(efp_generator[subset])
 
             HL_unnorm = torch.tensor(HL_unnorm).float().to(device)
-            X, HL, target, efps = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), \
+            HL, target, efps = torch.tensor(HL).float().to(device), \
                                           torch.tensor(target).float().to(device), torch.tensor(efps).float().to(device)
 
             target_long = torch.tensor(target_long).long().to(device)
@@ -340,11 +341,11 @@ def test(model, subset, epoch):
             elif model_type == 'GatedHLefpNet':
                 pred, pred_clipped, gates = model(HL, efps)
                 pred_armax_clipped = torch.argmax(pred_clipped, dim=1)
-                tmp_clipped += torch.sum(pred_armax_clipped == target_long).item() / target.shape[0]
+                tmp_clipped += torch.sum(pred_armax_clipped == target_long).item() / target_long.shape[0]
             elif model_type == 'EFPNet':
                 pred = model(efps)
             pred_armax = torch.argmax(pred, dim=1)
-            tmp += torch.sum(pred_armax==target_long).item() / target.shape[0]
+            tmp += torch.sum(pred_armax==target_long).item() / target_long.shape[0]
 
             mass = HL_unnorm[:, -1]
             bin_idx = torch.floor((mass - mass_range[0]) / bin_len)

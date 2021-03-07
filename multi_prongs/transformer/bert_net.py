@@ -18,10 +18,10 @@ parser.add_argument(
     )
 parser.add_argument(
     "--result_dir", type=str,
-    default="/baldig/physicsprojects2/N_tagger/exp/efps/20200209_HLNet_inter_dim800_num_hidden5"
+    default="/baldig/physicsprojects2/N_tagger/exp/exp_no_ptcut/efps/20200209_HLNet_inter_dim800_num_hidden5"
     )
-parser.add_argument('--stage', default='train', help='mode in [eval, train]')
-parser.add_argument('--model_type', default='HLNet')
+parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
+parser.add_argument('--model_type', default='bert')
 parser.add_argument('--load_pretrained', action='store_true', default=False)
 parser.add_argument('--batch_size', type=int, default=128, help='input batch size for training (default: 100)')
 parser.add_argument('--epochs', type=int, default=1000, help='number of epochs to train (default: 1000)')
@@ -48,14 +48,13 @@ device = 'cuda'
 batchsize = args.batchsize
 epoch = args.epoch
 load_pretrained = True
-root = '/baldig/physicsprojects2/N_tagger/exp'
+root = '/baldig/physicsprojects2/N_tagger/exp/exp_no_ptcut'
 exp_name = '/20201228_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed512_hidden6_head8'
 if not os.path.exists(root + exp_name):
     os.makedirs(root + exp_name)
 ## loging:
-copyfile('/extra/yadongl10/git_project/sandbox/multi_prongs/bert_net.py', root + exp_name + '/bert_net.py')
-
-filename = '/baldig/physicsprojects2/N_tagger/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
+copyfile('/extra/yadongl10/git_project/sandbox/multi_prongs/transformer/bert_net.py', root + exp_name + '/bert_net.py')
+filename = '/baldig/physicsprojects2/N_tagger/data/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
 
 with h5py.File(filename, 'r') as f:
     total_num_sample = f['target'].shape[0]
