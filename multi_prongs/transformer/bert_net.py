@@ -5,10 +5,6 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Sparse Auto-regressive Model')
 parser.add_argument(
-    "--strength", type=int, default=5,
-    help="regularization strength"
-    )
-parser.add_argument(
     "--num_hidden", type=int, default=5,
     help="number of latent layer"
     )
@@ -16,18 +12,18 @@ parser.add_argument(
     "--inter_dim", type=int, default=800,
     help="hidden layer dimension"
     )
-parser.add_argument(
-    "--result_dir", type=str,
-    default="/baldig/physicsprojects2/N_tagger/exp/exp_no_ptcut/efps/20200209_HLNet_inter_dim800_num_hidden5"
-    )
-parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
+# parser.add_argument(
+#     "--result_dir", type=str,
+#     default="/baldig/physicsprojects2/N_tagger/exp/exp_no_ptcut/efps/20200209_HLNet_inter_dim800_num_hidden5"
+#     )
+parser.add_argument('--stage', default='train', help='mode in [eval, train]')
 parser.add_argument('--model_type', default='bert')
 parser.add_argument('--load_pretrained', action='store_true', default=False)
-parser.add_argument('--batch_size', type=int, default=128, help='input batch size for training (default: 100)')
+parser.add_argument('--batch_size', type=int, default=256, help='input batch size for training (default: 256)')
 parser.add_argument('--epochs', type=int, default=1000, help='number of epochs to train (default: 1000)')
 parser.add_argument('--seed', type=int, default=123, help='random seed (default: 1)')
 parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 0.001)')
-parser.add_argument("--GPU", type=str, default='3', help='GPU id')
+parser.add_argument("--GPU", type=str, default='0,1', help='GPU id')
 args = parser.parse_args()
 
 import os
@@ -42,19 +38,25 @@ from torch import optim
 import torch.nn.functional as F
 from bert import BertForSequenceClassification
 from shutil import copyfile
+from torch.utils.tensorboard import SummaryWriter
 
 ## load config
 device = 'cuda'
-batchsize = args.batchsize
-epoch = args.epoch
+batchsize = args.batch_size
+epoch = args.epochs
 load_pretrained = True
-root = '/baldig/physicsprojects2/N_tagger/exp/exp_no_ptcut'
-exp_name = '/20201228_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed512_hidden6_head8'
+root = '/baldig/physicsprojects2/N_tagger/exp/exp_ptcut'
+exp_name = '/2020307_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed512_hidden4_head8'
 if not os.path.exists(root + exp_name):
     os.makedirs(root + exp_name)
+
+stage = args.stage
+writer = SummaryWriter(root + exp_name) if stage != 'eval' else None
+
 ## loging:
 copyfile('/extra/yadongl10/git_project/sandbox/multi_prongs/transformer/bert_net.py', root + exp_name + '/bert_net.py')
-filename = '/baldig/physicsprojects2/N_tagger/data/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
+# filename = '/baldig/physicsprojects2/N_tagger/data/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
+filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res123457910.h5'
 
 with h5py.File(filename, 'r') as f:
     total_num_sample = f['target'].shape[0]
@@ -71,9 +73,9 @@ def data_generator(filename, batchsize, start, stop=None, weighted=False):
     with h5py.File(filename, 'r') as f:
         while True:
             batch = slice(iexample, iexample + batchsize)
-            X = f['tower_from_img'][batch, :, :]
-            # X = f['parsed_Tower_centered'][batch, :, :]
-            HL = f['HL_normalized'][batch, :-4]
+            # X = f['tower_from_img'][batch, :, :]
+            X = f['parsed_Tower_centered'][batch, :, :]
+            HL = f['HL'][batch, :-4]
             target = f['target'][batch]
             if weighted:
                 weights = f['weights'][batch]
@@ -128,9 +130,9 @@ class BertMassNet(nn.Module):
 
 config = BertConfig(
                     hidden_size=512,
-                    num_hidden_layers=6, num_attention_heads=8,
-                    intermediate_size=128, num_labels=6,
-                    input_dim=182, #230
+                    num_hidden_layers=4, num_attention_heads=8,
+                    intermediate_size=128, num_labels=7,
+                    input_dim=230,
                     attention_probs_dropout_prob=0.1, hidden_dropout_prob=0.1
                     )
 
@@ -152,7 +154,7 @@ model = nn.DataParallel(model)
 ################### training
 optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=0)
 # optimizer = Lamb(model.parameters(), lr=1e-3, weight_decay=0, adam=True)
-scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[100, 200, 300, 400], gamma=0.5, last_epoch=-1)
+scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[200, 400, 600, 800], gamma=0.5, last_epoch=-1)
 loss_fn = nn.CrossEntropyLoss(reduction='none')
 
 
@@ -179,6 +181,8 @@ def train(model, optimizer):
 
         if i % 50 == 0:
             print('train loss:', loss.item(), 'acc:', acc)
+            writer.add_scalar('Loss/train', loss.item(), epoch * iterations + i)
+            writer.add_scalar('Acc/train', acc, epoch * iterations + i)
     val_acc = test(model, 'val')
     return val_acc, model
 
@@ -200,6 +204,7 @@ def test(model, subset):
             pred = torch.argmax(pred, dim=1)
             tmp += torch.sum(pred == target).item() / target.shape[0]
     print(model_type, 'acc', tmp / iter_test)
+    writer.add_scalar('Acc/val', tmp / iter_test, epoch)
     return tmp / iter_test
 
 

@@ -46,38 +46,38 @@ config = tf.ConfigProto()
 config.gpu_options.per_process_gpu_memory_fraction = 0.8
 config.gpu_options.allow_growth = True
 tf.keras.backend.set_session(tf.Session(config=config))
-
-
 # import energyflow as ef
 from energyflow.archs import PFN
 from energyflow.utils import data_split, remap_pids, to_categorical
 import h5py
-filename = '/baldig/physicsprojects2/N_tagger/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
+num_class = 7
+# filename = '/baldig/physicsprojects2/N_tagger/data/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
+filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res123457910.h5'
+
 with h5py.File(filename, 'r') as f:
-    X = np.array(f['parsed_Tower'])
+    X = np.array(f['parsed_Tower_centered'])
     y = np.array(f['target'])
-    HL = np.array(f['HL_normalized'])[:, :-4]
-    HL_unnorm = np.array(f['HL'])[:, :-4]
-mass = HL_unnorm[:, -1]
-HL_unnorm.shape, HL.shape
+    # HL = np.array(f['HL_normalized'])[:, :-4]
+    # HL_unnorm = np.array(f['HL'])[:, :-4]
+with h5py.File('/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res1234579_v2_hl.h5', 'r') as f:
+    HL = np.array(f['HL_normalized'][:, :-4])
 
 # convert labels to categorical
-Y = to_categorical(y, num_classes=6)
+Y = to_categorical(y, num_classes=num_class)
 
 # do train/val/test split
 total_num_sample = Y.shape[0]
 
 # center + normalize the tower
-for x in X:
-    mask = x[:, 0] > 0
-    yphi_avg = np.average(x[mask, 1:3], weights=x[mask, 0], axis=0)
-    x[mask, 1:3] -= yphi_avg
-    x[mask, 0] /= x[:, 0].sum()
+# for x in X:
+#     mask = x[:, 0] > 0
+#     yphi_avg = np.average(x[mask, 1:3], weights=x[mask, 0], axis=0)
+#     x[mask, 1:3] -= yphi_avg
+#     x[mask, 0] /= x[:, 0].sum()
 
 train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
 X_train, X_val, X_test = X[:train_cut], X[train_cut:val_cut], X[val_cut:]
 Y_train, Y_val, Y_test = Y[:train_cut], Y[train_cut:val_cut], Y[val_cut:]
-mass_test = mass[val_cut:]
 print('Done train/val/test split', X_train.shape, X_val.shape, X_test.shape)
 print(args.result_dir)
 # build architecture
@@ -88,7 +88,7 @@ Phi_sizes, F_sizes = (128, ) * 2, (fsize,)*num_hidden # (psize,)*num_hidden,
 batch_size = args.batch_size
 print(Phi_sizes)
 # pfn = PFN(input_dim=X.shape[-1], output_dim=6, Phi_sizes=Phi_sizes, F_sizes=F_sizes)
-pfn = PFN(input_dim=X.shape[-1], output_dim=6, Phi_sizes=Phi_sizes, F_sizes=F_sizes, F_dropouts=args.dropout)
+pfn = PFN(input_dim=X.shape[-1], output_dim=num_class, Phi_sizes=Phi_sizes, F_sizes=F_sizes, F_dropouts=args.dropout)
 
                                                                    #num_hidden{}_psize{}_fsize{}_batchsize{}_ep{}
 # log_dir="/baldig/physicsprojects2/N_tagger/exp/20210223_PFN_search/num_hidden{}_psize{}_fsize{}_batchsize{}_ep{}".format(num_hidden, psize, fsize, batch_size, args.epochs)
