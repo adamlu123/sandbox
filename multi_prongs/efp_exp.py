@@ -28,7 +28,7 @@ parser.add_argument(
     )
 parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
 parser.add_argument('--model_type', default='HLNet')
-parser.add_argument('--load_pretrained', action='store_true', default=True)
+parser.add_argument('--load_pretrained', action='store_true', default=False)
 parser.add_argument('--batch_size', type=int, default=128, help='input batch size for training (default: 100)')
 parser.add_argument('--epochs', type=int, default=1000, help='number of epochs to train (default: 1000)')
 parser.add_argument('--seed', type=int, default=123, help='random seed (default: 1)')
@@ -51,6 +51,7 @@ stage = args.stage
 writer = SummaryWriter(args.result_dir) if stage != 'eval' else None
 load_pretrained = args.load_pretrained
 strength = args.strength
+num_labels = 7
 
 ## I/O config
 device = 'cuda'
@@ -61,8 +62,10 @@ result_dir = args.result_dir
 
 ## loging:
 # ================ HL+mass file
-filename = '/baldig/physicsprojects2/N_tagger/data/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
+# filename = '/baldig/physicsprojects2/N_tagger/data/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
 # filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/res8_all_HL_target_cutted.h5'
+filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res123457910.h5'
+
 # ================ target file
 fn_target = '/baldig/physicsprojects2/N_tagger/exp/exp_no_ptcut/test/combined_pred_all.h5'
 tower_subset = 'parsed_Tower' # or tower_from_img parsed_Tower
@@ -70,7 +73,6 @@ tower_subset = 'parsed_Tower' # or tower_from_img parsed_Tower
 dv, nv = 7, 5
 fn_efps = '/baldig/physicsprojects2/N_tagger/data/efp/20200202_{}_d{}_n{}/efp_merge.h5'.format(tower_subset, dv, nv)
 # fn_efps = '/baldig/physicsprojects2/N_tagger/efp/20200201_tower_original/efp_merge.h5' # 20200201_tower_original 20200201_tower_img
-# fn_efps = '/baldig/physicsprojects2/N_tagger/efp/20200202_tower_d4/efp_merge.h5'
 
 with h5py.File(filename, 'r') as f:
     total_num_sample = f['target'].shape[0]
@@ -156,10 +158,10 @@ efpnet_base = make_hlnet_base(input_dim=566, inter_dim=inter_dim, num_hidden=num
 
 
 class HLNet(nn.Module):
-    def __init__(self, hlnet_base):
+    def __init__(self, hlnet_base, num_labels=7):
         super(HLNet, self).__init__()
         self.hlnet_base = hlnet_base
-        self.top = nn.Linear(64, 6)
+        self.top = nn.Linear(64, num_labels)
 
     def forward(self, HL):
         HL = self.hlnet_base(HL)
@@ -168,10 +170,10 @@ class HLNet(nn.Module):
 
 
 class EFPNet(nn.Module):
-    def __init__(self, efpnet_base):
+    def __init__(self, efpnet_base, num_labels=7):
         super(EFPNet, self).__init__()
         self.efpnet_base = efpnet_base
-        self.top = nn.Linear(64, 6)
+        self.top = nn.Linear(64, num_labels)
 
     def forward(self, efps):
         efps = self.efpnet_base(efps)
@@ -180,11 +182,11 @@ class EFPNet(nn.Module):
 
 
 class HLefpNet(nn.Module):
-    def __init__(self, hlnet_base, efpnet_base):
+    def __init__(self, hlnet_base, efpnet_base, num_labels=7):
         super(HLefpNet, self).__init__()
         self.hlnet_base = hlnet_base
         self.efpnet_base = efpnet_base
-        self.top = nn.Linear(128, 6)
+        self.top = nn.Linear(128, num_labels)
         self.bn1 = nn.BatchNorm1d(64)
         self.bn2 = nn.BatchNorm1d(64)
 
@@ -197,13 +199,13 @@ class HLefpNet(nn.Module):
 
 
 class GatedHLefpNet(nn.Module):
-    def __init__(self, hlnet_base, efpnet_base):
+    def __init__(self, hlnet_base, efpnet_base, num_labels=7):
         super(GatedHLefpNet, self).__init__()
         # self.logit_gates = nn.Parameter(data=torch.zeros(566))
         self.gates = nn.Parameter(data=torch.randn(566))
         self.hlnet_base = hlnet_base
         self.efpnet_base = efpnet_base
-        self.top = nn.Linear(128, 6)
+        self.top = nn.Linear(128, num_labels)
         self.bn1 = nn.BatchNorm1d(64)
         self.bn2 = nn.BatchNorm1d(64)
 
@@ -229,11 +231,11 @@ class GatedHLefpNet(nn.Module):
 model_type = args.model_type
 print('building model:', model_type)
 if model_type == 'HLNet':
-    model = HLNet(hlnet_base).to(device)
+    model = HLNet(hlnet_base, num_labels=num_labels).to(device)
 elif model_type in ['HLefpNet', 'GatedHLefpNet']:
-    model = eval(model_type)(hlnet_base, efpnet_base).to(device)
+    model = eval(model_type)(hlnet_base, efpnet_base, num_labels=num_labels).to(device)
 elif model_type == 'EFPNet':
-    model = EFPNet(efpnet_base).to(device)
+    model = EFPNet(efpnet_base, num_labels=num_labels).to(device)
 
 model = nn.DataParallel(model)
 
@@ -264,7 +266,7 @@ param_groups = [
 ]
 
 optimizer = optim.Adam(param_groups, weight_decay=0)
-scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[20, 40, 60, 80], gamma=0.5, last_epoch=-1)
+scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[200, 400, 600, 800], gamma=0.5, last_epoch=-1)
 loss_fn = nn.CrossEntropyLoss(reduction='none')
 
 
@@ -276,9 +278,9 @@ def train(model, optimizer, epoch):
         target = next(target_generator['train'])
         efps = next(efp_generator['train'])
 
-        HL, target, target_long, weights, efps = torch.tensor(HL).float().to(device), \
+        HL, target, target_long, efps = torch.tensor(HL).float().to(device), \
                                  torch.tensor(target).float().to(device), torch.tensor(target_long).long().to(device), \
-                                                    torch.tensor(weights).to(device), torch.tensor(efps).float().to(device)
+                                                     torch.tensor(efps).float().to(device)
 
         if model_type == 'HLNet':
             pred = model(HL)
@@ -372,8 +374,8 @@ def main(model):
     if stage == 'eval':
         testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', None)
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
-        combined_pred_only = torch.cat(pred_original_list, dim=0).numpy()
-        print(combined_pred.shape, combined_pred_only.shape, len(pred_mass_list))
+        # combined_pred_only = torch.cat(pred_original_list, dim=0).numpy()
+        # print(combined_pred.shape, combined_pred_only.shape, len(pred_mass_list))
         print('acc', combined_pred[-3,:].sum()/combined_pred.shape[1], 'cliped acc', combined_pred[-1,:].sum()/combined_pred.shape[1])
         print('gates>0.01', np.where(gates > 1e-2))
         num_remaining_efps = (gates> 1e-2).sum().tolist() if model_type == 'GatedHLefpNet' else 0.

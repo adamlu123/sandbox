@@ -1,21 +1,27 @@
 from transformers import *
-
 import argparse
-
 
 parser = argparse.ArgumentParser(description='Sparse Auto-regressive Model')
 parser.add_argument(
-    "--num_hidden", type=int, default=5,
+    "--num_hidden", type=int, default=4,
     help="number of latent layer"
     )
 parser.add_argument(
-    "--inter_dim", type=int, default=800,
-    help="hidden layer dimension"
+    "--hidden_size", type=int, default=128,
+    help="embedding size"
     )
-# parser.add_argument(
-#     "--result_dir", type=str,
-#     default="/baldig/physicsprojects2/N_tagger/exp/exp_no_ptcut/efps/20200209_HLNet_inter_dim800_num_hidden5"
-#     )
+parser.add_argument(
+    "--inter_dim", type=int, default=128,
+    help="intermediate layer size"
+    )
+parser.add_argument(
+    "--num_attention_heads", type=int, default=8,
+    help="num of attention heads"
+    )
+parser.add_argument(
+    "--result_dir", type=str,
+    default="/baldig/physicsprojects2/N_tagger/exp/exp_no_ptcut/efps/20200209_HLNet_inter_dim800_num_hidden5"
+    )
 parser.add_argument('--stage', default='train', help='mode in [eval, train]')
 parser.add_argument('--model_type', default='bert')
 parser.add_argument('--load_pretrained', action='store_true', default=False)
@@ -23,19 +29,19 @@ parser.add_argument('--batch_size', type=int, default=256, help='input batch siz
 parser.add_argument('--epochs', type=int, default=1000, help='number of epochs to train (default: 1000)')
 parser.add_argument('--seed', type=int, default=123, help='random seed (default: 1)')
 parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 0.001)')
-parser.add_argument("--GPU", type=str, default='0,1', help='GPU id')
+parser.add_argument("--GPU", type=str, default='2', help='GPU id')
 args = parser.parse_args()
 
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = args.GPU
 print('training using GPU:', args.GPU)
+print(str(args))
 
 import h5py
 import numpy as np
 import torch
 import torch.nn as nn
 from torch import optim
-import torch.nn.functional as F
 from bert import BertForSequenceClassification
 from shutil import copyfile
 from torch.utils.tensorboard import SummaryWriter
@@ -45,18 +51,20 @@ device = 'cuda'
 batchsize = args.batch_size
 epoch = args.epochs
 load_pretrained = True
-root = '/baldig/physicsprojects2/N_tagger/exp/exp_ptcut'
-exp_name = '/2020307_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed512_hidden4_head8'
-if not os.path.exists(root + exp_name):
-    os.makedirs(root + exp_name)
+# root = '/baldig/physicsprojects2/N_tagger/exp/exp_ptcut'
+# exp_name = '/2020308_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed512_hidden6_head8'
+result_dir = args.result_dir
 
 stage = args.stage
-writer = SummaryWriter(root + exp_name) if stage != 'eval' else None
+if stage != 'eval':
+    if not os.path.exists(result_dir):
+        os.makedirs(result_dir)
 
-## loging:
-copyfile('/extra/yadongl10/git_project/sandbox/multi_prongs/transformer/bert_net.py', root + exp_name + '/bert_net.py')
-# filename = '/baldig/physicsprojects2/N_tagger/data/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
-filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res123457910.h5'
+    writer = SummaryWriter(result_dir) if stage != 'eval' else None
+    ## loging:
+    copyfile('/extra/yadongl10/git_project/sandbox/multi_prongs/transformer/bert_net.py', result_dir + '/bert_net.py')
+    # filename = '/baldig/physicsprojects2/N_tagger/data/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
+    filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res123457910.h5'
 
 with h5py.File(filename, 'r') as f:
     total_num_sample = f['target'].shape[0]
@@ -129,9 +137,9 @@ class BertMassNet(nn.Module):
 
 
 config = BertConfig(
-                    hidden_size=512,
-                    num_hidden_layers=4, num_attention_heads=8,
-                    intermediate_size=128, num_labels=7,
+                    hidden_size=args.hidden_size,  #256,
+                    num_hidden_layers=args.num_hidden, num_attention_heads=args.num_attention_heads,
+                    intermediate_size=args.inter_dim, num_labels=7,
                     input_dim=230,
                     attention_probs_dropout_prob=0.1, hidden_dropout_prob=0.1
                     )
@@ -158,7 +166,7 @@ scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[200, 400
 loss_fn = nn.CrossEntropyLoss(reduction='none')
 
 
-def train(model, optimizer):
+def train(model, optimizer, epoch):
     model.train()
     for i in range(iterations):
         optimizer.zero_grad()
@@ -183,11 +191,11 @@ def train(model, optimizer):
             print('train loss:', loss.item(), 'acc:', acc)
             writer.add_scalar('Loss/train', loss.item(), epoch * iterations + i)
             writer.add_scalar('Acc/train', acc, epoch * iterations + i)
-    val_acc = test(model, 'val')
+    val_acc = test(model, 'val', epoch)
     return val_acc, model
 
 
-def test(model, subset):
+def test(model, subset, epoch):
     model.eval()
     tmp = 0
     with torch.no_grad():
@@ -212,17 +220,17 @@ def main(model):
     best_acc = 0
     for i in range(epoch):
         print('starting epoch', i)
-        val_acc, model = train(model, optimizer)
+        val_acc, model = train(model, optimizer, i)
         if val_acc > best_acc:
             best_acc = val_acc
-            torch.save(model.state_dict(), root + exp_name + '/best_{}_merged_b_u.pt'.format(model_type))
+            torch.save(model.state_dict(), result_dir + '/best_{}_merged_b_u.pt'.format(model_type))
             print('model saved')
         if (i + 1) % 10 == 0:
             # torch.save(model.state_dict(),
-            #            root + exp_name + '/{}_merged_b_u_ep{}.pt'.format(model_type, i))
+            #            result_dir + '/{}_merged_b_u_ep{}.pt'.format(model_type, i))
             print('model saved at epoch', i)
         #     test(model, 'test')
-    testacc = test(model, 'test')
+    testacc = test(model, 'test', i)
     print('test acc', testacc)
 
 

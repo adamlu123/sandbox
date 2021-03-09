@@ -89,9 +89,6 @@ batch_size = args.batch_size
 print(Phi_sizes)
 # pfn = PFN(input_dim=X.shape[-1], output_dim=6, Phi_sizes=Phi_sizes, F_sizes=F_sizes)
 pfn = PFN(input_dim=X.shape[-1], output_dim=num_class, Phi_sizes=Phi_sizes, F_sizes=F_sizes, F_dropouts=args.dropout)
-
-                                                                   #num_hidden{}_psize{}_fsize{}_batchsize{}_ep{}
-# log_dir="/baldig/physicsprojects2/N_tagger/exp/20210223_PFN_search/num_hidden{}_psize{}_fsize{}_batchsize{}_ep{}".format(num_hidden, psize, fsize, batch_size, args.epochs)
 tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=args.result_dir, histogram_freq=0)
 model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
     filepath=args.result_dir + '/best',

@@ -4,12 +4,12 @@ cd /extra/yadongl10/git_project/sandbox/multi_prongs
 source activate pytorch
 
 # hyperparemeters
-model_type='HLefpNet'  # HLefpNet GatedHLefpNet HLNet
+model_type='HLNet'
 epochs=1500
 stage='train'
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
 exp_path='/baldig/physicsprojects2/N_tagger/exp/exp_ptcut'
-exp_name='2020308_search_efp_net'
+exp_name='2020308_search_HLnet'
 exp_dir=${exp_path}/${exp_name}
 
 # start running
@@ -25,8 +25,8 @@ for batch_size in 256
             for lr in 1e-3
                 do
                 mkdir -p ${exp_dir}
-                cp ${multip_fldr}/run_scripts/run_efp_net.sh ${exp_dir}
-                result_dir=${exp_path}/${exp_name}/efp577_${model_type}_inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}
+                cp ${multip_fldr}/run_scripts/run_hlnet.sh ${exp_dir}
+                result_dir=${exp_path}/${exp_name}/efp566_model${model_type}_inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}
                 mkdir -p ${result_dir}
                 echo ${subsets}
                 echo ${result_dir}
@@ -38,6 +38,7 @@ for batch_size in 256
 done
 
 wait
+
 
 
 

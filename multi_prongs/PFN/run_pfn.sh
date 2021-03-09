@@ -21,7 +21,7 @@ for num_hidden in 4 # 3 7 9
     for psize in 512 256 128 #140 160 170  #128 #50 100 150 200
         do
         fsize=${psize}
-        for batch_size in 512
+        for batch_size in 256
             do
             for dropout in 25e-2 # 1e-1 2e-1 25e-2 3e-1 #5e-1 7e-1
                 do
