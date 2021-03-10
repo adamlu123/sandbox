@@ -20,11 +20,11 @@ parser.add_argument(
     )
 parser.add_argument(
     "--result_dir", type=str,
-    default="/baldig/physicsprojects2/N_tagger/exp/exp_no_ptcut/efps/20200209_HLNet_inter_dim800_num_hidden5"
+    default="/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/2020308_search_tiny_bert/bert_embed128_inter_dim128_num_hidden4_lr1e-3_batch_size256"
     )
-parser.add_argument('--stage', default='train', help='mode in [eval, train]')
+parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
 parser.add_argument('--model_type', default='bert')
-parser.add_argument('--load_pretrained', action='store_true', default=False)
+parser.add_argument('--load_pretrained', action='store_true', default=True)
 parser.add_argument('--batch_size', type=int, default=256, help='input batch size for training (default: 256)')
 parser.add_argument('--epochs', type=int, default=1000, help='number of epochs to train (default: 1000)')
 parser.add_argument('--seed', type=int, default=123, help='random seed (default: 1)')
@@ -50,9 +50,6 @@ from torch.utils.tensorboard import SummaryWriter
 device = 'cuda'
 batchsize = args.batch_size
 epoch = args.epochs
-load_pretrained = True
-# root = '/baldig/physicsprojects2/N_tagger/exp/exp_ptcut'
-# exp_name = '/2020308_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed512_hidden6_head8'
 result_dir = args.result_dir
 
 stage = args.stage
@@ -63,9 +60,9 @@ if stage != 'eval':
     writer = SummaryWriter(result_dir) if stage != 'eval' else None
     ## loging:
     copyfile('/extra/yadongl10/git_project/sandbox/multi_prongs/transformer/bert_net.py', result_dir + '/bert_net.py')
-    # filename = '/baldig/physicsprojects2/N_tagger/data/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
-    filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res123457910.h5'
 
+# filename = '/baldig/physicsprojects2/N_tagger/data/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
+filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res123457910.h5'
 with h5py.File(filename, 'r') as f:
     total_num_sample = f['target'].shape[0]
 train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
@@ -83,13 +80,13 @@ def data_generator(filename, batchsize, start, stop=None, weighted=False):
             batch = slice(iexample, iexample + batchsize)
             # X = f['tower_from_img'][batch, :, :]
             X = f['parsed_Tower_centered'][batch, :, :]
-            HL = f['HL'][batch, :-4]
+            HL_unnorm = f['HL'][batch, :-4]
             target = f['target'][batch]
             if weighted:
                 weights = f['weights'][batch]
-                yield X, HL, target, weights
+                yield X, HL_unnorm, target, weights
             else:
-                yield X, HL, target
+                yield X, HL_unnorm, target
             iexample += batchsize
             if iexample + batchsize >= stop:
                 iexample = start
@@ -137,7 +134,7 @@ class BertMassNet(nn.Module):
 
 
 config = BertConfig(
-                    hidden_size=args.hidden_size,  #256,
+                    hidden_size=args.hidden_size,
                     num_hidden_layers=args.num_hidden, num_attention_heads=args.num_attention_heads,
                     intermediate_size=args.inter_dim, num_labels=7,
                     input_dim=230,
@@ -159,11 +156,17 @@ def count_parameters(model):
 print('training parameters', count_parameters(model))
 model = nn.DataParallel(model)
 
+if args.load_pretrained:
+    print('load model from', result_dir)
+    cp = torch.load(result_dir + '/best_{}_merged_b_u.pt'.format(model_type))
+    model.load_state_dict(cp, strict=True)
+
 ################### training
-optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=0)
-# optimizer = Lamb(model.parameters(), lr=1e-3, weight_decay=0, adam=True)
-scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[200, 400, 600, 800], gamma=0.5, last_epoch=-1)
-loss_fn = nn.CrossEntropyLoss(reduction='none')
+if args.stage == 'train':
+    optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=0)
+    # optimizer = Lamb(model.parameters(), lr=1e-3, weight_decay=0, adam=True)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[200, 400, 600, 800], gamma=0.5, last_epoch=-1)
+    loss_fn = nn.CrossEntropyLoss(reduction='none')
 
 
 def train(model, optimizer, epoch):
@@ -173,14 +176,14 @@ def train(model, optimizer, epoch):
         # X, HL, target, weights = next(generator['train'])
         # X, HL, target, weights = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), \
         #                          torch.tensor(target).long().to(device), torch.tensor(weights).to(device)
-        X, HL, target = next(generator['train'])
+        X, HL_unnorm, target = next(generator['train'])
         X, target = torch.tensor(X).float().to(device), \
                         torch.tensor(target).long().to(device)
         if model_type == 'bert' or model_type == 'transformer':
             pred = model(X)
         elif model_type == 'BertMassNet':
-            HL = torch.tensor(HL).float().to(device)
-            pred = model(X, HL[:, -1])
+            HL_unnorm = torch.tensor(HL_unnorm).float().to(device)
+            pred = model(X, HL_unnorm[:, -1])
         loss = loss_fn(pred, target)  # * weights
         loss = loss.mean()
         loss.backward()
@@ -198,40 +201,57 @@ def train(model, optimizer, epoch):
 def test(model, subset, epoch):
     model.eval()
     tmp = 0
+    pred_mass_list = []
+
     with torch.no_grad():
         for i in range(iter_test):
             # X, HL, target, _ = next(generator[subset])
             # X, HL, target = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), torch.tensor(target).to(device)
-            X, HL, target = next(generator[subset])
-            X, target = torch.tensor(X).float().to(device), torch.tensor(target).to(device)
+            X, HL_unnorm, target = next(generator[subset])
+            X, target = torch.tensor(X).float().to(device), torch.tensor(target)
             if model_type == 'bert' or model_type == 'transformer':
                 pred = model(X)
             elif model_type == 'BertMassNet':
-                HL = torch.tensor(HL).float().to(device)
-                pred = model(X, HL[:, -1])
-            pred = torch.argmax(pred, dim=1)
-            tmp += torch.sum(pred == target).item() / target.shape[0]
+                HL_unnorm = torch.tensor(HL_unnorm).float().to(device)
+                pred = model(X, HL_unnorm[:, -1])
+            pred_armax = torch.argmax(pred, dim=1).cpu()
+            tmp += torch.sum(pred_armax == target).item() / target.shape[0]
+
+            mass, pt = torch.tensor(HL_unnorm[:, -1]), torch.tensor(HL_unnorm[:, -2])
+            rslt = pred_armax == target
+            pred_mass_list.append(torch.stack([pred_armax.float(), target.float(), rslt.float(), mass.float(), pt.float()]))
+
     print(model_type, 'acc', tmp / iter_test)
-    writer.add_scalar('Acc/val', tmp / iter_test, epoch)
-    return tmp / iter_test
+    if stage != 'eval':
+        writer.add_scalar('Acc/val', tmp / iter_test, epoch)
+    return tmp / iter_test, pred_mass_list
 
 
 def main(model):
     best_acc = 0
-    for i in range(epoch):
-        print('starting epoch', i)
-        val_acc, model = train(model, optimizer, i)
-        if val_acc > best_acc:
-            best_acc = val_acc
-            torch.save(model.state_dict(), result_dir + '/best_{}_merged_b_u.pt'.format(model_type))
-            print('model saved')
-        if (i + 1) % 10 == 0:
-            # torch.save(model.state_dict(),
-            #            result_dir + '/{}_merged_b_u_ep{}.pt'.format(model_type, i))
-            print('model saved at epoch', i)
-        #     test(model, 'test')
-    testacc = test(model, 'test', i)
-    print('test acc', testacc)
+    if stage == 'eval':
+        testacc, pred_mass_list = test(model, 'test', None)
+        combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
+        with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all.h5', 'a') as f:
+            f.create_dataset('{}_best'.format(model_type), data=combined_pred)
+
+    elif stage == 'train':
+        for i in range(epoch):
+            print('starting epoch', i)
+            val_acc, model = train(model, optimizer, i)
+            if val_acc > best_acc:
+                best_acc = val_acc
+                torch.save(model.state_dict(), result_dir + '/best_{}_merged_b_u.pt'.format(model_type))
+                print('model saved')
+            if (i + 1) % 10 == 0:
+                # torch.save(model.state_dict(),
+                #            result_dir + '/{}_merged_b_u_ep{}.pt'.format(model_type, i))
+                print('model saved at epoch', i)
+            #     test(model, 'test')
+        testacc = test(model, 'test', i)
+        print('test acc', testacc)
+    else:
+        raise ValueError('only support stage in: [train, eval]!')
 
 
 if __name__ == '__main__':

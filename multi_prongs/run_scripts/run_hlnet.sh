@@ -16,22 +16,25 @@ exp_dir=${exp_path}/${exp_name}
 count=0
 for batch_size in 256
     do
-    for inter_dim in 200 400 600 800
+    for inter_dim in 800 # 200 400 600
         do
-        GPU=${count}
-        ((count++))
-        for num_hidden in 5
+        for do_rate in 1e-2 2e-1 3e-1 4e-1
             do
-            for lr in 1e-3
+            GPU=${count}
+            ((count++))
+            for num_hidden in 5
                 do
-                mkdir -p ${exp_dir}
-                cp ${multip_fldr}/run_scripts/run_hlnet.sh ${exp_dir}
-                result_dir=${exp_path}/${exp_name}/efp566_model${model_type}_inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}
-                mkdir -p ${result_dir}
-                echo ${subsets}
-                echo ${result_dir}
-                python efp_exp.py --inter_dim ${inter_dim} --num_hidden ${num_hidden} --model_type ${model_type}\
-                --stage ${stage} --lr ${lr}  --batch_size ${batch_size} --result_dir ${result_dir} --GPU ${GPU} --epochs ${epochs} &
+                for lr in 1e-3 1e-4
+                    do
+                    mkdir -p ${exp_dir}
+                    cp ${multip_fldr}/run_scripts/run_hlnet.sh ${exp_dir}
+                    result_dir=${exp_path}/${exp_name}/${model_type}_inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}_do${do_rate}
+                    mkdir -p ${result_dir}
+                    echo ${subsets}
+                    echo ${result_dir}
+                    python efp_exp.py --inter_dim ${inter_dim} --num_hidden ${num_hidden} --model_type ${model_type}\
+                    --stage ${stage} --lr ${lr}  --batch_size ${batch_size} --result_dir ${result_dir} --GPU ${GPU} --epochs ${epochs} &
+                done
             done
         done
     done

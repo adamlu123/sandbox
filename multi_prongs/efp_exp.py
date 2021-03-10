@@ -23,13 +23,18 @@ parser.add_argument(
     help="hidden layer dimension"
     )
 parser.add_argument(
-    "--result_dir", type=str,
-    default="/baldig/physicsprojects2/N_tagger/exp/exp_no_ptcut/efps/20200209_HLNet_inter_dim800_num_hidden5"
+    "--do_rate", type=float, default=0.3,
+    help="dropout rate"
     )
-parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
+parser.add_argument(
+    "--result_dir", type=str,
+    # default="/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/2020308_search_efp_net/HLefpNet_inter_dim800_num_hidden5_lr1e-3_batch_size256_do1e-1"
+    default="/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/2020308_search_HLnet/HLNet_inter_dim800_num_hidden5_lr1e-4_batch_size256_do3e-1"
+    )
 parser.add_argument('--model_type', default='HLNet')
+parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
 parser.add_argument('--load_pretrained', action='store_true', default=False)
-parser.add_argument('--batch_size', type=int, default=128, help='input batch size for training (default: 100)')
+parser.add_argument('--batch_size', type=int, default=256, help='input batch size for training (default: 100)')
 parser.add_argument('--epochs', type=int, default=1000, help='number of epochs to train (default: 1000)')
 parser.add_argument('--seed', type=int, default=123, help='random seed (default: 1)')
 parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 0.001)')
@@ -49,7 +54,6 @@ from torch.utils.tensorboard import SummaryWriter
 stage = args.stage
 
 writer = SummaryWriter(args.result_dir) if stage != 'eval' else None
-load_pretrained = args.load_pretrained
 strength = args.strength
 num_labels = 7
 
@@ -68,11 +72,12 @@ filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res1234
 
 # ================ target file
 fn_target = '/baldig/physicsprojects2/N_tagger/exp/exp_no_ptcut/test/combined_pred_all.h5'
-tower_subset = 'parsed_Tower' # or tower_from_img parsed_Tower
+tower_subset = 'parsedTower' # or tower_from_img parsed_Tower
 # ================ efps file
 dv, nv = 7, 5
-fn_efps = '/baldig/physicsprojects2/N_tagger/data/efp/20200202_{}_d{}_n{}/efp_merge.h5'.format(tower_subset, dv, nv)
-# fn_efps = '/baldig/physicsprojects2/N_tagger/efp/20200201_tower_original/efp_merge.h5' # 20200201_tower_original 20200201_tower_img
+fn_efps = '/baldig/physicsprojects2/N_tagger/data/efp/20200307_{}_d{}_n{}/efp_merge.h5'.format(tower_subset, dv, nv)
+# fn_efps = '/baldig/physicsprojects2/N_tagger/data/efp/20200202_{}_d{}_n{}/efp_merge.h5'.format(tower_subset, dv, nv)
+
 
 with h5py.File(filename, 'r') as f:
     total_num_sample = f['target'].shape[0]
@@ -151,10 +156,8 @@ target_generator['val'] = target_data_generator(fn_target, batchsize, start=trai
 target_generator['test'] = target_data_generator(fn_target, batchsize, start=val_cut, stop=test_cut)
 
 ################### model
-inter_dim = args.inter_dim
-num_hidden = args.num_hidden
-hlnet_base = make_hlnet_base(input_dim=17, inter_dim=inter_dim, num_hidden=num_hidden) # 25 for HL3 version
-efpnet_base = make_hlnet_base(input_dim=566, inter_dim=inter_dim, num_hidden=num_hidden)  # 207 566 126
+hlnet_base = make_hlnet_base(input_dim=17, inter_dim=args.inter_dim, num_hidden=args.num_hidden, do_rate=args.do_rate) # 25 for HL3 version
+efpnet_base = make_hlnet_base(input_dim=567, inter_dim=args.inter_dim, num_hidden=args.num_hidden, do_rate=args.do_rate)  # 207 566 126
 
 
 class HLNet(nn.Module):
@@ -239,10 +242,10 @@ elif model_type == 'EFPNet':
 
 model = nn.DataParallel(model)
 
-if load_pretrained:
+if args.load_pretrained:
     print('load model from', result_dir)
     cp = torch.load(result_dir + '/best_{}_merged_b_u.pt'.format(model_type)) # '/{}_merged_b_u_ep99.pt'.format(model_type))
-    # cp = torch.load(result_dir + '/{}_merged_b_u_ep{}.pt'.format(model_type, epoch-1))
+    # cp = torch.load(result_dir + '/{}_merged_b_u_ep{}.pt'.format(model_type, 999))
     model.load_state_dict(cp, strict=True)
 
 ################### training
@@ -254,7 +257,7 @@ for name, param in model.named_parameters():
     else:
         other_param.append(param)
 
-print(model)
+# print(model)
 print(torch.__version__)
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -326,6 +329,7 @@ def test(model, subset, epoch):
     gates = torch.tensor([0])
     with torch.no_grad():
         for i in range(iter_test):
+            print(i)
             HL, target_long, HL_unnorm = next(generator[subset])
             target = next(target_generator[subset])
             efps = next(efp_generator[subset])
@@ -349,11 +353,11 @@ def test(model, subset, epoch):
             pred_armax = torch.argmax(pred, dim=1)
             tmp += torch.sum(pred_armax==target_long).item() / target_long.shape[0]
 
-            mass = HL_unnorm[:, -1]
+            mass, pt = HL_unnorm[:, -1], HL_unnorm[:, -2]
             bin_idx = torch.floor((mass - mass_range[0]) / bin_len)
             rslt = pred_armax == target_long
             rslt_clipped = pred_armax_clipped == target_long
-            pred_mass_list.append(torch.stack([pred_armax.float(), target_long.float(), bin_idx, rslt.float(), mass, rslt_clipped.float()]).cpu())
+            pred_mass_list.append(torch.stack([pred_armax.float(), target_long.float(), rslt.float(), mass, pt]).cpu())
             pred_original_list.append(pred.cpu())
 
     clipped_acc = tmp_clipped / iter_test if model_type == 'GatedHLefpNet' else 0.
@@ -379,15 +383,15 @@ def main(model):
         print('acc', combined_pred[-3,:].sum()/combined_pred.shape[1], 'cliped acc', combined_pred[-1,:].sum()/combined_pred.shape[1])
         print('gates>0.01', np.where(gates > 1e-2))
         num_remaining_efps = (gates> 1e-2).sum().tolist() if model_type == 'GatedHLefpNet' else 0.
-
+        #
         # if model_type == 'GatedHLefpNet':
         #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/efp566/combined_pred_hl3_efps566_inter_dim800_num_hidden5.h5', 'a') as f:
         #         f.create_dataset('savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
         #         f.create_dataset('savewoclip_{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
         #         f.create_dataset('savewoclip_{}_strength{}_gates'.format(model_type, strength), data=gates)
         # else:
-        #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/efp566/combined_pred_hl3_efps566_inter_dim800_num_hidden5.h5', 'a') as f:
-        #         # del f['{}_best'.format(model_type)]
+        #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all.h5', 'a') as f:
+        #         del f['{}_best'.format(model_type)]
         #         f.create_dataset('{}_best'.format(model_type), data=combined_pred)
         # print('saving finished!')
 
@@ -395,7 +399,8 @@ def main(model):
         for i in range(epoch):
             print('starting epoch', i)
             val_acc, val_clipped_acc, model = train(model, optimizer, epoch=i)
-            if val_clipped_acc > best_acc:
+            val_metric = val_clipped_acc if args.model_type == 'GatedHLefpNet' else val_acc
+            if val_metric > best_acc:
                 best_acc = val_clipped_acc
                 torch.save(model.state_dict(), result_dir + '/best_{}_merged_b_u.pt'.format(model_type))
                 print('model saved')
@@ -403,13 +408,14 @@ def main(model):
                 torch.save(model.state_dict(),
                            result_dir + '/{}_merged_b_u_ep{}.pt'.format(model_type, i))
                 print('model saved at epoch', i)
+        writer.close()
         # testacc = test(model, 'test')
         # print('test acc', testacc)
 
 
 if __name__ == '__main__':
     main(model)
-    writer.close()
+
 
 
 # from shutil import copyfile

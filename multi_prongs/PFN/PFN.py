@@ -4,24 +4,24 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Sparse Auto-regressive Model')
 parser.add_argument(
-    "--num_hidden", type=int, default=3,
+    "--num_hidden", type=int, default=4,
     help="number of latent layer"
     )
 parser.add_argument(
-    "--psize", type=int, default=100,
+    "--psize", type=int, default=256,
     help="hidden layer dimension"
 )
 parser.add_argument(
-    "--fsize", type=int, default=100,
+    "--fsize", type=int, default=256,
     help="hidden layer dimension"
     )
 parser.add_argument(
-    "--dropout", type=float, default=1e-1,
+    "--dropout", type=float, default=25e-2,
     help="dropout ratio"
     )
 parser.add_argument(
     "--result_dir", type=str,
-    default=None
+    default='/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/20210309_PFN_search_batch256/do2e-1_num_hidden4_psize256_fsize256_batchsize256_ep1000'
     )
 parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
 parser.add_argument('--load_pretrained', action='store_true', default=False)
@@ -58,10 +58,10 @@ with h5py.File(filename, 'r') as f:
     X = np.array(f['parsed_Tower_centered'])
     y = np.array(f['target'])
     # HL = np.array(f['HL_normalized'])[:, :-4]
-    # HL_unnorm = np.array(f['HL'])[:, :-4]
-with h5py.File('/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res1234579_v2_hl.h5', 'r') as f:
-    HL = np.array(f['HL_normalized'][:, :-4])
-
+    HL_unnorm = np.array(f['HL'])[:, :-4]
+# with h5py.File('/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res1234579_v2_hl.h5', 'r') as f:
+#     HL = np.array(f['HL_normalized'][:, :-4])
+mass, pt = HL_unnorm[:, -1], HL_unnorm[:, -2]
 # convert labels to categorical
 Y = to_categorical(y, num_classes=num_class)
 
@@ -89,22 +89,40 @@ batch_size = args.batch_size
 print(Phi_sizes)
 # pfn = PFN(input_dim=X.shape[-1], output_dim=6, Phi_sizes=Phi_sizes, F_sizes=F_sizes)
 pfn = PFN(input_dim=X.shape[-1], output_dim=num_class, Phi_sizes=Phi_sizes, F_sizes=F_sizes, F_dropouts=args.dropout)
-tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=args.result_dir, histogram_freq=0)
-model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-    filepath=args.result_dir + '/best',
-    save_weights_only=True,
-    monitor='val_acc',
-    mode='max',
-    save_best_only=True)
 
-# train model
-pfn.fit(X_train, Y_train,
-        epochs=args.epochs,
-        batch_size=batch_size,
-        validation_data=(X_val, Y_val),
-        verbose=1,
-        callbacks=[tensorboard_callback, model_checkpoint_callback])
+if args.stage == 'train':
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=args.result_dir, histogram_freq=0)
+    model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+        filepath=args.result_dir + '/best',
+        save_weights_only=True,
+        monitor='val_acc',
+        mode='max',
+        save_best_only=True)
 
+    # train model
+    pfn.fit(X_train, Y_train,
+            epochs=args.epochs,
+            batch_size=batch_size,
+            validation_data=(X_val, Y_val),
+            verbose=1,
+            callbacks=[tensorboard_callback, model_checkpoint_callback])
+
+elif args.stage == 'eval':
+    pfn.load_weights(args.result_dir + '/best')
+
+    preds = pfn.predict(X_test, batch_size=256)
+    preds = np.argmax(preds, 1)
+    target = np.argmax(Y_test, 1)
+    rslt = preds == target
+    print(preds.shape, 'acc', np.sum(rslt / Y_test.shape[0]))
+    mass, pt = mass[val_cut:], pt[val_cut:]
+    combined_pred = np.stack([preds, target, rslt, mass, pt])
+    print(combined_pred.shape)
+    with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all.h5', 'a') as f:
+        del f['PFN']
+        f.create_dataset('{}'.format('PFN'), data=combined_pred)
+else:
+    raise ValueError('only support stage in: [train, eval]!')
 
 # save model
 # pfn.save(args.result_dir)
