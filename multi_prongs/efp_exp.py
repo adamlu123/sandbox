@@ -205,7 +205,7 @@ class GatedHLefpNet(nn.Module):
     def __init__(self, hlnet_base, efpnet_base, num_labels=7):
         super(GatedHLefpNet, self).__init__()
         # self.logit_gates = nn.Parameter(data=torch.zeros(566))
-        self.gates = nn.Parameter(data=torch.randn(566))
+        self.gates = nn.Parameter(data=torch.randn(567))
         self.hlnet_base = hlnet_base
         self.efpnet_base = efpnet_base
         self.top = nn.Linear(128, num_labels)
@@ -329,7 +329,6 @@ def test(model, subset, epoch):
     gates = torch.tensor([0])
     with torch.no_grad():
         for i in range(iter_test):
-            print(i)
             HL, target_long, HL_unnorm = next(generator[subset])
             target = next(target_generator[subset])
             efps = next(efp_generator[subset])
@@ -384,16 +383,17 @@ def main(model):
         print('gates>0.01', np.where(gates > 1e-2))
         num_remaining_efps = (gates> 1e-2).sum().tolist() if model_type == 'GatedHLefpNet' else 0.
         #
-        # if model_type == 'GatedHLefpNet':
-        #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/test/efp566/combined_pred_hl3_efps566_inter_dim800_num_hidden5.h5', 'a') as f:
-        #         f.create_dataset('savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
-        #         f.create_dataset('savewoclip_{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
-        #         f.create_dataset('savewoclip_{}_strength{}_gates'.format(model_type, strength), data=gates)
-        # else:
-        #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all.h5', 'a') as f:
-        #         del f['{}_best'.format(model_type)]
-        #         f.create_dataset('{}_best'.format(model_type), data=combined_pred)
-        # print('saving finished!')
+        if model_type == 'GatedHLefpNet':
+            with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_efps567_inter_dim800_num_hidden5_do4e_1.h5', 'a') as f:
+                f.create_dataset('savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
+                f.create_dataset('savewoclip_{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
+                f.create_dataset('savewoclip_{}_strength{}_gates'.format(model_type, strength), data=gates)
+        else:
+            with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all.h5', 'a') as f:
+                if '{}_best'.format(model_type) in f:
+                    del f['{}_best'.format(model_type)]
+                f.create_dataset('{}_best'.format(model_type), data=combined_pred)
+        print('saving finished!')
 
     else:
         for i in range(epoch):

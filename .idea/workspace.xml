@@ -3,16 +3,11 @@
   <component name="ChangeListManager">
     <list default="true" id="e44c722f-3e28-4a47-9abe-72e45a577b99" name="Default Changelist" comment="minor">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/PFN/PFN.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/PFN/PFN.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/PFN/run_pfn.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/PFN/run_pfn.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/data_preproc/generate_efps.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/data_preproc/generate_efps.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/multi_prongs/efp_exp.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/efp_exp.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/resnet.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/resnet.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/multi_prongs/run_scripts/eval_HLNet.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/run_scripts/eval_HLNet.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/run_scripts/eval_efp_gated_net.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/run_scripts/eval_efp_gated_net.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/multi_prongs/run_scripts/eval_efp_net.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/run_scripts/eval_efp_net.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/run_scripts/run_efp_net.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/run_scripts/run_efp_net.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/run_scripts/run_hlnet.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/run_scripts/run_hlnet.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/transformer/bert_net.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/transformer/bert_net.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/multi_prongs/run_scripts/run_efp_gated_net.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/run_scripts/run_efp_gated_net.sh" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -400,7 +395,7 @@
       <workItem from="1614731746221" duration="10548000" />
       <workItem from="1614811017672" duration="1211000" />
       <workItem from="1614812287116" duration="77117000" />
-      <workItem from="1615401424238" duration="107000" />
+      <workItem from="1615401424238" duration="7195000" />
     </task>
     <servers />
   </component>
@@ -677,7 +672,7 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/multi_prongs/efp_exp.py</url>
-          <line>366</line>
+          <line>365</line>
           <option name="timeStamp" value="661" />
         </line-breakpoint>
       </breakpoints>

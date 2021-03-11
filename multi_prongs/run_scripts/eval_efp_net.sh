@@ -9,17 +9,10 @@ epochs=1000
 stage='eval'
 model_type='HLefpNet'
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
-#exp_path='/baldig/physicsprojects2/N_tagger/exp/efps'
-#exp_name='2020214_search_efp_566_hl3'
 exp_path='/baldig/physicsprojects2/N_tagger/exp/exp_ptcut'
-exp_name='2020308_search_efp_net'
-#exp_name='2020208_search_lr_1e-3_decay0.5_nowc_weighted_sample_corrected_image_noramed_efp_d5_hl_original'
-#exp_name='2020209_search_corrected_image_normed_efp_566_hl_original_gate'
+exp_name='2020309_search_efp_net'
 
 exp_dir=${exp_path}/${exp_name}
-
-# start running
-count=0
 
 # start running
 count=0
@@ -27,13 +20,13 @@ for batch_size in 256
     do
     for inter_dim in 800 # 200 400 600
         do
-        for do_rate in 1e-1 #2e-1 3e-1 #4e-1
+        for do_rate in 4e-1 #2e-1 3e-1 #4e-1
             do
             GPU=${count}
             ((count++))
             for num_hidden in 5
                 do
-                for lr in 1e-3 #1e-4
+                for lr in 1e-4
                     do
                     result_dir=${exp_path}/${exp_name}/${model_type}_inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}_do${do_rate}
                     echo ${subsets}

@@ -4,7 +4,7 @@ cd /extra/yadongl10/git_project/sandbox/multi_prongs
 source activate pytorch
 
 # hyperparemeters
-epochs=1000
+epochs=1500
 stage='eval'
 model_type='HLNet'
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
@@ -14,8 +14,8 @@ exp_name='2020308_search_HLnet'
 exp_dir=${exp_path}/${exp_name}
 
 # start running
-count=3
-for epochs in 1000 #950 900 850
+count=0
+for do_rate in 4e-1
     do
     GPU=${count}
     ((count++))
@@ -25,9 +25,9 @@ for epochs in 1000 #950 900 850
             do
             for num_hidden in 5 #7
                 do
-                for lr in 1e-3
+                for lr in 1e-4
                     do
-                    result_dir=${exp_dir}/efp566_model${model_type}_inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}
+                    result_dir=${exp_dir}/${model_type}_inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}_do${do_rate}
                     echo ${result_dir}
                     python efp_exp.py --inter_dim ${inter_dim} --num_hidden ${num_hidden} --model_type ${model_type}\
                     --stage ${stage} --lr ${lr}  --batch_size ${batch_size} --result_dir ${result_dir} --GPU ${GPU} --epochs ${epochs} --load_pretrained
