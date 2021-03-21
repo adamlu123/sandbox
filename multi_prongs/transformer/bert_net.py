@@ -3,11 +3,11 @@ import argparse
 
 parser = argparse.ArgumentParser(description='Sparse Auto-regressive Model')
 parser.add_argument(
-    "--num_hidden", type=int, default=4,
+    "--num_hidden", type=int, default=6,
     help="number of latent layer"
     )
 parser.add_argument(
-    "--hidden_size", type=int, default=128,
+    "--hidden_size", type=int, default=256,
     help="embedding size"
     )
 parser.add_argument(
@@ -20,11 +20,12 @@ parser.add_argument(
     )
 parser.add_argument(
     "--result_dir", type=str,
-    default="/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/2020308_search_tiny_bert/bert_embed128_inter_dim128_num_hidden4_lr1e-3_batch_size256"
+    # default='/baldig/physicsprojects2/N_tagger/exp/archive/2020307_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed512_hidden4_head8'
+    default="/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/2020308_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed512_hidden6_head8"
     )
 parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
 parser.add_argument('--model_type', default='bert')
-parser.add_argument('--load_pretrained', action='store_true', default=True)
+parser.add_argument('--load_pretrained', action='store_true', default=False)
 parser.add_argument('--batch_size', type=int, default=256, help='input batch size for training (default: 256)')
 parser.add_argument('--epochs', type=int, default=1000, help='number of epochs to train (default: 1000)')
 parser.add_argument('--seed', type=int, default=123, help='random seed (default: 1)')
@@ -33,7 +34,7 @@ parser.add_argument("--GPU", type=str, default='2', help='GPU id')
 args = parser.parse_args()
 
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = args.GPU
+os.environ['CUDA_VISIBLE_DEVICES'] = '0, 1,2,3' #args.GPU
 print('training using GPU:', args.GPU)
 print(str(args))
 
@@ -79,7 +80,7 @@ def data_generator(filename, batchsize, start, stop=None, weighted=False):
         while True:
             batch = slice(iexample, iexample + batchsize)
             # X = f['tower_from_img'][batch, :, :]
-            X = f['parsed_Tower_centered'][batch, :, :]
+            X = f['parsed_Tower_cir_centered'][batch, :, :]
             HL_unnorm = f['HL'][batch, :-4]
             target = f['target'][batch]
             if weighted:
@@ -194,7 +195,7 @@ def train(model, optimizer, epoch):
             print('train loss:', loss.item(), 'acc:', acc)
             writer.add_scalar('Loss/train', loss.item(), epoch * iterations + i)
             writer.add_scalar('Acc/train', acc, epoch * iterations + i)
-    val_acc = test(model, 'val', epoch)
+    val_acc, _ = test(model, 'val', epoch)
     return val_acc, model
 
 
@@ -233,7 +234,10 @@ def main(model):
         testacc, pred_mass_list = test(model, 'test', None)
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
         with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all.h5', 'a') as f:
+            if '{}_best'.format(model_type) in f:
+                del f['{}_best'.format(model_type)]
             f.create_dataset('{}_best'.format(model_type), data=combined_pred)
+        print('saving finished!')
 
     elif stage == 'train':
         for i in range(epoch):
@@ -248,7 +252,7 @@ def main(model):
                 #            result_dir + '/{}_merged_b_u_ep{}.pt'.format(model_type, i))
                 print('model saved at epoch', i)
             #     test(model, 'test')
-        testacc = test(model, 'test', i)
+        testacc, _ = test(model, 'test', i)
         print('test acc', testacc)
     else:
         raise ValueError('only support stage in: [train, eval]!')

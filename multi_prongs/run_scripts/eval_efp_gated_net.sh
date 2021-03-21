@@ -19,7 +19,7 @@ for do_rate in 4e-1 #1000 950 900 850
     do
     GPU=${count}
     ((count++))
-    for strength in 1 2 3 4 5 6 7 10
+    for strength in 6 #1 2 3 4 5 6 7 10
         do
         for batch_size in 256
             do

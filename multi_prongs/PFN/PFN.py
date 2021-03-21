@@ -55,7 +55,7 @@ num_class = 7
 filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res123457910.h5'
 
 with h5py.File(filename, 'r') as f:
-    X = np.array(f['parsed_Tower_centered'])
+    X = np.array(f['parsed_Tower_cir_centered'])
     y = np.array(f['target'])
     # HL = np.array(f['HL_normalized'])[:, :-4]
     HL_unnorm = np.array(f['HL'])[:, :-4]
@@ -86,11 +86,16 @@ psize, fsize = args.psize, args.fsize
 
 Phi_sizes, F_sizes = (128, ) * 2, (fsize,)*num_hidden # (psize,)*num_hidden,
 batch_size = args.batch_size
-print(Phi_sizes)
-# pfn = PFN(input_dim=X.shape[-1], output_dim=6, Phi_sizes=Phi_sizes, F_sizes=F_sizes)
-pfn = PFN(input_dim=X.shape[-1], output_dim=num_class, Phi_sizes=Phi_sizes, F_sizes=F_sizes, F_dropouts=args.dropout)
+opt = tf.keras.optimizers.Adam(lr=args.lr)
+compile_opts = {'optimizer': opt}
+
+print(Phi_sizes, 'lr', args.lr)
+# pfn = PFN(input_dim=X.shape[-1], output_dim=6, Phi_sizes=Phi_sizes, F_sizes=F_sizes, compile_opts=compile_opts)
+pfn = PFN(input_dim=X.shape[-1], output_dim=num_class, Phi_sizes=Phi_sizes, F_sizes=F_sizes, F_dropouts=args.dropout, compile_opts=compile_opts)
 
 if args.stage == 'train':
+    if args.load_pretrained:
+        pfn.load_weights(args.result_dir + '/best')
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=args.result_dir, histogram_freq=0)
     model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
         filepath=args.result_dir + '/best',
@@ -118,9 +123,10 @@ elif args.stage == 'eval':
     mass, pt = mass[val_cut:], pt[val_cut:]
     combined_pred = np.stack([preds, target, rslt, mass, pt])
     print(combined_pred.shape)
-    with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all.h5', 'a') as f:
-        del f['PFN']
-        f.create_dataset('{}'.format('PFN'), data=combined_pred)
+    # with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all.h5', 'a') as f:
+    #     del f['PFN']
+    #     f.create_dataset('{}'.format('PFN'), data=combined_pred)
+    # print('saving finished!')
 else:
     raise ValueError('only support stage in: [train, eval]!')
 

@@ -9,10 +9,10 @@ import os
 # cd /extra/yadongl10/git_project/sandbox/multi_prongs/data_preproc python generate_efps.py
 # source activate tf180
 phase = 'merge'  #[merge, generate]
-subset = 'parsedTower'  # or parsed_Tower
+subset = 'parsed_Tower_cir_centered'  # or parsed_Tower
 
 dv, nv = 7, 5
-save_dir = '/baldig/physicsprojects2/N_tagger/data/efp/20200307_{}_d{}_n{}'.format(subset, dv, nv)
+save_dir = '/baldig/physicsprojects2/N_tagger/data/efp/20200319_circularcenter_{}_d{}_n{}'.format(subset, dv, nv)
 print('phase', phase, 'config', "d<{}".format(dv), "n<{}".format(nv), "p==1")
 
 # filename = '/baldig/physicsprojects2/N_tagger/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
@@ -39,6 +39,7 @@ if phase == 'generate':
         os.makedirs(save_dir)
     for efp_ix, graph in enumerate(graphs):
         n, e, d, v, k, c, p, h = efpset.specs[efp_ix]
+        # if efp_ix < 62: continue
         print('config', "d<{}".format(dv), "n<{}".format(nv), "p==1")
         print('efp_ix', efp_ix, 'total', len(graphs), 'ndk', n, d, k)
         s = time.time()

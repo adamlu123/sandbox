@@ -53,7 +53,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 stage = args.stage
 
-writer = SummaryWriter(args.result_dir) if stage != 'eval' else None
+writer = SummaryWriter(args.result_dir) if stage == 'train' else None
 strength = args.strength
 num_labels = 7
 
@@ -316,7 +316,7 @@ def train(model, optimizer, epoch):
     return val_acc, val_clipped_acc, model
 
 
-def test(model, subset, epoch):
+def test(model, subset, epoch, efp_id=None):
     mass_range = [300, 700]
     mass_bins = np.linspace(mass_range[0], mass_range[1], 11)
     bin_len = mass_bins[1] - mass_bins[0]
@@ -326,7 +326,8 @@ def test(model, subset, epoch):
     model.eval()
     tmp = 0
     tmp_clipped = 0
-    gates = torch.tensor([0])
+    gates = model.module.gates if isinstance(model, nn.DataParallel) else model.gates
+    # gates = torch.tensor([0])
     with torch.no_grad():
         for i in range(iter_test):
             HL, target_long, HL_unnorm = next(generator[subset])
@@ -344,7 +345,8 @@ def test(model, subset, epoch):
             elif model_type == 'HLefpNet':
                 pred = model(HL, efps)
             elif model_type == 'GatedHLefpNet':
-                pred, pred_clipped, gates = model(HL, efps)
+                if efp_id: efps[:, efp_id] = torch.zeros_like(efps[:, efp_id]) #efps[:, efp_id] == torch.zeros_like(efps[:, efp_id])
+                pred, pred_clipped, _ = model(HL, efps)
                 pred_armax_clipped = torch.argmax(pred_clipped, dim=1)
                 tmp_clipped += torch.sum(pred_armax_clipped == target_long).item() / target_long.shape[0]
             elif model_type == 'EFPNet':
@@ -356,44 +358,62 @@ def test(model, subset, epoch):
             bin_idx = torch.floor((mass - mass_range[0]) / bin_len)
             rslt = pred_armax == target_long
             rslt_clipped = pred_armax_clipped == target_long
-            pred_mass_list.append(torch.stack([pred_armax.float(), target_long.float(), rslt.float(), mass, pt]).cpu())
+            pred_mass_list.append(torch.stack([pred_armax.float(), target_long.float(), rslt.float(), rslt_clipped.float(), mass, pt]).cpu())
             pred_original_list.append(pred.cpu())
 
     clipped_acc = tmp_clipped / iter_test if model_type == 'GatedHLefpNet' else 0.
-    num_remaining_efps = ((gates).abs() > 1e-2).sum().tolist() if model_type == 'GatedHLefpNet' else 0.
+    gates = gates.detach().cpu().numpy()
+    num_remaining_efps = (np.abs(gates) > 1e-2).sum().tolist() if model_type == 'GatedHLefpNet' else 0.
 
     print(model_type, 'acc', tmp / iter_test, 'clipped acc', clipped_acc, 'num remaining:', num_remaining_efps)
-    if stage != 'eval':
+    if stage == 'train':
         print('write to tensorboard ...')
         writer.add_scalar('Acc/val', tmp / iter_test, epoch)
         writer.add_scalar('Acc_clipped/val', clipped_acc, epoch)
         writer.add_scalar('num_remaining_efps', num_remaining_efps, epoch)
 
-    return tmp / iter_test, clipped_acc, pred_original_list, pred_mass_list, gates.detach().cpu().numpy()
+    return tmp / iter_test, clipped_acc, pred_original_list, pred_mass_list, gates
 
 
 def main(model):
     best_acc = 0
     if stage == 'eval':
-        testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', None)
+
+
+        save_dict = {}
+
+        gates = model.module.gates.detach().cpu().numpy()
+        gates_selected_i = np.where(np.abs(gates) > 1e-2)[0]
+        gates_selected_v = gates[gates_selected_i]
+        gates_ascend = np.argsort(gates_selected_v)[::-1]
+        print(gates_selected_i[gates_ascend])
+        efp_ids = []
+        for efp_id in gates_selected_i[gates_ascend]:
+            efp_ids.append(efp_id)
+            print('testing removing efp_id', efp_id)
+            testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None, efp_id=efp_id)
+            save_dict[efp_id] = testclipped_acc
+
+        testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None)
+        save_dict['full'] = testclipped_acc
+        np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/importance_efps.npy', save_dict)
+
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
-        # combined_pred_only = torch.cat(pred_original_list, dim=0).numpy()
-        # print(combined_pred.shape, combined_pred_only.shape, len(pred_mass_list))
-        print('acc', combined_pred[-3,:].sum()/combined_pred.shape[1], 'cliped acc', combined_pred[-1,:].sum()/combined_pred.shape[1])
-        print('gates>0.01', np.where(gates > 1e-2))
-        num_remaining_efps = (gates> 1e-2).sum().tolist() if model_type == 'GatedHLefpNet' else 0.
+        print('acc', combined_pred[2,:].sum()/combined_pred.shape[1], 'cliped acc', combined_pred[3,:].sum()/combined_pred.shape[1])
+        print('gates>0.01', gates_selected_i)
+        num_remaining_efps = len(gates_selected_i) if model_type == 'GatedHLefpNet' else 0.
         #
-        if model_type == 'GatedHLefpNet':
-            with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_efps567_inter_dim800_num_hidden5_do4e_1.h5', 'a') as f:
-                f.create_dataset('savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
-                f.create_dataset('savewoclip_{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
-                f.create_dataset('savewoclip_{}_strength{}_gates'.format(model_type, strength), data=gates)
-        else:
-            with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all.h5', 'a') as f:
-                if '{}_best'.format(model_type) in f:
-                    del f['{}_best'.format(model_type)]
-                f.create_dataset('{}_best'.format(model_type), data=combined_pred)
-        print('saving finished!')
+        # if model_type == 'GatedHLefpNet':
+        #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_efps567_inter_dim800_num_hidden5_do4e_1_corrected.h5', 'a') as f:
+        #         f.create_dataset('savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
+        #         f.create_dataset('savewoclip_{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
+        #         f.create_dataset('savewoclip_{}_strength{}_gates'.format(model_type, strength), data=gates)
+        # else:
+        #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all.h5', 'a') as f:
+        #         if '{}_best'.format(model_type) in f:
+        #             del f['{}_best'.format(model_type)]
+        #         f.create_dataset('{}_best'.format(model_type), data=combined_pred)
+        # print('saving finished!')
 
     else:
         for i in range(epoch):

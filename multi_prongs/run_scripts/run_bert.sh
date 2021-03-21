@@ -8,20 +8,20 @@ epochs=1000
 stage='train'
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
 exp_path='/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/'
-exp_name='2020308_search_tiny_bert' #'2020214_search_HLNet_hl3'
+exp_name='2020318_circularcenter_search_tiny_bert' #'2020214_search_HLNet_hl3'
 exp_dir=${exp_path}/${exp_name}
 
 count=0
 
-for lr in 1e-3
+for lr in 1e-4
     do
     for batch_size in 256
         do
-        for inter_dim in 128
+        for inter_dim in 3072 # 128
             do
-            for num_hidden in 2 4
+            for num_hidden in 8
                 do
-                for hidden_size in 128 256 # embedding size
+                for hidden_size in 768 # embedding size
                 do
                 GPU=${count}
                 ((count++))
