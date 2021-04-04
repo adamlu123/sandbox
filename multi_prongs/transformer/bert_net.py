@@ -1,13 +1,16 @@
 from transformers import *
 import argparse
+import sys
+sys.path.append('/extra/yadongl10/git_project/sandbox/multi_prongs')
+from utils import cross_validate, get_id_range
 
 parser = argparse.ArgumentParser(description='Sparse Auto-regressive Model')
 parser.add_argument(
-    "--num_hidden", type=int, default=6,
+    "--num_hidden", type=int, default=4,
     help="number of latent layer"
     )
 parser.add_argument(
-    "--hidden_size", type=int, default=256,
+    "--hidden_size", type=int, default=512,
     help="embedding size"
     )
 parser.add_argument(
@@ -20,12 +23,13 @@ parser.add_argument(
     )
 parser.add_argument(
     "--result_dir", type=str,
-    # default='/baldig/physicsprojects2/N_tagger/exp/archive/2020307_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed512_hidden4_head8'
-    default="/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/2020308_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed512_hidden6_head8"
+    default='/baldig/physicsprojects2/N_tagger/exp/archive/2020307_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed512_hidden4_head8'
+    # default="/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/2020308_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed512_hidden6_head8"
     )
 parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
 parser.add_argument('--model_type', default='bert')
 parser.add_argument('--load_pretrained', action='store_true', default=False)
+parser.add_argument('--fold_id', type=int, default=0, help='CV fold in [0, 9]')
 parser.add_argument('--batch_size', type=int, default=256, help='input batch size for training (default: 256)')
 parser.add_argument('--epochs', type=int, default=1000, help='number of epochs to train (default: 1000)')
 parser.add_argument('--seed', type=int, default=123, help='random seed (default: 1)')
@@ -34,7 +38,7 @@ parser.add_argument("--GPU", type=str, default='2', help='GPU id')
 args = parser.parse_args()
 
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '0, 1,2,3' #args.GPU
+os.environ['CUDA_VISIBLE_DEVICES'] = args.GPU # '0,1,2,3' #
 print('training using GPU:', args.GPU)
 print(str(args))
 
@@ -54,16 +58,20 @@ epoch = args.epochs
 result_dir = args.result_dir
 
 stage = args.stage
-if stage != 'eval':
+if stage == 'train':
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
-
-    writer = SummaryWriter(result_dir) if stage != 'eval' else None
+    writer = SummaryWriter(result_dir)
     ## loging:
     copyfile('/extra/yadongl10/git_project/sandbox/multi_prongs/transformer/bert_net.py', result_dir + '/bert_net.py')
+elif stage == 'eval':
+    args.load_pretrained = True
 
 # filename = '/baldig/physicsprojects2/N_tagger/data/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
 filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res123457910.h5'
+# filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_N4test.h5'
+
+
 with h5py.File(filename, 'r') as f:
     total_num_sample = f['target'].shape[0]
 train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
@@ -72,9 +80,12 @@ iterations = int(train_cut / batchsize)
 iter_test = int((val_cut - train_cut) / batchsize)
 print('total number samples, train iter and test iter', total_num_sample, iterations, iter_test)
 
+train_range, val_range, test_range = get_id_range(total_num_sample, fold_id=args.fold_id, num_folds=10)
+
 
 ################### data generator
-def data_generator(filename, batchsize, start, stop=None, weighted=False):
+def data_generator(filename, batchsize, idx_range, weighted=False):
+    start, stop = idx_range
     iexample = start
     with h5py.File(filename, 'r') as f:
         while True:
@@ -92,11 +103,10 @@ def data_generator(filename, batchsize, start, stop=None, weighted=False):
             if iexample + batchsize >= stop:
                 iexample = start
 
-
 generator = {}
-generator['train'] = data_generator(filename, batchsize, start=0, stop=train_cut, weighted=False)
-generator['val'] = data_generator(filename, batchsize, start=train_cut, stop=val_cut, weighted=False)
-generator['test'] = data_generator(filename, batchsize, start=val_cut, stop=test_cut, weighted=False)
+generator['train'] = data_generator(filename, batchsize, train_range, weighted=False)
+generator['val'] = data_generator(filename, batchsize, val_range, weighted=False)
+generator['test'] = data_generator(filename, batchsize, test_range, weighted=False)
 
 
 ################### model
@@ -203,7 +213,7 @@ def test(model, subset, epoch):
     model.eval()
     tmp = 0
     pred_mass_list = []
-
+    pred_original_list = []
     with torch.no_grad():
         for i in range(iter_test):
             # X, HL, target, _ = next(generator[subset])
@@ -221,22 +231,25 @@ def test(model, subset, epoch):
             mass, pt = torch.tensor(HL_unnorm[:, -1]), torch.tensor(HL_unnorm[:, -2])
             rslt = pred_armax == target
             pred_mass_list.append(torch.stack([pred_armax.float(), target.float(), rslt.float(), mass.float(), pt.float()]))
+            pred_original_list.append(pred.cpu())
 
     print(model_type, 'acc', tmp / iter_test)
     if stage != 'eval':
         writer.add_scalar('Acc/val', tmp / iter_test, epoch)
-    return tmp / iter_test, pred_mass_list
+    return tmp / iter_test, pred_mass_list, pred_original_list
 
 
 def main(model):
     best_acc = 0
     if stage == 'eval':
-        testacc, pred_mass_list = test(model, 'test', None)
+        testacc, pred_mass_list, pred_original_list = test(model, 'test', None)
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
-        with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all.h5', 'a') as f:
+        pred_original_list = torch.cat(pred_original_list, dim=0).numpy()
+        with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all_N4test.h5', 'a') as f:
+            f.create_dataset('circularcenter_{}_best_original'.format(model_type), data=pred_original_list)
             if '{}_best'.format(model_type) in f:
                 del f['{}_best'.format(model_type)]
-            f.create_dataset('{}_best'.format(model_type), data=combined_pred)
+            f.create_dataset('circularcenter_{}_best'.format(model_type), data=combined_pred)
         print('saving finished!')
 
     elif stage == 'train':

@@ -6,7 +6,7 @@ source activate tf180
 
 # hyperparemeters
 epochs=1000
-stage='train'
+stage='train' # [eval, train]
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
 exp_path='/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/'
 exp_name='20210318_circularcenter_PFN_search_batch256'
@@ -16,14 +16,14 @@ lr=1e-4
 
 # start running
 count=0
-for num_hidden in 2 # 3 7 9
+for num_hidden in 3 5 7 9
     do
     for psize in 1024 #140 160 170  #128 #50 100 150 200
         do
         fsize=${psize}
         for batch_size in 256
             do
-            for dropout in 2e-1 3e-1 4e-1 5e-1 #6e-1 # 2e-1 25e-2 #
+            for dropout in 2e-1 #2e-1 3e-1 4e-1 5e-1 #6e-1 # 2e-1 25e-2 #
                 do
                 GPU=${count}
                 ((count++))

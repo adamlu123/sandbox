@@ -9,7 +9,7 @@ epochs=1500
 stage='train'
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
 exp_path='/baldig/physicsprojects2/N_tagger/exp/exp_ptcut'
-exp_name='2020308_search_HLnet'
+exp_name='2020401_BN_search_HLnet'
 exp_dir=${exp_path}/${exp_name}
 
 # start running
@@ -24,7 +24,7 @@ for batch_size in 256
             ((count++))
             for num_hidden in 5
                 do
-                for lr in 1e-3 1e-4
+                for lr in 1e-4
                     do
                     mkdir -p ${exp_dir}
                     cp ${multip_fldr}/run_scripts/run_hlnet.sh ${exp_dir}

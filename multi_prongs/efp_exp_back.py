@@ -9,7 +9,7 @@ import time
 import h5py
 import numpy as np
 
-parser = argparse.ArgumentParser(description='Multi-prong Model')
+parser = argparse.ArgumentParser(description='Sparse Auto-regressive Model')
 parser.add_argument(
     "--strength", type=int, default=0,
     help="regularization strength"
@@ -36,7 +36,7 @@ parser.add_argument(
     # default="/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/2020308_search_HLnet/HLNet_inter_dim800_num_hidden5_lr1e-4_batch_size256_do3e-1"
     )
 parser.add_argument('--model_type', default='HLNet')
-parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
+parser.add_argument('--stage', default='train', help='mode in [eval, train]')
 parser.add_argument('--load_pretrained', action='store_true', default=False)
 parser.add_argument('--batch_size', type=int, default=256, help='input batch size for training (default: 100)')
 parser.add_argument('--epochs', type=int, default=1000, help='number of epochs to train (default: 1000)')
@@ -73,7 +73,6 @@ result_dir = args.result_dir
 # filename = '/baldig/physicsprojects2/N_tagger/data/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
 # filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/res8_all_HL_target_cutted.h5'
 filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res123457910.h5'
-# filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_N4test.h5'
 
 # ================ target file
 fn_target = '/baldig/physicsprojects2/N_tagger/exp/exp_no_ptcut/test/combined_pred_all.h5'
@@ -161,8 +160,8 @@ target_generator['val'] = target_data_generator(fn_target, batchsize, start=trai
 target_generator['test'] = target_data_generator(fn_target, batchsize, start=val_cut, stop=test_cut)
 
 ################### model
-hlnet_base = make_hlnet_base(input_dim=17, inter_dim=args.inter_dim, num_hidden=args.num_hidden, out_dim=args.out_dim, do_rate=args.do_rate,batchnorm_base=True) # 25 for HL3 version
-efpnet_base = make_hlnet_base(input_dim=567, inter_dim=args.inter_dim, num_hidden=args.num_hidden, out_dim=args.out_dim, do_rate=args.do_rate,batchnorm_base=True)  # 207 566 126
+hlnet_base = make_hlnet_base(input_dim=17, inter_dim=args.inter_dim, num_hidden=args.num_hidden, out_dim=args.out_dim, do_rate=args.do_rate,batchnorm_base=False) # 25 for HL3 version
+efpnet_base = make_hlnet_base(input_dim=567, inter_dim=args.inter_dim, num_hidden=args.num_hidden, out_dim=args.out_dim, do_rate=args.do_rate,batchnorm_base=False)  # 207 566 126
 
 
 class HLNet(nn.Module):
@@ -349,7 +348,7 @@ def test(model, subset, epoch, feature_id=None):
             target_long = torch.tensor(target_long).long().to(device)
             pred_armax_clipped = torch.zeros_like(target_long)
             if model_type == 'HLNet':
-                if feature_id != None: HL[:, feature_id] = torch.zeros_like(HL[:, feature_id]) #HL[:, feature_id][torch.randperm(batchsize)]  #
+                if feature_id: HL[:, feature_id] = torch.zeros_like(HL[:, feature_id]) #HL[:, feature_id][torch.randperm(batchsize)]  #
                 pred = model(HL)
             elif model_type == 'HLefpNet':
                 pred = model(HL, efps)
@@ -402,12 +401,12 @@ def main(model):
             for efp_id in gates_selected_i[gates_ascend]:
                 efp_ids.append(efp_id)
                 print('testing removing efp_id', efp_id)
-                testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None, feature_id=efp_id)
+                testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None, efp_id=efp_id)
                 save_dict[efp_id] = testclipped_acc
 
             testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None)
             save_dict['full'] = testclipped_acc
-            np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/circularcenter_importance_efps_perm_noise_s10.npy', save_dict)
+            np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/importance_efps_perm_noise.npy', save_dict)
         elif model_type == 'HLNet':
             for HL_id in range(16):
                 print('testing removing efp_id', HL_id)
@@ -417,30 +416,23 @@ def main(model):
             testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None)
             save_dict['full'] = testacc
             # np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/importance_hl_remove.npy', save_dict)
-        # print('saved {} analysis results!'.format(model_type))
+        print('saved {} analysis results!'.format(model_type))
 
     # get combined_pred
-    #     gates = model.module.gates.detach().cpu().numpy()
-    #     gates_selected_i = np.where(np.abs(gates) > 1e-2)[0]
-    #     num_remaining_efps = len(gates_selected_i) if model_type == 'GatedHLefpNet' else 0.
-
         testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None)
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
-        pred_original_list = torch.cat(pred_original_list, dim=0).numpy()
         print('acc', combined_pred[2,:].sum()/combined_pred.shape[1], 'cliped acc', combined_pred[3,:].sum()/combined_pred.shape[1])
 
         # if model_type == 'GatedHLefpNet':
-        #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_efps567_inter_dim800_num_hidden5_do3e_1_corrected.h5', 'a') as f:
-        #         f.create_dataset('circularcenter_savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
-        #         f.create_dataset('circularcenter_savewoclip_{}_strength{}_best_original'.format(model_type, strength), data=pred_original_list)
-        #         f.create_dataset('circularcenter_savewoclip_{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
-        #         f.create_dataset('circularcenter_savewoclip_{}_strength{}_gates'.format(model_type, strength), data=gates)
+        #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_efps567_inter_dim800_num_hidden5_do4e_1_corrected.h5', 'a') as f:
+        #         f.create_dataset('savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
+        #         f.create_dataset('savewoclip_{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
+        #         f.create_dataset('savewoclip_{}_strength{}_gates'.format(model_type, strength), data=gates)
         # else:
-        #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all_N4test.h5', 'a') as f:
-        #         # if '{}_best'.format(model_type) in f:
-        #         #     del f['{}_best'.format(model_type)]
-        #         f.create_dataset('circularcenter_{}_best'.format(model_type), data=combined_pred)
-        #         f.create_dataset('circularcenter_{}_best_original'.format(model_type), data=pred_original_list)
+        #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all.h5', 'a') as f:
+        #         if '{}_best'.format(model_type) in f:
+        #             del f['{}_best'.format(model_type)]
+        #         f.create_dataset('{}_best'.format(model_type), data=combined_pred)
         # print('saving finished!')
 
     else:

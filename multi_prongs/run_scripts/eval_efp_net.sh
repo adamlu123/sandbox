@@ -9,8 +9,9 @@ epochs=1000
 stage='eval'
 model_type='HLefpNet'
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
-exp_path='/baldig/physicsprojects2/N_tagger/exp/exp_ptcut'
-exp_name='2020309_search_efp_net'
+exp_path='/baldig/physicsprojects2/N_tagger/exp/tune_HLefpNet'
+exp_name='2020321_circularcenter_BN_search_efp_net' #'2020309_search_efp_net'
+out_dim=128
 
 exp_dir=${exp_path}/${exp_name}
 
@@ -20,7 +21,7 @@ for batch_size in 256
     do
     for inter_dim in 800 # 200 400 600
         do
-        for do_rate in 4e-1 #2e-1 3e-1 #4e-1
+        for do_rate in 3e-1 #2e-1 3e-1 #4e-1
             do
             GPU=${count}
             ((count++))
@@ -28,7 +29,8 @@ for batch_size in 256
                 do
                 for lr in 1e-4
                     do
-                    result_dir=${exp_path}/${exp_name}/${model_type}_inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}_do${do_rate}
+                    result_dir=${exp_path}/${exp_name}/${model_type}_inter_dim${inter_dim}_num_hidden${num_hidden}_out_dim${out_dim}_lr${lr}_batch_size${batch_size}_do${do_rate}
+#                    result_dir=${exp_path}/${exp_name}/${model_type}_inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}_do${do_rate}
                     echo ${subsets}
                     echo ${result_dir}
                     python efp_exp.py --inter_dim ${inter_dim} --num_hidden ${num_hidden} --model_type ${model_type}\

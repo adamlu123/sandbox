@@ -53,6 +53,7 @@ def process_tower(towerslines_by_jet):
 
 
 def parser(file, N):
+    tar = []
     HL = []
     Tower = []
     towerslines_by_jet = []
@@ -76,11 +77,24 @@ def parser(file, N):
                 # print(file[i:i + 3])
                 # raise ValueError('len(processed)', len(processed))
             if processed[-3] + processed[-2] == N and len(processed) == 22: #and (processed[-5] > mass_range[0] and processed[-5] < mass_range[1]):
-                if args.subset == 'res6':
-                    Nq, Nb = processed[-3], processed[-2]
+                Nq, Nb = processed[-3], processed[-2]
+                if args.subset in ['res6', 'res8', 'res9']:
                     if Nq == 4 and Nb == 0:
                         matched_cnt += 1
                         HL.append(processed)
+                        match = True
+                    else:
+                        match = False
+                elif args.subset == 'N4test':
+                    if Nq == 0 and Nb == 4:
+                        matched_cnt += 1
+                        HL.append(processed)
+                        tar.append(4)
+                        match = True
+                    elif Nq == 4 and Nb == 0:
+                        matched_cnt += 1
+                        HL.append(processed)
+                        tar.append(9)
                         match = True
                     else:
                         match = False
@@ -102,7 +116,7 @@ def parser(file, N):
     if towerslines_by_jet:
         Tower.append(process_tower(towerslines_by_jet))
     print('N={} total num of jets: {}, matched jets:{}'.format(N, cnt, matched_cnt))
-    return HL, Tower
+    return HL, Tower, tar
 
 
 def parser_HL(file, N):
@@ -130,6 +144,10 @@ def save_h5(seed=123, HL_only=True):
     ### loop over different txt files
     for N in [1, 2, 3, 4, 6, 8]:
         for i in range(len(name_dict[N])):
+            # if i > 5:
+            #     break
+            if i % 10 == 0:
+                print('Processing the file: ', i)
             data_dir = name_dict[N][i]
             file = []
             with open(data_dir, 'r') as f:
@@ -138,14 +156,58 @@ def save_h5(seed=123, HL_only=True):
             if HL_only:
                 HL = parser_HL(file, N)
             else:
-                HL, Tower = parser(file, N)
+                HL, Tower, tar = parser(file, N)
                 if len(HL) != len(Tower):
                     print(len(HL), len(Tower))
                     raise ValueError('len of HL must equal to len of Tower!')
                 parsed_Tower = parsed_Tower + Tower
+                target = target + tar
             # print(np.array(HL)[:, -4].max())
             parsed_HL = parsed_HL + HL
-            target = target + [N] * len(HL)
+            # target = target + [N] * len(HL)
+
+    idx = np.random.permutation(len(target))
+    if HL_only:
+        return np.array(parsed_HL)[idx], np.array(target)[idx]
+    else:
+        return np.array(parsed_HL)[idx], np.array(parsed_Tower)[idx], np.array(target)[idx]
+
+
+
+def parse_from_filelist(filelist, N, HL_only=False):
+    parsed_Tower, parsed_HL = [], []
+    for i in range(len(filelist)):
+        if i % 10 == 0:
+            print('Processing the file: ', i)
+        data_dir = filelist[i]
+        file = []
+        with open(data_dir, 'r') as f:
+            for idx, line in enumerate(f):
+                file.append(line)
+        if HL_only:
+            HL = parser_HL(file, N)
+        else:
+            HL, Tower, target = parser(file, N)
+            if len(HL) != len(Tower):
+                print(len(HL), len(Tower))
+                raise ValueError('len of HL must equal to len of Tower!')
+            parsed_Tower = parsed_Tower + Tower
+        parsed_HL = parsed_HL + HL
+    return parsed_Tower, parsed_HL, target
+
+
+def save_h5_new(seed=123, HL_only=True):
+    # if not HL_only and not mass_range: raise ValueError('Missing mass_range!')
+    np.random.seed(seed)
+
+    parsed_HL = []
+    parsed_Tower = []
+    target = []
+    ### loop over different txt files
+    for N in [1, 2, 3, 4, 6, 8]:
+        tower, hl = parse_from_filelist(name_dict[N], N, HL_only=False)
+        parsed_Tower = parsed_Tower + tower
+        parsed_HL = parsed_HL + hl
 
     idx = np.random.permutation(len(target))
     if HL_only:
@@ -161,7 +223,8 @@ def get_transform_target(target):
         '3': 2,
         '4': 3,
         '6': 4,
-        '8': 5
+        '8': 5,
+        '9': 6
     }
     trasformed_target = []
     for i in target:
@@ -193,6 +256,7 @@ with h5py.File('/baldig/physicsprojects2/N_tagger/data/v20200302_data/{}_all_HL_
 
 with open('/baldig/physicsprojects2/N_tagger/data/v20200302_data/{}_all_parsedTower.pkl'.format(subset), 'wb') as f:
     pkl.dump(parsed_Tower, f)
+print('finish saving!')
 
 
 

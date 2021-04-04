@@ -1,6 +1,9 @@
 # standard library imports
 from __future__ import absolute_import, division, print_function
 import argparse
+import sys
+sys.path.append('/extra/yadongl10/git_project/sandbox/multi_prongs')
+from utils import cross_validate
 
 parser = argparse.ArgumentParser(description='Sparse Auto-regressive Model')
 parser.add_argument(
@@ -26,6 +29,7 @@ parser.add_argument(
 parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
 parser.add_argument('--load_pretrained', action='store_true', default=False)
 parser.add_argument('--batch_size', type=int, default=128, help='input batch size for training (default: 100)')
+parser.add_argument('--fold_id', type=int, default=0, help='CV fold in [0, 9]')
 parser.add_argument('--epochs', type=int, default=1000, help='number of epochs to train (default: 1000)')
 parser.add_argument('--seed', type=int, default=123, help='random seed (default: 1)')
 parser.add_argument('--lr', type=float, default=1e-3, help='learning rate (default: 0.001)')
@@ -52,7 +56,12 @@ from energyflow.utils import data_split, remap_pids, to_categorical
 import h5py
 num_class = 7
 # filename = '/baldig/physicsprojects2/N_tagger/data/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
+# filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_N4test.h5'
 filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res123457910.h5'
+print('----------------------------------------')
+print('cross validation: fold id ', args.fold_id, filename)
+print('----------------------------------------')
+
 
 with h5py.File(filename, 'r') as f:
     X = np.array(f['parsed_Tower_cir_centered'])
@@ -75,6 +84,8 @@ total_num_sample = Y.shape[0]
 #     x[mask, 1:3] -= yphi_avg
 #     x[mask, 0] /= x[:, 0].sum()
 
+
+X, Y = cross_validate(X, Y, fold_id=args.fold_id, num_folds=10)
 train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
 X_train, X_val, X_test = X[:train_cut], X[train_cut:val_cut], X[val_cut:]
 Y_train, Y_val, Y_test = Y[:train_cut], Y[train_cut:val_cut], Y[val_cut:]
@@ -113,20 +124,23 @@ if args.stage == 'train':
             callbacks=[tensorboard_callback, model_checkpoint_callback])
 
 elif args.stage == 'eval':
+    print('load model from', args.result_dir)
     pfn.load_weights(args.result_dir + '/best')
 
     preds = pfn.predict(X_test, batch_size=256)
-    preds = np.argmax(preds, 1)
+    preds_argmax = np.argmax(preds, 1)
     target = np.argmax(Y_test, 1)
-    rslt = preds == target
-    print(preds.shape, 'acc', np.sum(rslt / Y_test.shape[0]))
+    rslt = preds_argmax == target
+    print(preds_argmax.shape, 'acc', np.sum(rslt / Y_test.shape[0]))
     mass, pt = mass[val_cut:], pt[val_cut:]
-    combined_pred = np.stack([preds, target, rslt, mass, pt])
+    combined_pred = np.stack([preds_argmax, target, rslt, mass, pt])
     print(combined_pred.shape)
-    # with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all.h5', 'a') as f:
-    #     del f['PFN']
-    #     f.create_dataset('{}'.format('PFN'), data=combined_pred)
-    # print('saving finished!')
+    with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all_N4test.h5', 'a') as f:
+        del f['circularcenter_{}'.format('PFN')]
+        del f['circularcenter_{}_original'.format('PFN')]
+        f.create_dataset('circularcenter_{}'.format('PFN'), data=combined_pred)
+        f.create_dataset('circularcenter_{}_original'.format('PFN'), data=preds)
+    print('saving finished!')
 else:
     raise ValueError('only support stage in: [train, eval]!')
 

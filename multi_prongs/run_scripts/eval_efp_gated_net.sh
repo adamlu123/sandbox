@@ -8,18 +8,18 @@ epochs=1500
 stage='eval'
 model_type='GatedHLefpNet'
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
-exp_path='/baldig/physicsprojects2/N_tagger/exp/exp_ptcut'
-exp_name='2020310_search_efp_gated_net'
+exp_path='/baldig/physicsprojects2/N_tagger/exp/tune_HLefpNet'
+exp_name='2020322_circularcenter_BN_search_efpgatednet'
 exp_dir=${exp_path}/${exp_name}
 
 # start running
 count=0
 
-for do_rate in 4e-1 #1000 950 900 850
+for do_rate in 3e-1 #1000 950 900 850
     do
     GPU=${count}
     ((count++))
-    for strength in 6 #1 2 3 4 5 6 7 10
+    for strength in 10 # 11 13 15 20 #1 2 3 4 5 6 7 10
         do
         for batch_size in 256
             do

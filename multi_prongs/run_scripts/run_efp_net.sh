@@ -8,9 +8,10 @@ model_type='HLefpNet'  # HLefpNet GatedHLefpNet HLNet
 epochs=1500
 stage='train'
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
-exp_path='/baldig/physicsprojects2/N_tagger/exp/exp_ptcut'
-exp_name='2020309_search_efp_net'
+exp_path='/baldig/physicsprojects2/N_tagger/exp/tune_HLefpNet'
+exp_name='2020321_circularcenter_BN_search_efp_net_rep2'
 exp_dir=${exp_path}/${exp_name}
+out_dim=128
 
 # start running
 count=0
@@ -24,11 +25,11 @@ for batch_size in 256
             ((count++))
             for num_hidden in 5
                 do
-                for lr in 1e-3 1e-4
+                for lr in 1e-4
                     do
                     mkdir -p ${exp_dir}
                     cp ${multip_fldr}/run_scripts/run_efp_net.sh ${exp_dir}
-                    result_dir=${exp_path}/${exp_name}/${model_type}_inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}_do${do_rate}
+                    result_dir=${exp_path}/${exp_name}/${model_type}_inter_dim${inter_dim}_num_hidden${num_hidden}_out_dim${out_dim}_lr${lr}_batch_size${batch_size}_do${do_rate}
                     mkdir -p ${result_dir}
                     echo ${subsets}
                     echo ${result_dir}
