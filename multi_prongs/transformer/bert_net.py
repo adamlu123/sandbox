@@ -2,7 +2,7 @@ from transformers import *
 import argparse
 import sys
 sys.path.append('/extra/yadongl10/git_project/sandbox/multi_prongs')
-from utils import cross_validate, get_id_range
+from utils import split_data
 
 parser = argparse.ArgumentParser(description='Sparse Auto-regressive Model')
 parser.add_argument(
@@ -38,7 +38,7 @@ parser.add_argument("--GPU", type=str, default='2', help='GPU id')
 args = parser.parse_args()
 
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = args.GPU # '0,1,2,3' #
+os.environ['CUDA_VISIBLE_DEVICES'] = args.GPU # '0,1,2,3'
 print('training using GPU:', args.GPU)
 print(str(args))
 
@@ -74,39 +74,21 @@ filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res1234
 
 with h5py.File(filename, 'r') as f:
     total_num_sample = f['target'].shape[0]
-train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
-
-iterations = int(train_cut / batchsize)
-iter_test = int((val_cut - train_cut) / batchsize)
-print('total number samples, train iter and test iter', total_num_sample, iterations, iter_test)
-
-train_range, val_range, test_range = get_id_range(total_num_sample, fold_id=args.fold_id, num_folds=10)
-
+    X = np.array(f['parsed_Tower_cir_centered'])
+    Y = np.array(f['target'])
+    HL = np.array(f['HL'])
+# train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
+# iterations = int(train_cut / batchsize)
+# iter_test = int((val_cut - train_cut) / batchsize)
+# print('total number samples, train iter and test iter', total_num_sample, iterations, iter_test)
 
 ################### data generator
-def data_generator(filename, batchsize, idx_range, weighted=False):
-    start, stop = idx_range
-    iexample = start
-    with h5py.File(filename, 'r') as f:
-        while True:
-            batch = slice(iexample, iexample + batchsize)
-            # X = f['tower_from_img'][batch, :, :]
-            X = f['parsed_Tower_cir_centered'][batch, :, :]
-            HL_unnorm = f['HL'][batch, :-4]
-            target = f['target'][batch]
-            if weighted:
-                weights = f['weights'][batch]
-                yield X, HL_unnorm, target, weights
-            else:
-                yield X, HL_unnorm, target
-            iexample += batchsize
-            if iexample + batchsize >= stop:
-                iexample = start
+data_train, data_val, data_test = split_data(X, Y, HL, fold_id=args.fold_id, num_folds=10)
 
 generator = {}
-generator['train'] = data_generator(filename, batchsize, train_range, weighted=False)
-generator['val'] = data_generator(filename, batchsize, val_range, weighted=False)
-generator['test'] = data_generator(filename, batchsize, test_range, weighted=False)
+generator['train'] = torch.utils.data.DataLoader(data_train, batch_size=args.batch_size, shuffle=True, num_workers=10)
+generator['val'] = torch.utils.data.DataLoader(data_val, batch_size=args.batch_size, shuffle=True, num_workers=10)
+generator['test'] = torch.utils.data.DataLoader(data_test, batch_size=args.batch_size, shuffle=True, num_workers=10)
 
 
 ################### model
@@ -182,12 +164,8 @@ if args.stage == 'train':
 
 def train(model, optimizer, epoch):
     model.train()
-    for i in range(iterations):
+    for i, (X, target, HL_unnorm) in enumerate(generator['train']):
         optimizer.zero_grad()
-        # X, HL, target, weights = next(generator['train'])
-        # X, HL, target, weights = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), \
-        #                          torch.tensor(target).long().to(device), torch.tensor(weights).to(device)
-        X, HL_unnorm, target = next(generator['train'])
         X, target = torch.tensor(X).float().to(device), \
                         torch.tensor(target).long().to(device)
         if model_type == 'bert' or model_type == 'transformer':
@@ -195,7 +173,7 @@ def train(model, optimizer, epoch):
         elif model_type == 'BertMassNet':
             HL_unnorm = torch.tensor(HL_unnorm).float().to(device)
             pred = model(X, HL_unnorm[:, -1])
-        loss = loss_fn(pred, target)  # * weights
+        loss = loss_fn(pred, target)
         loss = loss.mean()
         loss.backward()
         optimizer.step()
@@ -203,9 +181,9 @@ def train(model, optimizer, epoch):
 
         if i % 50 == 0:
             print('train loss:', loss.item(), 'acc:', acc)
-            writer.add_scalar('Loss/train', loss.item(), epoch * iterations + i)
-            writer.add_scalar('Acc/train', acc, epoch * iterations + i)
-    val_acc, _ = test(model, 'val', epoch)
+            writer.add_scalar('Loss/train', loss.item(), epoch * len(generator['train']) + i)
+            writer.add_scalar('Acc/train', acc, epoch * len(generator['train']) + i)
+    val_acc, _, _ = test(model, 'val', epoch)
     return val_acc, model
 
 
@@ -215,28 +193,26 @@ def test(model, subset, epoch):
     pred_mass_list = []
     pred_original_list = []
     with torch.no_grad():
-        for i in range(iter_test):
-            # X, HL, target, _ = next(generator[subset])
-            # X, HL, target = torch.tensor(X).float().to(device), torch.tensor(HL).float().to(device), torch.tensor(target).to(device)
-            X, HL_unnorm, target = next(generator[subset])
-            X, target = torch.tensor(X).float().to(device), torch.tensor(target)
+        for i, (X, target, HL_unnorm) in enumerate(generator[subset]):
+            X, target = torch.tensor(X).float().to(device), torch.tensor(target).cpu()
             if model_type == 'bert' or model_type == 'transformer':
                 pred = model(X)
             elif model_type == 'BertMassNet':
                 HL_unnorm = torch.tensor(HL_unnorm).float().to(device)
                 pred = model(X, HL_unnorm[:, -1])
             pred_armax = torch.argmax(pred, dim=1).cpu()
-            tmp += torch.sum(pred_armax == target).item() / target.shape[0]
+            tmp += torch.sum(pred_armax == target).item() # / target.shape[0]
 
             mass, pt = torch.tensor(HL_unnorm[:, -1]), torch.tensor(HL_unnorm[:, -2])
             rslt = pred_armax == target
             pred_mass_list.append(torch.stack([pred_armax.float(), target.float(), rslt.float(), mass.float(), pt.float()]))
             pred_original_list.append(pred.cpu())
 
-    print(model_type, 'acc', tmp / iter_test)
+    acc = tmp / (len(generator[subset])*batchsize)
+    print(model_type, 'acc', acc)
     if stage != 'eval':
-        writer.add_scalar('Acc/val', tmp / iter_test, epoch)
-    return tmp / iter_test, pred_mass_list, pred_original_list
+        writer.add_scalar('Acc/val', acc, epoch)
+    return acc, pred_mass_list, pred_original_list
 
 
 def main(model):
@@ -245,11 +221,11 @@ def main(model):
         testacc, pred_mass_list, pred_original_list = test(model, 'test', None)
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
         pred_original_list = torch.cat(pred_original_list, dim=0).numpy()
-        with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all_N4test.h5', 'a') as f:
-            f.create_dataset('circularcenter_{}_best_original'.format(model_type), data=pred_original_list)
+        with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv.h5', 'a') as f:
+            f.create_dataset('fold{}_{}_best_original'.format(args.fold_id, model_type), data=pred_original_list)
             if '{}_best'.format(model_type) in f:
                 del f['{}_best'.format(model_type)]
-            f.create_dataset('circularcenter_{}_best'.format(model_type), data=combined_pred)
+            f.create_dataset('fold{}_{}_best'.format(args.fold_id, model_type), data=combined_pred)
         print('saving finished!')
 
     elif stage == 'train':
@@ -264,8 +240,7 @@ def main(model):
                 # torch.save(model.state_dict(),
                 #            result_dir + '/{}_merged_b_u_ep{}.pt'.format(model_type, i))
                 print('model saved at epoch', i)
-            #     test(model, 'test')
-        testacc, _ = test(model, 'test', i)
+        testacc, _, _ = test(model, 'test', i)
         print('test acc', testacc)
     else:
         raise ValueError('only support stage in: [train, eval]!')
