@@ -8,7 +8,7 @@ epochs=1000
 stage='eval' # [eval, train]
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
 exp_path='/baldig/physicsprojects2/N_tagger/exp/cross_valid'
-exp_name='20200403_search_tiny_bert'  # 20200404_search_tiny_bert
+exp_name='20200405_correct_etacenter_search_tiny_bert'  # 20200404_search_tiny_bert
 exp_dir=${exp_path}/${exp_name}
 
 count=0

@@ -9,14 +9,14 @@ epochs=1000
 stage='train' # [eval, train]
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
 exp_path='/baldig/physicsprojects2/N_tagger/exp/cross_valid'
-exp_name='20210402_PFN_search_batch256'
+exp_name='20210405_correct_etacenter_search_PFN'
 exp_dir=${exp_path}/${exp_name}
 mkdir -p exp_dir
 lr=1e-4
 
 # start running
-count=0
-for fold_id in 0 1 2 3
+count=1
+for fold_id in 0 8 9 #4 5 6 7 #
     do
     GPU=${count}
     ((count++))

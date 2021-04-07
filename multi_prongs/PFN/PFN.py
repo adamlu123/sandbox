@@ -1,9 +1,22 @@
 # standard library imports
 from __future__ import absolute_import, division, print_function
 import argparse
-import sys
-sys.path.append('/extra/yadongl10/git_project/sandbox/multi_prongs')
-from utils import cross_validate
+# import sys
+# sys.path.append('/extra/yadongl10/git_project/sandbox/multi_prongs')
+# from utils import cross_validate
+def cross_validate(X, Y, fold_id, num_folds=10):
+    """
+    :param X:
+    :param Y:
+    :param fold_id: starts from 1, 2, ..., num_folds
+    :param num_folds:
+    :return:
+    """
+    n = X.shape[0]
+    test_size = int(n // num_folds)
+    test_ids = (fold_id * test_size + np.arange(test_size)).tolist()
+    perm = np.array([i for i in range(n) if i not in test_ids] + test_ids)
+    return X[perm], Y[perm]
 
 parser = argparse.ArgumentParser(description='Sparse Auto-regressive Model')
 parser.add_argument(
@@ -64,7 +77,7 @@ print('----------------------------------------')
 
 
 with h5py.File(filename, 'r') as f:
-    X = np.array(f['parsed_Tower_cir_centered'])
+    X = np.array(f['parsed_Tower_eta_arith_phi_cir_centered']) # [parsed_Tower_eta_arith_phi_cir_centered parsed_Tower_cir_centered]
     y = np.array(f['target'])
     # HL = np.array(f['HL_normalized'])[:, :-4]
     HL_unnorm = np.array(f['HL'])[:, :-4]
@@ -104,6 +117,17 @@ print(Phi_sizes, 'lr', args.lr)
 # pfn = PFN(input_dim=X.shape[-1], output_dim=6, Phi_sizes=Phi_sizes, F_sizes=F_sizes, compile_opts=compile_opts)
 pfn = PFN(input_dim=X.shape[-1], output_dim=num_class, Phi_sizes=Phi_sizes, F_sizes=F_sizes, F_dropouts=args.dropout, compile_opts=compile_opts)
 
+# def get_pres_acc(model):
+#     y_pred=model.predict(x_test, batch_size=128)
+#     y_pred=to_categorical(np.argmax(y_pred, axis=1), target.shape[1])
+#     conf_matrixes=multilabel_confusion_matrix(y_test, y_pred)
+#     pres=[]
+#     acc=[]
+#     for mat in conf_matrixes:
+#         pres.append((mat[0][0])/np.sum(mat))
+#         acc.append((mat[0][0]+mat[1][1])/np.sum(mat))
+#     return np.mean(pres), np.mean(acc)
+
 if args.stage == 'train':
     if args.load_pretrained:
         pfn.load_weights(args.result_dir + '/best')
@@ -135,11 +159,11 @@ elif args.stage == 'eval':
     mass, pt = mass[val_cut:], pt[val_cut:]
     combined_pred = np.stack([preds_argmax, target, rslt, mass, pt])
     print(combined_pred.shape)
-    with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all_N4test.h5', 'a') as f:
-        del f['circularcenter_{}'.format('PFN')]
-        del f['circularcenter_{}_original'.format('PFN')]
-        f.create_dataset('circularcenter_{}'.format('PFN'), data=combined_pred)
-        f.create_dataset('circularcenter_{}_original'.format('PFN'), data=preds)
+    with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv_correctetacenter.h5', 'a') as f:
+        # del f['circularcenter_{}'.format('PFN')]
+        # del f['circularcenter_{}_original'.format('PFN')]
+        f.create_dataset('fold{}_{}_best'.format(args.fold_id, 'PFN'), data=combined_pred)
+        f.create_dataset('fold{}_{}_best_original'.format(args.fold_id, 'PFN'), data=preds)
     print('saving finished!')
 else:
     raise ValueError('only support stage in: [train, eval]!')

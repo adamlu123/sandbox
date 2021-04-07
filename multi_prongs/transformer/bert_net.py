@@ -10,7 +10,7 @@ parser.add_argument(
     help="number of latent layer"
     )
 parser.add_argument(
-    "--hidden_size", type=int, default=512,
+    "--hidden_size", type=int, default=256,
     help="embedding size"
     )
 parser.add_argument(
@@ -74,7 +74,8 @@ filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res1234
 
 with h5py.File(filename, 'r') as f:
     total_num_sample = f['target'].shape[0]
-    X = np.array(f['parsed_Tower_cir_centered'])
+    # X = np.array(f['parsed_Tower_cir_centered'])
+    X = np.array(f['parsed_Tower_eta_arith_phi_cir_centered'])
     Y = np.array(f['target'])
     HL = np.array(f['HL'])
 # train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
@@ -99,7 +100,7 @@ class TransformerClassification(nn.Module):
         self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
         self.embed = nn.Linear(3, d_model, bias=False)
         self.pool = nn.Linear(d_model, 1)
-        self.out_linear = nn.Linear(seq_len, 6)
+        self.out_linear = nn.Linear(seq_len, 7)
 
     def forward(self, X):
         src = self.embed(X)    # batch, S, embed_size
@@ -221,10 +222,8 @@ def main(model):
         testacc, pred_mass_list, pred_original_list = test(model, 'test', None)
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
         pred_original_list = torch.cat(pred_original_list, dim=0).numpy()
-        with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv.h5', 'a') as f:
+        with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv_r2.h5', 'a') as f:
             f.create_dataset('fold{}_{}_best_original'.format(args.fold_id, model_type), data=pred_original_list)
-            if '{}_best'.format(model_type) in f:
-                del f['{}_best'.format(model_type)]
             f.create_dataset('fold{}_{}_best'.format(args.fold_id, model_type), data=combined_pred)
         print('saving finished!')
 
@@ -237,8 +236,6 @@ def main(model):
                 torch.save(model.state_dict(), result_dir + '/best_{}_merged_b_u.pt'.format(model_type))
                 print('model saved')
             if (i + 1) % 10 == 0:
-                # torch.save(model.state_dict(),
-                #            result_dir + '/{}_merged_b_u_ep{}.pt'.format(model_type, i))
                 print('model saved at epoch', i)
         testacc, _, _ = test(model, 'test', i)
         print('test acc', testacc)
