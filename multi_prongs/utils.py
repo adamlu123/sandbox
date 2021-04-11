@@ -1,5 +1,6 @@
 import numpy as np
 from torch.utils.data import Dataset
+import torch
 
 
 def cross_validate(X, Y, fold_id, num_folds=10):
@@ -43,6 +44,23 @@ class MethodDataset(Dataset):
 
     def __getitem__(self, index):
         return self.X[index], self.Y[index], self.HL[index]
+
+
+def get_batch_classwise_acc(pred_mass_list):
+    combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
+    print(combined_pred.shape)
+    pred, target = combined_pred[0, :], combined_pred[1, :]
+    classwise_acc = []
+    for i in range(7):
+        tmp = pred[target==i]
+        correct = np.where(tmp==i)[0].shape[0]
+        # print(correct, tmp.shape[0])
+        classwise_acc.append(correct / tmp.shape[0])
+    print(classwise_acc)
+    return classwise_acc
+
+
+
 
 
 # def data_generator(filename, batchsize, idx_range, weighted=False):

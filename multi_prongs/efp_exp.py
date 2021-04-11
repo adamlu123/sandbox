@@ -54,6 +54,7 @@ import torch.nn as nn
 from torch import optim
 from resnet import make_hlnet_base
 from torch.utils.tensorboard import SummaryWriter
+from utils import get_batch_classwise_acc
 
 stage = args.stage
 
@@ -321,8 +322,8 @@ def train(model, optimizer, epoch):
     return val_acc, val_clipped_acc, model
 
 
-def test(model, subset, epoch, feature_id=None):
-    # torch.manual_seed(123)
+def test(model, subset, epoch, ftype=None, feature_id=None):
+    torch.manual_seed(123) # TODO: need to comment out during training
     mass_range = [300, 700]
     mass_bins = np.linspace(mass_range[0], mass_range[1], 11)
     bin_len = mass_bins[1] - mass_bins[0]
@@ -349,12 +350,18 @@ def test(model, subset, epoch, feature_id=None):
             target_long = torch.tensor(target_long).long().to(device)
             pred_armax_clipped = torch.zeros_like(target_long)
             if model_type == 'HLNet':
-                if feature_id != None: HL[:, feature_id] = torch.zeros_like(HL[:, feature_id]) #HL[:, feature_id][torch.randperm(batchsize)]  #
+                if feature_id is not None: HL[:, feature_id] = HL[:, feature_id][torch.randperm(batchsize)]  # torch.zeros_like(HL[:, feature_id]) #
                 pred = model(HL)
             elif model_type == 'HLefpNet':
                 pred = model(HL, efps)
             elif model_type == 'GatedHLefpNet':
-                if feature_id: efps[:, feature_id] = efps[:, feature_id][torch.randperm(batchsize)] # torch.zeros_like(efps[:, feature_id])
+                if feature_id is not None and ftype is not None:
+                    if ftype == 'efp':
+                        efps[:, feature_id] = efps[:, feature_id][torch.randperm(batchsize)]  #torch.zeros_like(efps[:, feature_id])  #
+                    elif ftype == 'hl':
+                        HL[:, feature_id] = HL[:, feature_id][torch.randperm(batchsize)]  # torch.zeros_like(HL[:, feature_id])
+                    else:
+                        raise ValueError('ftype has to be in [efp, hl]')
                 pred, pred_clipped, _ = model(HL, efps)
                 pred_armax_clipped = torch.argmax(pred_clipped, dim=1)
                 tmp_clipped += torch.sum(pred_armax_clipped == target_long).item() / target_long.shape[0]
@@ -402,12 +409,22 @@ def main(model):
             for efp_id in gates_selected_i[gates_ascend]:
                 efp_ids.append(efp_id)
                 print('testing removing efp_id', efp_id)
-                testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None, feature_id=efp_id)
-                save_dict[efp_id] = testclipped_acc
+                testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None, ftype='efp', feature_id=efp_id)
+                save_dict['efp' + str(efp_id)] = testclipped_acc
+                save_dict['efp_classwise' + str(efp_id)] = get_batch_classwise_acc(pred_mass_list)
+                # print(pred_mass_list)
+            for HL_id in range(16):
+                testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None, ftype='hl',
+                                                                                           feature_id=HL_id)
+                save_dict['hl' + str(HL_id)] = testclipped_acc
+                save_dict['hl_classwise' + str(HL_id)] = get_batch_classwise_acc(pred_mass_list)
+                # print(pred_mass_list)
 
             testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None)
             save_dict['full'] = testclipped_acc
-            np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/circularcenter_importance_efps_perm_noise_s10.npy', save_dict)
+            save_dict['full_classwise'] = get_batch_classwise_acc(pred_mass_list)
+
+            np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/HL_efp_joint_analysis_scramble.npy', save_dict)
         elif model_type == 'HLNet':
             for HL_id in range(16):
                 print('testing removing efp_id', HL_id)
@@ -416,7 +433,7 @@ def main(model):
                 save_dict[HL_id] = testacc
             testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None)
             save_dict['full'] = testacc
-            # np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/importance_hl_remove.npy', save_dict)
+            np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/importance_hl_perm_noise.npy', save_dict)
         # print('saved {} analysis results!'.format(model_type))
 
     # get combined_pred
@@ -428,7 +445,7 @@ def main(model):
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
         pred_original_list = torch.cat(pred_original_list, dim=0).numpy()
         print('acc', combined_pred[2,:].sum()/combined_pred.shape[1], 'cliped acc', combined_pred[3,:].sum()/combined_pred.shape[1])
-
+        print('finish!')
         # if model_type == 'GatedHLefpNet':
         #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_efps567_inter_dim800_num_hidden5_do3e_1_corrected.h5', 'a') as f:
         #         f.create_dataset('circularcenter_savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
