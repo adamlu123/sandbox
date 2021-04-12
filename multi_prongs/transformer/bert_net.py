@@ -38,7 +38,7 @@ parser.add_argument("--GPU", type=str, default='2', help='GPU id')
 args = parser.parse_args()
 
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = args.GPU # '0,1,2,3'
+os.environ['CUDA_VISIBLE_DEVICES'] = args.GPU #
 print('training using GPU:', args.GPU)
 print(str(args))
 

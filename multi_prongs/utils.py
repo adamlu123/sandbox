@@ -4,7 +4,7 @@ import torch
 
 
 def cross_validate(X, Y, fold_id, num_folds=10):
-    """
+    """ Deprecated
     :param X:
     :param Y:
     :param fold_id: starts from 1, 2, ..., num_folds
@@ -18,9 +18,19 @@ def cross_validate(X, Y, fold_id, num_folds=10):
     return X[perm], Y[perm]
 
 
+def cross_validate_perm(data, fold_id, num_folds=10):
+    n = data.shape[0]
+    test_size = int(n // num_folds)
+    test_ids = (fold_id * test_size + np.arange(test_size)).tolist()
+    perm = np.array([i for i in range(n) if i not in test_ids] + test_ids)
+    return data[perm]
+
+
 def split_data(X, Y, HL, fold_id=None, num_folds=10):
     total_num_sample = X.shape[0]
     if fold_id is not None:
+        # X = cross_validate_perm(X, fold_id=fold_id, num_folds=num_folds)
+        # Y = cross_validate_perm(Y, fold_id=fold_id, num_folds=num_folds)
         X, Y = cross_validate(X, Y, fold_id=fold_id, num_folds=num_folds)
     train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
 
@@ -38,9 +48,12 @@ def split_data(X, Y, HL, fold_id=None, num_folds=10):
 def split_data_HL_efp(efp, Y, HL, HL_unnorm, fold_id=None, num_folds=10):
     total_num_sample = HL.shape[0]
     if fold_id is not None:
-        X, Y = cross_validate(HL, Y, fold_id=fold_id, num_folds=num_folds)
-    train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
+        l = [efp, Y, HL, HL_unnorm]
+        for i in range(len(l)):
+            l[i] = cross_validate_perm(l[i], fold_id=fold_id, num_folds=num_folds)
+        efp, Y, HL, HL_unnorm = l
 
+    train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
     efp_train, efp_val, efp_test = efp[:train_cut], efp[train_cut:val_cut], efp[val_cut:]
     Y_train, Y_val, Y_test = Y[:train_cut], Y[train_cut:val_cut], Y[val_cut:]
     HL_train, HL_val, HL_test = HL[:train_cut], HL[train_cut:val_cut], HL[val_cut:]

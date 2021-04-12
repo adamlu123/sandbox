@@ -39,6 +39,7 @@ parser.add_argument(
 parser.add_argument('--model_type', default='HLNet')
 parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
 parser.add_argument('--load_pretrained', action='store_true', default=False)
+parser.add_argument('--fold_id', type=int, default=0, help='CV fold in [0, 9]')
 parser.add_argument('--batch_size', type=int, default=256, help='input batch size for training (default: 100)')
 parser.add_argument('--epochs', type=int, default=1000, help='number of epochs to train (default: 1000)')
 parser.add_argument('--seed', type=int, default=123, help='random seed (default: 1)')
@@ -98,7 +99,7 @@ with h5py.File(filename, 'r') as f:
 with h5py.File(fn_efps, 'r') as f:
     efp = np.array(f['efp_merge_normalized'])
 
-data_train, data_val, data_test = split_data_HL_efp(efp, Y, HL, HL_unnorm, fold_id=None, num_folds=10)
+data_train, data_val, data_test = split_data_HL_efp(efp, Y, HL, HL_unnorm, fold_id=args.fold_id, num_folds=10)
 
 generator = {}
 generator['train'] = torch.utils.data.DataLoader(data_train, batch_size=args.batch_size, shuffle=True, num_workers=10)
@@ -363,6 +364,7 @@ def main(model):
             # np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/HL_efp_joint_analysis_scramble.npy', save_dict)
         elif model_type == 'HLNet':
             for HL_id in range(16):
+                # below is for scrambling across the whole dataset
                 print('testing removing efp_id', HL_id)
                 with h5py.File(filename, 'r') as f:
                     HL = np.array(f['HL_normalized'])[:, :-4]
