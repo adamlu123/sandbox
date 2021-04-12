@@ -18,9 +18,10 @@ def cross_validate(X, Y, fold_id, num_folds=10):
     return X[perm], Y[perm]
 
 
-def split_data(X, Y, HL, fold_id, num_folds=10):
+def split_data(X, Y, HL, fold_id=None, num_folds=10):
     total_num_sample = X.shape[0]
-    X, Y = cross_validate(X, Y, fold_id=fold_id, num_folds=num_folds)
+    if fold_id is not None:
+        X, Y = cross_validate(X, Y, fold_id=fold_id, num_folds=num_folds)
     train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
 
     X_train, X_val, X_test = X[:train_cut], X[train_cut:val_cut], X[val_cut:]
@@ -30,6 +31,24 @@ def split_data(X, Y, HL, fold_id, num_folds=10):
     data_train = MethodDataset(X_train, Y_train, HL_train)
     data_val = MethodDataset(X_val, Y_val, HL_val)
     data_test = MethodDataset(X_test, Y_test, HL_test)
+
+    return data_train, data_val, data_test
+
+
+def split_data_HL_efp(efp, Y, HL, HL_unnorm, fold_id=None, num_folds=10):
+    total_num_sample = HL.shape[0]
+    if fold_id is not None:
+        X, Y = cross_validate(HL, Y, fold_id=fold_id, num_folds=num_folds)
+    train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
+
+    efp_train, efp_val, efp_test = efp[:train_cut], efp[train_cut:val_cut], efp[val_cut:]
+    Y_train, Y_val, Y_test = Y[:train_cut], Y[train_cut:val_cut], Y[val_cut:]
+    HL_train, HL_val, HL_test = HL[:train_cut], HL[train_cut:val_cut], HL[val_cut:]
+    HL_unnorm_train, HL_unnorm_val, HL_unnorm_test = HL_unnorm[:train_cut], HL_unnorm[train_cut:val_cut], HL_unnorm[val_cut:]
+
+    data_train = EFPDataset(efp_train, Y_train, HL_train, HL_unnorm_train)
+    data_val = EFPDataset(efp_val, Y_val, HL_val, HL_unnorm_val)
+    data_test = EFPDataset(efp_test, Y_test, HL_test, HL_unnorm_test)
 
     return data_train, data_val, data_test
 
@@ -44,6 +63,18 @@ class MethodDataset(Dataset):
 
     def __getitem__(self, index):
         return self.X[index], self.Y[index], self.HL[index]
+
+
+class EFPDataset(Dataset):
+    def __init__(self, X, Y, HL, HL_unorm):
+        self.X, self.Y, self.HL, self.HL_unorm = X, Y, HL, HL_unorm
+        self.n = X.shape[0]
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, index):
+        return self.X[index], self.Y[index], self.HL[index], self.HL_unorm[index]
 
 
 def get_batch_classwise_acc(pred_mass_list):
