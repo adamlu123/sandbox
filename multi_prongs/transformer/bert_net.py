@@ -23,7 +23,7 @@ parser.add_argument(
     )
 parser.add_argument(
     "--result_dir", type=str,
-    default='/baldig/physicsprojects2/N_tagger/exp/archive/2020307_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed512_hidden4_head8'
+    default='/baldig/physicsprojects2/N_tagger/exp/archive/2020307_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed256_hidden4_head8'
     # default="/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/2020308_lr_1e-4_decay0.5_nowc_bertmass_tower_from_img_embed512_hidden6_head8"
     )
 parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
@@ -77,7 +77,7 @@ with h5py.File(filename, 'r') as f:
     # X = np.array(f['parsed_Tower_cir_centered'])
     X = np.array(f['parsed_Tower_eta_arith_phi_cir_centered'])
     Y = np.array(f['target'])
-    HL = np.array(f['HL'])
+    HL = np.array(f['HL'][:, :-4])
 # train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
 # iterations = int(train_cut / batchsize)
 # iter_test = int((val_cut - train_cut) / batchsize)
@@ -222,9 +222,11 @@ def main(model):
         testacc, pred_mass_list, pred_original_list = test(model, 'test', None)
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
         pred_original_list = torch.cat(pred_original_list, dim=0).numpy()
-        with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv_r2.h5', 'a') as f:
-            f.create_dataset('fold{}_{}_best_original'.format(args.fold_id, model_type), data=pred_original_list)
-            f.create_dataset('fold{}_{}_best'.format(args.fold_id, model_type), data=combined_pred)
+        with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv_correctetacenter.h5', 'a') as f:
+            # del f['fold{}_{}_best_original'.format(args.fold_id, model_type)]
+            # del f['fold{}_{}_best'.format(args.fold_id, model_type)]
+            # f.create_dataset('fold{}_{}_best_original'.format(args.fold_id, model_type), data=pred_original_list)
+            f.create_dataset('fold{}_{}_large_best'.format(args.fold_id, model_type), data=combined_pred)
         print('saving finished!')
 
     elif stage == 'train':
@@ -235,8 +237,6 @@ def main(model):
                 best_acc = val_acc
                 torch.save(model.state_dict(), result_dir + '/best_{}_merged_b_u.pt'.format(model_type))
                 print('model saved')
-            if (i + 1) % 10 == 0:
-                print('model saved at epoch', i)
         testacc, _, _ = test(model, 'test', i)
         print('test acc', testacc)
     else:

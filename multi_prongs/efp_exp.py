@@ -426,14 +426,14 @@ def main(model):
 
             np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/HL_efp_joint_analysis_scramble.npy', save_dict)
         elif model_type == 'HLNet':
-            for HL_id in range(16):
-                print('testing removing efp_id', HL_id)
-                testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None,
-                                                                                           feature_id=HL_id)
-                save_dict[HL_id] = testacc
+            # for HL_id in range(16):
+            #     print('testing removing efp_id', HL_id)
+            #     testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None,
+            #                                                                                feature_id=HL_id)
+            #     save_dict[HL_id] = testacc
             testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None)
             save_dict['full'] = testacc
-            np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/importance_hl_perm_noise.npy', save_dict)
+            # np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/importance_hl_perm_noise.npy', save_dict)
         # print('saved {} analysis results!'.format(model_type))
 
     # get combined_pred

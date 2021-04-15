@@ -259,12 +259,12 @@ def train(model, optimizer, epoch):
             writer.add_scalar('Loss/train', loss.item(), epoch * iterations + i)
             writer.add_scalar('Acc/train', acc, epoch * iterations + i)
 
-    val_acc, val_clipped_acc, _, _, _ = test(model, 'val', epoch)
+    val_acc, val_clipped_acc, _, _, _ = test(generator, model, 'val', epoch)
     return val_acc, val_clipped_acc, model
 
 
 def test(generator, model, subset, epoch, ftype=None, feature_id=None):
-    torch.manual_seed(123) # TODO: need to comment out during training
+    # torch.manual_seed(123) # TODO: need to comment out during training
     mass_range = [300, 700]
     mass_bins = np.linspace(mass_range[0], mass_range[1], 11)
     bin_len = mass_bins[1] - mass_bins[0]
@@ -332,6 +332,7 @@ def main(model):
     if stage == 'eval':
     # evaluate individual efps
         save_dict = {}
+        individual_analysis = False
         if model_type == 'GatedHLefpNet':
             gates = model.module.gates.detach().cpu().numpy()
             gates_selected_i = np.where(np.abs(gates) > 1e-2)[0]
@@ -363,24 +364,25 @@ def main(model):
 
             # np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/HL_efp_joint_analysis_scramble.npy', save_dict)
         elif model_type == 'HLNet':
-            for HL_id in range(16):
-                # below is for scrambling across the whole dataset
-                print('testing removing efp_id', HL_id)
-                with h5py.File(filename, 'r') as f:
-                    HL = np.array(f['HL_normalized'])[:, :-4]
-                    HL = np.delete(HL, -2, 1)
-                HL_perm = HL
-                perm = torch.randperm(HL.shape[0])
-                HL_perm[:, HL_id] = HL[:, HL_id][perm]
+            if individual_analysis:
+                for HL_id in range(16):
+                    # below is for scrambling across the whole dataset
+                    print('testing removing efp_id', HL_id)
+                    with h5py.File(filename, 'r') as f:
+                        HL = np.array(f['HL_normalized'])[:, :-4]
+                        HL = np.delete(HL, -2, 1)
+                    HL_perm = HL
+                    perm = torch.randperm(HL.shape[0])
+                    HL_perm[:, HL_id] = HL[:, HL_id][perm]
 
-                data_train, data_val, data_test = split_data_HL_efp(efp, Y, HL_perm, HL_unnorm, fold_id=None, num_folds=10)
-                generator['test'] = torch.utils.data.DataLoader(data_test, batch_size=args.batch_size, shuffle=True,
-                                                                num_workers=10)
+                    data_train, data_val, data_test = split_data_HL_efp(efp, Y, HL_perm, HL_unnorm, fold_id=None, num_folds=10)
+                    generator['test'] = torch.utils.data.DataLoader(data_test, batch_size=args.batch_size, shuffle=True,
+                                                                    num_workers=10)
 
-                testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(generator, model, 'test', epoch=None,
-                                                                                           feature_id=HL_id)
-                save_dict[HL_id] = testacc
-            testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None)
+                    testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(generator, model, 'test', epoch=None,
+                                                                                               feature_id=HL_id)
+                    save_dict[HL_id] = testacc
+            testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(generator, model, 'test', epoch=None)
             save_dict['full'] = testacc
             # np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/importance_hl_perm_noise.npy', save_dict)
         # print('saved {} analysis results!'.format(model_type))
@@ -390,11 +392,16 @@ def main(model):
     #     gates_selected_i = np.where(np.abs(gates) > 1e-2)[0]
     #     num_remaining_efps = len(gates_selected_i) if model_type == 'GatedHLefpNet' else 0.
 
-        testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None)
+        testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(generator, model, 'test', epoch=None)
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
         pred_original_list = torch.cat(pred_original_list, dim=0).numpy()
         print('acc', combined_pred[2,:].sum()/combined_pred.shape[1], 'cliped acc', combined_pred[3,:].sum()/combined_pred.shape[1])
-        print('finish!')
+        if model_type == 'HLNet':
+            with h5py.File(
+                    '/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv_correctetacenter.h5',
+                    'a') as f:
+                f.create_dataset('fold{}_{}_best'.format(args.fold_id, model_type), data=combined_pred)
+                f.create_dataset('fold{}_{}_best_original'.format(args.fold_id, model_type), data=pred_original_list)
         # if model_type == 'GatedHLefpNet':
         #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_efps567_inter_dim800_num_hidden5_do3e_1_corrected.h5', 'a') as f:
         #         f.create_dataset('circularcenter_savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
@@ -407,7 +414,7 @@ def main(model):
         #         #     del f['{}_best'.format(model_type)]
         #         f.create_dataset('circularcenter_{}_best'.format(model_type), data=combined_pred)
         #         f.create_dataset('circularcenter_{}_best_original'.format(model_type), data=pred_original_list)
-        # print('saving finished!')
+        print('saving finished!')
 
     else:
         for i in range(epoch):
@@ -418,14 +425,11 @@ def main(model):
                 best_acc = val_clipped_acc
                 torch.save(model.state_dict(), result_dir + '/best_{}_merged_b_u.pt'.format(model_type))
                 print('model saved')
-            if (i+1) % 50 == 0:
+            if (i+1) % 100 == 0:
                 torch.save(model.state_dict(),
                            result_dir + '/{}_merged_b_u_ep{}.pt'.format(model_type, i))
                 print('model saved at epoch', i)
         writer.close()
-        # testacc = test(model, 'test')
-        # print('test acc', testacc)
-
 
 if __name__ == '__main__':
     main(model)
