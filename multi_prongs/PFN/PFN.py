@@ -108,7 +108,9 @@ print(args.result_dir)
 num_hidden = args.num_hidden
 psize, fsize = args.psize, args.fsize
 
-Phi_sizes, F_sizes = (128, ) * 2, (fsize,)*num_hidden # (psize,)*num_hidden,
+# Phi_sizes, F_sizes = (128, ) * 2, (fsize,)*num_hidden # (psize,)*num_hidden,
+Phi_sizes, F_sizes = (psize,)*num_hidden, (fsize,)*num_hidden #
+
 batch_size = args.batch_size
 opt = tf.keras.optimizers.Adam(lr=args.lr)
 compile_opts = {'optimizer': opt}
@@ -117,16 +119,6 @@ print(Phi_sizes, 'lr', args.lr)
 # pfn = PFN(input_dim=X.shape[-1], output_dim=6, Phi_sizes=Phi_sizes, F_sizes=F_sizes, compile_opts=compile_opts)
 pfn = PFN(input_dim=X.shape[-1], output_dim=num_class, Phi_sizes=Phi_sizes, F_sizes=F_sizes, F_dropouts=args.dropout, compile_opts=compile_opts)
 
-# def get_pres_acc(model):
-#     y_pred=model.predict(x_test, batch_size=128)
-#     y_pred=to_categorical(np.argmax(y_pred, axis=1), target.shape[1])
-#     conf_matrixes=multilabel_confusion_matrix(y_test, y_pred)
-#     pres=[]
-#     acc=[]
-#     for mat in conf_matrixes:
-#         pres.append((mat[0][0])/np.sum(mat))
-#         acc.append((mat[0][0]+mat[1][1])/np.sum(mat))
-#     return np.mean(pres), np.mean(acc)
 
 if args.stage == 'train':
     if args.load_pretrained:
@@ -159,12 +151,12 @@ elif args.stage == 'eval':
     mass, pt = mass[val_cut:], pt[val_cut:]
     combined_pred = np.stack([preds_argmax, target, rslt, mass, pt])
     print(combined_pred.shape)
-    with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv_correctetacenter.h5', 'a') as f:
-        # del f['circularcenter_{}'.format('PFN')]
-        # del f['circularcenter_{}_original'.format('PFN')]
-        f.create_dataset('fold{}_{}_best'.format(args.fold_id, 'PFN'), data=combined_pred)
-        f.create_dataset('fold{}_{}_best_original'.format(args.fold_id, 'PFN'), data=preds)
-    print('saving finished!')
+    # with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv_correctetacenter.h5', 'a') as f:
+    #     # del f['circularcenter_{}'.format('PFN')]
+    #     # del f['circularcenter_{}_original'.format('PFN')]
+    #     f.create_dataset('fold{}_{}_best'.format(args.fold_id, 'PFN'), data=combined_pred)
+    #     f.create_dataset('fold{}_{}_best_original'.format(args.fold_id, 'PFN'), data=preds)
+    # print('saving finished!')
 else:
     raise ValueError('only support stage in: [train, eval]!')
 

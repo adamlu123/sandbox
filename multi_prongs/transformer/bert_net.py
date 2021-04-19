@@ -225,7 +225,7 @@ def main(model):
         with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv_correctetacenter.h5', 'a') as f:
             # del f['fold{}_{}_best_original'.format(args.fold_id, model_type)]
             # del f['fold{}_{}_best'.format(args.fold_id, model_type)]
-            # f.create_dataset('fold{}_{}_best_original'.format(args.fold_id, model_type), data=pred_original_list)
+            f.create_dataset('fold{}_{}_large_best_original'.format(args.fold_id, model_type), data=pred_original_list)
             f.create_dataset('fold{}_{}_large_best'.format(args.fold_id, model_type), data=combined_pred)
         print('saving finished!')
 

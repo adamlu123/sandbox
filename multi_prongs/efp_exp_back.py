@@ -160,8 +160,8 @@ target_generator['val'] = target_data_generator(fn_target, batchsize, start=trai
 target_generator['test'] = target_data_generator(fn_target, batchsize, start=val_cut, stop=test_cut)
 
 ################### model
-hlnet_base = make_hlnet_base(input_dim=17, inter_dim=args.inter_dim, num_hidden=args.num_hidden, out_dim=args.out_dim, do_rate=args.do_rate,batchnorm_base=False) # 25 for HL3 version
-efpnet_base = make_hlnet_base(input_dim=567, inter_dim=args.inter_dim, num_hidden=args.num_hidden, out_dim=args.out_dim, do_rate=args.do_rate,batchnorm_base=False)  # 207 566 126
+hlnet_base = make_hlnet_base(input_dim=17, inter_dim=args.inter_dim, num_hidden=args.num_hidden, out_dim=args.out_dim, do_rate=args.do_rate,batchnorm_base=True) # 25 for HL3 version
+efpnet_base = make_hlnet_base(input_dim=567, inter_dim=args.inter_dim, num_hidden=args.num_hidden, out_dim=args.out_dim, do_rate=args.do_rate,batchnorm_base=True)  # 207 566 126
 
 
 class HLNet(nn.Module):
@@ -385,55 +385,62 @@ def test(model, subset, epoch, feature_id=None):
 
 def main(model):
     best_acc = 0
+    individual_analysis = False
     if stage == 'eval':
-    # evaluate individual efps
-        save_dict = {}
-        if model_type == 'GatedHLefpNet':
-            gates = model.module.gates.detach().cpu().numpy()
-            gates_selected_i = np.where(np.abs(gates) > 1e-2)[0]
-            gates_selected_v = gates[gates_selected_i]
-            gates_ascend = np.argsort(gates_selected_v)[::-1]
-            print('gates>0.01', gates_selected_i)
-            num_remaining_efps = len(gates_selected_i) if model_type == 'GatedHLefpNet' else 0.
-            print(gates_selected_i[gates_ascend])
+        if individual_analysis == True:
+        # evaluate individual efps
+            save_dict = {}
+            if model_type == 'GatedHLefpNet':
+                gates = model.module.gates.detach().cpu().numpy()
+                gates_selected_i = np.where(np.abs(gates) > 1e-2)[0]
+                gates_selected_v = gates[gates_selected_i]
+                gates_ascend = np.argsort(gates_selected_v)[::-1]
+                print('gates>0.01', gates_selected_i)
+                num_remaining_efps = len(gates_selected_i) if model_type == 'GatedHLefpNet' else 0.
+                print(gates_selected_i[gates_ascend])
 
-            efp_ids = []
-            for efp_id in gates_selected_i[gates_ascend]:
-                efp_ids.append(efp_id)
-                print('testing removing efp_id', efp_id)
-                testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None, efp_id=efp_id)
-                save_dict[efp_id] = testclipped_acc
+                efp_ids = []
+                for efp_id in gates_selected_i[gates_ascend]:
+                    efp_ids.append(efp_id)
+                    print('testing removing efp_id', efp_id)
+                    testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None, efp_id=efp_id)
+                    save_dict[efp_id] = testclipped_acc
 
-            testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None)
-            save_dict['full'] = testclipped_acc
-            np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/importance_efps_perm_noise.npy', save_dict)
-        elif model_type == 'HLNet':
-            for HL_id in range(16):
-                print('testing removing efp_id', HL_id)
-                testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None,
-                                                                                           feature_id=HL_id)
-                save_dict[HL_id] = testacc
-            testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None)
-            save_dict['full'] = testacc
-            # np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/importance_hl_remove.npy', save_dict)
-        print('saved {} analysis results!'.format(model_type))
+                testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None)
+                save_dict['full'] = testclipped_acc
+                np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/importance_efps_perm_noise.npy', save_dict)
+            elif model_type == 'HLNet':
+                for HL_id in range(16):
+                    print('testing removing efp_id', HL_id)
+                    testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None,
+                                                                                               feature_id=HL_id)
+                    save_dict[HL_id] = testacc
+                testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None)
+                save_dict['full'] = testacc
+                # np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/importance_hl_remove.npy', save_dict)
+            print('saved {} analysis results!'.format(model_type))
 
     # get combined_pred
         testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(model, 'test', epoch=None)
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
+        pred_original_list = torch.cat(pred_original_list, dim=0).numpy()
         print('acc', combined_pred[2,:].sum()/combined_pred.shape[1], 'cliped acc', combined_pred[3,:].sum()/combined_pred.shape[1])
 
-        # if model_type == 'GatedHLefpNet':
-        #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_efps567_inter_dim800_num_hidden5_do4e_1_corrected.h5', 'a') as f:
-        #         f.create_dataset('savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
-        #         f.create_dataset('savewoclip_{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
-        #         f.create_dataset('savewoclip_{}_strength{}_gates'.format(model_type, strength), data=gates)
-        # else:
-        #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all.h5', 'a') as f:
-        #         if '{}_best'.format(model_type) in f:
-        #             del f['{}_best'.format(model_type)]
-        #         f.create_dataset('{}_best'.format(model_type), data=combined_pred)
-        # print('saving finished!')
+        if model_type == 'GatedHLefpNet':
+            with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all.h5', 'a') as f:
+                if 'circularcenter_savewoclip_{}_strength{}_best'.format(model_type, strength) in f:
+                    del f['circularcenter_savewoclip_{}_strength{}_best'.format(model_type, strength)]
+                f.create_dataset('circularcenter_savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
+                f.create_dataset('circularcenter_savewoclip_{}_strength{}_best_original'.format(model_type, strength), data=pred_original_list)
+                # f.create_dataset('savewoclip_{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
+                # f.create_dataset('savewoclip_{}_strength{}_gates'.format(model_type, strength), data=gates)
+        else:
+            with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all.h5', 'a') as f:
+                if '{}_best'.format(model_type) in f:
+                    del f['{}_best'.format(model_type)]
+                f.create_dataset('{}_best'.format(model_type), data=combined_pred)
+
+        print('saving finished!')
 
     else:
         for i in range(epoch):
