@@ -36,6 +36,7 @@ parser.add_argument(
     default="/baldig/physicsprojects2/N_tagger/exp/archive/test"
     # default="/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/2020308_search_HLnet/HLNet_inter_dim800_num_hidden5_lr1e-4_batch_size256_do3e-1"
     )
+parser.add_argument("--delete", type=str, default='pt', help='to delete [pt, mass_pt, None]')
 parser.add_argument('--model_type', default='HLNet')
 parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
 parser.add_argument('--load_pretrained', action='store_true', default=False)
@@ -94,7 +95,15 @@ with h5py.File(filename, 'r') as f:
     Y = np.array(f['target'])
     HL_unnorm = np.array(f['HL'])[:, :-4]
     HL = np.array(f['HL_normalized'])[:, :-4]
-    HL = np.delete(HL, -2, 1) # delete pt TODO  mass: -1: mass, -2: pt
+    if args.delete == 'pt':
+        HL = np.delete(HL, -2, 1) # delete pt TODO  mass: -1: mass, -2: pt
+    elif args.delete == 'mass_pt':
+        HL = HL[:, :-2]
+    elif args.delete == 'None':
+        pass
+    else:
+        raise ValueError('delete has to be in [pt, mass_pt, None]')
+    print('delete: {}; after deletion HL shape:{}'.format(args.delete, HL.shape))
 
 with h5py.File(fn_efps, 'r') as f:
     efp = np.array(f['efp_merge_normalized'])
@@ -108,7 +117,7 @@ generator['test'] = torch.utils.data.DataLoader(data_test, batch_size=args.batch
 
 
 ################### model
-hlnet_base = make_hlnet_base(input_dim=17, inter_dim=args.inter_dim, num_hidden=args.num_hidden, out_dim=args.out_dim, do_rate=args.do_rate,batchnorm_base=True) # 25 for HL3 version
+hlnet_base = make_hlnet_base(input_dim=HL.shape[1], inter_dim=args.inter_dim, num_hidden=args.num_hidden, out_dim=args.out_dim, do_rate=args.do_rate,batchnorm_base=True) # 25 for HL3 version
 efpnet_base = make_hlnet_base(input_dim=567, inter_dim=args.inter_dim, num_hidden=args.num_hidden, out_dim=args.out_dim, do_rate=args.do_rate,batchnorm_base=True)  # 207 566 126
 
 
@@ -193,7 +202,14 @@ elif model_type == 'EFPNet':
     model = EFPNet(efpnet_base, num_labels=num_labels).to(device)
 
 model = nn.DataParallel(model)
+print(model)
+print(torch.__version__)
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+print('total#', count_parameters(model))
 
+if stage == 'eval':
+    args.load_pretrained = True
 if args.load_pretrained:
     print('load model from', result_dir)
     cp = torch.load(result_dir + '/best_{}_merged_b_u.pt'.format(model_type)) # '/{}_merged_b_u_ep99.pt'.format(model_type))
@@ -208,12 +224,7 @@ for name, param in model.named_parameters():
     else:
         other_param.append(param)
 
-print(model)
-print(torch.__version__)
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-print('total#', count_parameters(model), 'num of param in hl', len(hl_param), 'num of param in other', len(other_param))
 param_groups = [
     {'params': hl_param, 'lr': lr},
     {'params': other_param, 'lr': lr}
@@ -267,13 +278,13 @@ def test(generator, model, subset, epoch, ftype=None, feature_id=None):
     # torch.manual_seed(123) # TODO: need to comment out during training
     mass_range = [300, 700]
     mass_bins = np.linspace(mass_range[0], mass_range[1], 11)
-    bin_len = mass_bins[1] - mass_bins[0]
+    # bin_len = mass_bins[1] - mass_bins[0]
     pred_mass_list = []
     pred_original_list = []
 
     model.eval()
-    tmp = 0
-    tmp_clipped = 0
+    # tmp = 0
+    # tmp_clipped = 0
     if model_type == 'GatedHLefpNet':
         gates = model.module.gates if isinstance(model, nn.DataParallel) else model.gates
     else:
@@ -300,31 +311,35 @@ def test(generator, model, subset, epoch, ftype=None, feature_id=None):
                         raise ValueError('ftype has to be in [efp, hl]')
                 pred, pred_clipped, _ = model(HL, efps)
                 pred_armax_clipped = torch.argmax(pred_clipped, dim=1)
-                tmp_clipped += torch.sum(pred_armax_clipped == target_long).item() / target_long.shape[0]
+                # tmp_clipped += torch.sum(pred_armax_clipped == target_long).item() / target_long.shape[0]
             elif model_type == 'EFPNet':
                 pred = model(efps)
             pred_armax = torch.argmax(pred, dim=1)
-            tmp += torch.sum(pred_armax==target_long).item() / target_long.shape[0]
+            # tmp += torch.sum(pred_armax==target_long).item() / target_long.shape[0]
 
             mass, pt = HL_unnorm[:, -1], HL_unnorm[:, -2]
-            bin_idx = torch.floor((mass - mass_range[0]) / bin_len)
+            # bin_idx = torch.floor((mass - mass_range[0]) / bin_len)
             rslt = pred_armax == target_long
             rslt_clipped = pred_armax_clipped == target_long
             pred_mass_list.append(torch.stack([pred_armax.float(), target_long.float(), rslt.float(), rslt_clipped.float(), mass, pt]).cpu())
             pred_original_list.append(pred.cpu())
 
-    clipped_acc = tmp_clipped / iter_test if model_type == 'GatedHLefpNet' else 0.
+    # clipped_acc = tmp_clipped / iter_test if model_type == 'GatedHLefpNet' else 0.
     gates = gates.detach().cpu().numpy()
     num_remaining_efps = (np.abs(gates) > 1e-2).sum().tolist() if model_type == 'GatedHLefpNet' else 0.
 
-    print(model_type, 'acc', tmp / iter_test, 'clipped acc', clipped_acc, 'num remaining:', num_remaining_efps)
+    combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
+    acc = combined_pred[2, :].sum() / combined_pred.shape[1]
+    clipped_acc = combined_pred[3, :].sum() / combined_pred.shape[1] if model_type == 'GatedHLefpNet' else 0.
+    print(model_type, 'acc', acc, 'cliped acc', clipped_acc, 'num remaining:', num_remaining_efps)
+
     if stage == 'train':
         print('write to tensorboard ...')
-        writer.add_scalar('Acc/val', tmp / iter_test, epoch)
+        writer.add_scalar('Acc/val', acc, epoch)
         writer.add_scalar('Acc_clipped/val', clipped_acc, epoch)
         writer.add_scalar('num_remaining_efps', num_remaining_efps, epoch)
 
-    return tmp / iter_test, clipped_acc, pred_original_list, pred_mass_list, gates
+    return acc, clipped_acc, pred_original_list, pred_mass_list, gates
 
 
 def main(model):
@@ -396,12 +411,20 @@ def main(model):
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
         pred_original_list = torch.cat(pred_original_list, dim=0).numpy()
         print('acc', combined_pred[2,:].sum()/combined_pred.shape[1], 'cliped acc', combined_pred[3,:].sum()/combined_pred.shape[1])
+        print('total#', count_parameters(model), 'num of param in hl', len(hl_param), 'num of param in other',
+          len(other_param))
+
         if model_type == 'HLNet':
             with h5py.File(
                     '/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv_correctetacenter.h5',
                     'a') as f:
-                f.create_dataset('fold{}_{}_best'.format(args.fold_id, model_type), data=combined_pred)
-                f.create_dataset('fold{}_{}_best_original'.format(args.fold_id, model_type), data=pred_original_list)
+                # del f['fold{}_{}_{}_best'.format(args.fold_id, args.delete, model_type)]
+                # del f['fold{}_{}_{}_best_original'.format(args.fold_id, args.delete, model_type)]
+                f.create_dataset('fold{}_{}_{}_{}_best'.format(args.fold_id, args.inter_dim, args.num_hidden, model_type), data=combined_pred)
+                f.create_dataset('fold{}_{}_{}_{}_best_original'.format(args.fold_id, args.inter_dim, args.num_hidden,  model_type), data=pred_original_list)
+                # f.create_dataset('fold{}_{}_{}_best'.format(args.fold_id, args.delete, model_type), data=combined_pred)
+                # f.create_dataset('fold{}_{}_{}_best_original'.format(args.fold_id, args.delete, model_type), data=pred_original_list)
+
         # if model_type == 'GatedHLefpNet':
         #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_efps567_inter_dim800_num_hidden5_do3e_1_corrected.h5', 'a') as f:
         #         f.create_dataset('circularcenter_savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
