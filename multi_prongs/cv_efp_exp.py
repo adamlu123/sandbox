@@ -425,18 +425,16 @@ def main(model):
                 # f.create_dataset('fold{}_{}_{}_best'.format(args.fold_id, args.delete, model_type), data=combined_pred)
                 # f.create_dataset('fold{}_{}_{}_best_original'.format(args.fold_id, args.delete, model_type), data=pred_original_list)
 
-        # if model_type == 'GatedHLefpNet':
-        #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_efps567_inter_dim800_num_hidden5_do3e_1_corrected.h5', 'a') as f:
-        #         f.create_dataset('circularcenter_savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
-        #         f.create_dataset('circularcenter_savewoclip_{}_strength{}_best_original'.format(model_type, strength), data=pred_original_list)
-        #         f.create_dataset('circularcenter_savewoclip_{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
-        #         f.create_dataset('circularcenter_savewoclip_{}_strength{}_gates'.format(model_type, strength), data=gates)
-        # else:
-        #     with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_all_N4test.h5', 'a') as f:
-        #         # if '{}_best'.format(model_type) in f:
-        #         #     del f['{}_best'.format(model_type)]
-        #         f.create_dataset('circularcenter_{}_best'.format(model_type), data=combined_pred)
-        #         f.create_dataset('circularcenter_{}_best_original'.format(model_type), data=pred_original_list)
+        elif model_type == 'GatedHLefpNet':
+            with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_efps567_inter_dim800_num_hidden5_do3e_1_corrected.h5', 'a') as f:
+                f.create_dataset('circularcenter_savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
+                f.create_dataset('circularcenter_savewoclip_{}_strength{}_best_original'.format(model_type, strength), data=pred_original_list)
+                f.create_dataset('circularcenter_savewoclip_{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
+                f.create_dataset('circularcenter_savewoclip_{}_strength{}_gates'.format(model_type, strength), data=gates)
+        elif model_type == 'HLefpNet':
+            with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv_correctetacenter.h5', 'a') as f:
+                f.create_dataset('fold{}_{}_best'.format(args.fold_id, model_type), data=combined_pred)
+                f.create_dataset('fold{}_{}_best_original'.format(args.fold_id, model_type), data=pred_original_list)
         print('saving finished!')
 
     else:
