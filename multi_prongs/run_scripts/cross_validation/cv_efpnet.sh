@@ -5,12 +5,13 @@ source activate pytorch
 
 # hyperparemeters
 epochs=1500
-stage='eval' # [train, eval]
+stage='train' # [train, eval]
 model_type='HLefpNet'
 
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
 exp_path='/baldig/physicsprojects2/N_tagger/exp/cross_valid'
-exp_name='20200421_efpnet'
+#exp_name='20200421_efpnet'
+exp_name='20200422_efpnet_23'
 exp_dir=${exp_path}/${exp_name}
 
 mkdir -p ${exp_dir}
@@ -20,7 +21,7 @@ cp ${multip_fldr}/run_scripts/cross_validation/cv_efpnet.sh ${exp_dir}
 count=0
 
 echo ${stage}
-for fold_id in 4 #5 6 7 #0 1 2 3
+for fold_id in 4 5 6 7 #0 1 2 3
     do
     GPU=${count}
     ((count++))
@@ -41,7 +42,7 @@ for fold_id in 4 #5 6 7 #0 1 2 3
                         python cv_efp_exp.py --inter_dim ${inter_dim} --num_hidden ${num_hidden} \
                         --model_type ${model_type} \
                         --stage ${stage} --lr ${lr}  --batch_size ${batch_size} --result_dir ${result_dir} \
-                        --GPU ${GPU} --epochs ${epochs} --fold_id ${fold_id} &
+                        --GPU ${GPU} --epochs ${epochs} --fold_id ${fold_id} --hlefps23 &
                     done
                 done
             done

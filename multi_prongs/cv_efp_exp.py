@@ -38,6 +38,7 @@ parser.add_argument(
     )
 parser.add_argument("--delete", type=str, default='pt', help='to delete [pt, mass_pt, None]')
 parser.add_argument('--model_type', default='HLNet')
+parser.add_argument('--hlefps23', action='store_true', default=False)
 parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
 parser.add_argument('--load_pretrained', action='store_true', default=False)
 parser.add_argument('--fold_id', type=int, default=0, help='CV fold in [0, 9]')
@@ -80,15 +81,6 @@ filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res1234
 dv, nv = 7, 5
 fn_efps = '/baldig/physicsprojects2/N_tagger/data/efp/20200319_circularcenter_{}_d{}_n{}/efp_merge.h5'.format('parsed_Tower_cir_centered', dv, nv)
 
-with h5py.File(filename, 'r') as f:
-    total_num_sample = f['target'].shape[0]
-train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
-
-iterations = int(train_cut / batchsize)
-iter_test = int((total_num_sample - val_cut) / batchsize)
-print('total number samples, train iter and test iter', total_num_sample, iterations, iter_test)
-
-
 ################### data generator
 with h5py.File(filename, 'r') as f:
     total_num_sample = f['target'].shape[0]
@@ -115,10 +107,21 @@ generator['train'] = torch.utils.data.DataLoader(data_train, batch_size=args.bat
 generator['val'] = torch.utils.data.DataLoader(data_val, batch_size=args.batch_size, shuffle=True, num_workers=10)
 generator['test'] = torch.utils.data.DataLoader(data_test, batch_size=args.batch_size, shuffle=True, num_workers=10)
 
+# train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample * 0.9), total_num_sample
+iterations = len(generator['train']) #int(train_cut / batchsize)
+iter_test = len(generator['test']) #int((total_num_sample - val_cut) / batchsize)
+print('total number samples, train iter and test iter', total_num_sample, iterations, iter_test)
+
 
 ################### model
 hlnet_base = make_hlnet_base(input_dim=HL.shape[1], inter_dim=args.inter_dim, num_hidden=args.num_hidden, out_dim=args.out_dim, do_rate=args.do_rate,batchnorm_base=True) # 25 for HL3 version
-efpnet_base = make_hlnet_base(input_dim=567, inter_dim=args.inter_dim, num_hidden=args.num_hidden, out_dim=args.out_dim, do_rate=args.do_rate,batchnorm_base=True)  # 207 566 126
+
+if args.hlefps23:
+    efps_23 = [2, 4,  11,  15,  56,  57,  58,  59,  62,  87, 150, 169, 185, 200, 216, 259, 269, 358, 394, 448,
+                     476, 529, 561]
+    efpnet_base = make_hlnet_base(input_dim=len(efps_23), inter_dim=args.inter_dim, num_hidden=args.num_hidden, out_dim=args.out_dim, do_rate=args.do_rate,batchnorm_base=True)  # 207 566 126
+else:
+    efpnet_base = make_hlnet_base(input_dim=567, inter_dim=args.inter_dim, num_hidden=args.num_hidden, out_dim=args.out_dim, do_rate=args.do_rate,batchnorm_base=True)  # 207 566 126
 
 
 class HLNet(nn.Module):
@@ -193,7 +196,7 @@ class GatedHLefpNet(nn.Module):
 
 
 model_type = args.model_type
-print('building model:', model_type)
+print('building model:', model_type, 'only include selected efps:', args.hlefps23)
 if model_type == 'HLNet':
     model = HLNet(hlnet_base, num_labels=num_labels).to(device)
 elif model_type in ['HLefpNet', 'GatedHLefpNet']:
@@ -246,7 +249,10 @@ def train(model, optimizer, epoch):
         if model_type == 'HLNet':
             pred = model(HL)
         elif model_type == 'HLefpNet':
-            pred = model(HL, efps)
+            if args.hlefps23:
+                pred = model(HL, efps[:, efps_23])
+            else:
+                pred = model(HL, efps)
         elif model_type == 'GatedHLefpNet':
             pred, gates = model(HL, efps)
         elif model_type == 'EFPNet':
@@ -300,7 +306,10 @@ def test(generator, model, subset, epoch, ftype=None, feature_id=None):
                 # if feature_id is not None: HL[:, feature_id] = HL[:, feature_id][torch.randperm(HL.shape[0])]  # torch.zeros_like(HL[:, feature_id]) #
                 pred = model(HL)
             elif model_type == 'HLefpNet':
-                pred = model(HL, efps)
+                if args.hlefps23:
+                    pred = model(HL, efps[:, efps_23])
+                else:
+                    pred = model(HL, efps)
             elif model_type == 'GatedHLefpNet':
                 if feature_id is not None and ftype is not None:
                     if ftype == 'efp':
@@ -311,20 +320,16 @@ def test(generator, model, subset, epoch, ftype=None, feature_id=None):
                         raise ValueError('ftype has to be in [efp, hl]')
                 pred, pred_clipped, _ = model(HL, efps)
                 pred_armax_clipped = torch.argmax(pred_clipped, dim=1)
-                # tmp_clipped += torch.sum(pred_armax_clipped == target_long).item() / target_long.shape[0]
             elif model_type == 'EFPNet':
                 pred = model(efps)
             pred_armax = torch.argmax(pred, dim=1)
-            # tmp += torch.sum(pred_armax==target_long).item() / target_long.shape[0]
 
             mass, pt = HL_unnorm[:, -1], HL_unnorm[:, -2]
-            # bin_idx = torch.floor((mass - mass_range[0]) / bin_len)
             rslt = pred_armax == target_long
             rslt_clipped = pred_armax_clipped == target_long
             pred_mass_list.append(torch.stack([pred_armax.float(), target_long.float(), rslt.float(), rslt_clipped.float(), mass, pt]).cpu())
             pred_original_list.append(pred.cpu())
 
-    # clipped_acc = tmp_clipped / iter_test if model_type == 'GatedHLefpNet' else 0.
     gates = gates.detach().cpu().numpy()
     num_remaining_efps = (np.abs(gates) > 1e-2).sum().tolist() if model_type == 'GatedHLefpNet' else 0.
 
@@ -432,9 +437,10 @@ def main(model):
                 f.create_dataset('circularcenter_savewoclip_{}_strength{}_best_n_remain'.format(model_type, strength), data=num_remaining_efps)
                 f.create_dataset('circularcenter_savewoclip_{}_strength{}_gates'.format(model_type, strength), data=gates)
         elif model_type == 'HLefpNet':
+            model_type_new = model_type + 'efp23' if args.hlefps23 else model_type
             with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv_correctetacenter.h5', 'a') as f:
-                f.create_dataset('fold{}_{}_best'.format(args.fold_id, model_type), data=combined_pred)
-                f.create_dataset('fold{}_{}_best_original'.format(args.fold_id, model_type), data=pred_original_list)
+                f.create_dataset('fold{}_{}_best'.format(args.fold_id, model_type_new), data=combined_pred)
+                f.create_dataset('fold{}_{}_best_original'.format(args.fold_id, model_type_new), data=pred_original_list)
         print('saving finished!')
 
     else:
