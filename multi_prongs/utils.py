@@ -104,6 +104,10 @@ def get_batch_classwise_acc(pred_mass_list):
     return classwise_acc
 
 
+def bin_logits_are_matched(combined_pred, pred_logit):
+    pred_bin = combined_pred[0, :]
+    print('matched: ', np.all(np.argmax(pred_logit, axis=1) == pred_bin))
+
 
 
 

@@ -2,7 +2,7 @@ from transformers import *
 import argparse
 import sys
 sys.path.append('/extra/yadongl10/git_project/sandbox/multi_prongs')
-from utils import split_data
+from utils import split_data, bin_logits_are_matched
 
 parser = argparse.ArgumentParser(description='Sparse Auto-regressive Model')
 parser.add_argument(
@@ -222,11 +222,14 @@ def main(model):
         testacc, pred_mass_list, pred_original_list = test(model, 'test', None)
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
         pred_original_list = torch.cat(pred_original_list, dim=0).numpy()
+        bin_logits_are_matched(combined_pred, pred_original_list)
         with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv_correctetacenter.h5', 'a') as f:
-            # del f['fold{}_{}_best_original'.format(args.fold_id, model_type)]
-            # del f['fold{}_{}_best'.format(args.fold_id, model_type)]
-            f.create_dataset('fold{}_{}_large_best_original'.format(args.fold_id, model_type), data=pred_original_list)
-            f.create_dataset('fold{}_{}_large_best'.format(args.fold_id, model_type), data=combined_pred)
+        #     # del f['fold{}_{}_best_original'.format(args.fold_id, model_type)]
+        #     # del f['fold{}_{}_best'.format(args.fold_id, model_type)]
+            f.create_dataset('fold{}_{}_v2_best_original'.format(args.fold_id, model_type), data=pred_original_list)
+            f.create_dataset('fold{}_{}_v2_best'.format(args.fold_id, model_type), data=combined_pred)
+            # f.create_dataset('fold{}_{}_large_best_original'.format(args.fold_id, model_type), data=pred_original_list)
+            # f.create_dataset('fold{}_{}_large_best'.format(args.fold_id, model_type), data=combined_pred)
         print('saving finished!')
 
     elif stage == 'train':

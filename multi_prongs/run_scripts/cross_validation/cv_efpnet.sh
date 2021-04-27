@@ -5,13 +5,12 @@ source activate pytorch
 
 # hyperparemeters
 epochs=1500
-stage='train' # [train, eval]
+stage='eval' # [train, eval]
 model_type='HLefpNet'
 
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
 exp_path='/baldig/physicsprojects2/N_tagger/exp/cross_valid'
-#exp_name='20200421_efpnet'
-exp_name='20200422_efpnet_23'
+exp_name='20200422_efpnet_23'  # 20200421_efpnet
 exp_dir=${exp_path}/${exp_name}
 
 mkdir -p ${exp_dir}

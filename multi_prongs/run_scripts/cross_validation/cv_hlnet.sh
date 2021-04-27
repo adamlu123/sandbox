@@ -9,17 +9,16 @@ stage='eval' # [train, eval]
 model_type='HLNet'
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
 exp_path='/baldig/physicsprojects2/N_tagger/exp/cross_valid'
-#exp_name='2020308_search_HLnet'
-exp_name='2020412_del_masspt_HLnet'
+exp_name='2020412_BN_search_HLnet' # 2020412_BN_search_HLnet 2020412_del_masspt_HLnet
 exp_dir=${exp_path}/${exp_name}
 mkdir -p ${exp_dir}
 cp ${multip_fldr}/run_scripts/cross_validation/cv_hlnet.sh ${exp_dir}
 
 # start running
-count=1
-for del in 'pt' # 'mass_pt'
+count=0
+for del in 'pt' # 'mass_pt' #'None' #'pt' #
     do
-    for fold_id in 4 # 5 6 7 #
+    for fold_id in 8 9 #0 1 2 3 # 4 5 6 7 #
         do
         GPU=${count}
         ((count++))
@@ -33,7 +32,7 @@ for del in 'pt' # 'mass_pt'
                         do
                         for lr in 1e-4
                             do
-                            result_dir=${exp_dir}/fold${fold_id}_${model_type}_inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}_do${do_rate}_del${del}
+                            result_dir=${exp_dir}/fold${fold_id}_${model_type}_inter_dim${inter_dim}_num_hidden${num_hidden}_lr${lr}_batch_size${batch_size}_do${do_rate}
                             mkdir -p ${result_dir}
                             echo ${result_dir}
 
@@ -50,3 +49,4 @@ for del in 'pt' # 'mass_pt'
 done
 #wait
 
+#_del${del}
