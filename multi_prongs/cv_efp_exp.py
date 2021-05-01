@@ -403,13 +403,19 @@ def main(model):
                                                                                                ftype='hl',
                                                                                                feature_id=HL_id)
                     save_dict['hl'+str(HL_id)] = testacc
+                    save_dict['hl_classwise' + str(HL_id)] = get_batch_classwise_acc(pred_mass_list)
                 for efp_id in efps_23:
                     print('testing removing efp_id', efp_id)
                     testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(generator, model, 'test',
                                                                                                ftype='efp',
                                                                                                feature_id=efp_id)
                     save_dict['efp' + str(efp_id)] = testacc
+                    save_dict['efp_classwise' + str(efp_id)] = get_batch_classwise_acc(pred_mass_list)
+
+                testacc, testclipped_acc, pred_original_list, pred_mass_list, gates = test(generator, model, 'test')
                 save_dict['full'] = testacc
+                save_dict['full_classwise'] = get_batch_classwise_acc(pred_mass_list)
+
                 np.save('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/importance_analy/f{}_hlefp23_perm.npy'.format(
                         args.fold_id), save_dict)
 

@@ -4,11 +4,7 @@
     <list default="true" id="e44c722f-3e28-4a47-9abe-72e45a577b99" name="Default Changelist" comment="minor">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/multi_prongs/cv_efp_exp.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/cv_efp_exp.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/run_scripts/cross_validation/cv_efpnet.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/run_scripts/cross_validation/cv_efpnet.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/run_scripts/cross_validation/cv_hlnet.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/run_scripts/cross_validation/cv_hlnet.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/multi_prongs/run_scripts/cv_run_bert.sh" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/run_scripts/cv_run_bert.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/transformer/bert_net.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/transformer/bert_net.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/multi_prongs/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/multi_prongs/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -408,7 +404,8 @@
       <workItem from="1618269327105" duration="33963000" />
       <workItem from="1618881152873" duration="12306000" />
       <workItem from="1618981793974" duration="22288000" />
-      <workItem from="1619508795952" duration="4684000" />
+      <workItem from="1619508795952" duration="17165000" />
+      <workItem from="1619843167814" duration="609000" />
     </task>
     <servers />
   </component>
