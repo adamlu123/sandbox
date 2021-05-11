@@ -64,7 +64,6 @@ stage = args.stage
 
 writer = SummaryWriter(args.result_dir) if stage == 'train' else None
 strength = args.strength
-num_labels = 7
 
 ## I/O config
 device = 'cuda'
@@ -75,7 +74,8 @@ result_dir = args.result_dir
 
 ################### Creating data:
 # ================ HL+mass file
-filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res123457910.h5'
+# filename = '/baldig/physicsprojects2/N_tagger/data/v20200302_data/merged_res123457910.h5'
+filename = '/baldig/physicsprojects2/N_tagger/data/merged/parsedTower_res1_res5_merged_mass300_700_b_u_shuffled.h5'
 
 # ================ efps file
 dv, nv = 7, 5
@@ -86,7 +86,8 @@ with h5py.File(filename, 'r') as f:
     total_num_sample = f['target'].shape[0]
     Y = np.array(f['target'])
     HL_unnorm = np.array(f['HL'])[:, :-4]
-    HL = np.array(f['HL_normalized'])[:, :-4]
+    # HL = np.array(f['HL_normalized'])[:, :-4]
+    HL = np.array(f['HL3_normalized']) # (, 3*8 + 2)
     if args.delete == 'pt':
         HL = np.delete(HL, -2, 1) # delete pt TODO  mass: -1: mass, -2: pt
     elif args.delete == 'mass_pt':
@@ -95,7 +96,9 @@ with h5py.File(filename, 'r') as f:
         pass
     else:
         raise ValueError('delete has to be in [pt, mass_pt, None]')
-    print('delete: {}; after deletion HL shape:{}'.format(args.delete, HL.shape))
+    num_labels = len(np.unique(Y))
+    print('delete: {}; after deletion HL shape:{}, num_labels:{}'.format(args.delete, HL.shape, num_labels))
+
 
 with h5py.File(fn_efps, 'r') as f:
     efp = np.array(f['efp_merge_normalized'])

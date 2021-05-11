@@ -4,12 +4,13 @@ cd /extra/yadongl10/git_project/sandbox/multi_prongs
 source activate pytorch
 
 # hyperparemeters
-epochs=1500
-stage='eval' # [train, eval]
+epochs=1000
+stage='train' # [train, eval]
 model_type='HLNet'
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
 exp_path='/baldig/physicsprojects2/N_tagger/exp/cross_valid'
-exp_name='2020412_BN_search_HLnet' # 2020412_BN_search_HLnet 2020412_del_masspt_HLnet
+#exp_name='2020412_BN_search_HLnet' # 2020412_BN_search_HLnet 2020412_del_masspt_HLnet
+exp_name='20210511_HL3'
 exp_dir=${exp_path}/${exp_name}
 mkdir -p ${exp_dir}
 cp ${multip_fldr}/run_scripts/cross_validation/cv_hlnet.sh ${exp_dir}
@@ -18,7 +19,7 @@ cp ${multip_fldr}/run_scripts/cross_validation/cv_hlnet.sh ${exp_dir}
 count=0
 for del in 'pt' # 'mass_pt' #'None' #'pt' #
     do
-    for fold_id in 8 9 #0 1 2 3 # 4 5 6 7 #
+    for fold_id in 0 #8 9 #0 1 2 3 # 4 5 6 7 #
         do
         GPU=${count}
         ((count++))

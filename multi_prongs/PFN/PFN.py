@@ -39,6 +39,7 @@ parser.add_argument(
     "--result_dir", type=str,
     default='/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/20210309_PFN_search_batch256/do2e-1_num_hidden4_psize256_fsize256_batchsize256_ep1000'
     )
+parser.add_argument('--model', default='PFN', help='model types in [PFN, EFN]')
 parser.add_argument('--stage', default='eval', help='mode in [eval, train]')
 parser.add_argument('--load_pretrained', action='store_true', default=False)
 parser.add_argument('--batch_size', type=int, default=128, help='input batch size for training (default: 100)')
@@ -64,7 +65,7 @@ config.gpu_options.per_process_gpu_memory_fraction = 0.8
 config.gpu_options.allow_growth = True
 tf.keras.backend.set_session(tf.Session(config=config))
 # import energyflow as ef
-from energyflow.archs import PFN
+from energyflow.archs import PFN, EFN
 from energyflow.utils import data_split, remap_pids, to_categorical
 import h5py
 num_class = 7
@@ -103,6 +104,11 @@ train_cut, val_cut, test_cut = int(total_num_sample * 0.8), int(total_num_sample
 X_train, X_val, X_test = X[:train_cut], X[train_cut:val_cut], X[val_cut:]
 Y_train, Y_val, Y_test = Y[:train_cut], Y[train_cut:val_cut], Y[val_cut:]
 print('Done train/val/test split', X_train.shape, X_val.shape, X_test.shape)
+if args.model == 'EFN':
+    X_train = [X_train[:, :, 0], X_train[:, :, 1:]]
+    X_val = [X_val[:, :, 0], X_val[:, :, 1:]]
+    X_test = [X_test[:, :, 0], X_test[:, :, 1:]]
+
 print(args.result_dir)
 # build architecture
 num_hidden = args.num_hidden
@@ -116,13 +122,18 @@ opt = tf.keras.optimizers.Adam(lr=args.lr)
 compile_opts = {'optimizer': opt}
 
 print(Phi_sizes, 'lr', args.lr)
-# pfn = PFN(input_dim=X.shape[-1], output_dim=6, Phi_sizes=Phi_sizes, F_sizes=F_sizes, compile_opts=compile_opts)
-pfn = PFN(input_dim=X.shape[-1], output_dim=num_class, Phi_sizes=Phi_sizes, F_sizes=F_sizes, F_dropouts=args.dropout, compile_opts=compile_opts)
-
+if args.model == 'PFN':
+    model = PFN(input_dim=X.shape[-1], output_dim=num_class, Phi_sizes=Phi_sizes, F_sizes=F_sizes, F_dropouts=args.dropout, compile_opts=compile_opts)
+elif args.model == 'EFN':
+    model = EFN(input_dim=2,
+              Phi_sizes=(256, 256, 256),
+              F_sizes=(1024, 1024),
+              F_dropouts=0.2,
+              output_dim=7)
 
 if args.stage == 'train':
     if args.load_pretrained:
-        pfn.load_weights(args.result_dir + '/best')
+        model.load_weights(args.result_dir + '/best')
     tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=args.result_dir, histogram_freq=0)
     model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
         filepath=args.result_dir + '/best',
@@ -132,7 +143,7 @@ if args.stage == 'train':
         save_best_only=True)
 
     # train model
-    pfn.fit(X_train, Y_train,
+    model.fit(X_train, Y_train,
             epochs=args.epochs,
             batch_size=batch_size,
             validation_data=(X_val, Y_val),
@@ -141,9 +152,9 @@ if args.stage == 'train':
 
 elif args.stage == 'eval':
     print('load model from', args.result_dir)
-    pfn.load_weights(args.result_dir + '/best')
+    model.load_weights(args.result_dir + '/best')
 
-    preds = pfn.predict(X_test, batch_size=256)
+    preds = model.predict(X_test, batch_size=256)
     preds_argmax = np.argmax(preds, 1)
     target = np.argmax(Y_test, 1)
     rslt = preds_argmax == target
@@ -151,14 +162,14 @@ elif args.stage == 'eval':
     mass, pt = mass[val_cut:], pt[val_cut:]
     combined_pred = np.stack([preds_argmax, target, rslt, mass, pt])
     print(combined_pred.shape)
-    # with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv_correctetacenter.h5', 'a') as f:
-    #     # del f['circularcenter_{}'.format('PFN')]
-    #     # del f['circularcenter_{}_original'.format('PFN')]
-    #     f.create_dataset('fold{}_{}_best'.format(args.fold_id, 'PFN'), data=combined_pred)
-    #     f.create_dataset('fold{}_{}_best_original'.format(args.fold_id, 'PFN'), data=preds)
-    # print('saving finished!')
+    with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv_correctetacenter.h5', 'a') as f:
+        del f['fold{}_{}_best'.format(args.fold_id, '{}'.format(args.model))]
+        del f['fold{}_{}_best_original'.format(args.fold_id, '{}'.format(args.model))]
+        f.create_dataset('fold{}_{}_best'.format(args.fold_id, '{}'.format(args.model)), data=combined_pred)
+        f.create_dataset('fold{}_{}_best_original'.format(args.fold_id, '{}'.format(args.model)), data=preds)
+    print('saving finished!')
 else:
     raise ValueError('only support stage in: [train, eval]!')
 
 # save model
-# pfn.save(args.result_dir)
+# model.save(args.result_dir)

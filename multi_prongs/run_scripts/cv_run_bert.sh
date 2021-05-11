@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 cd /extra/yadongl10/git_project/sandbox/multi_prongs/transformer
 source activate pytorch
 
@@ -14,7 +15,7 @@ exp_name='placehold'
 exp_dir=${exp_path}/${exp_name}
 
 count=0
-for fold_id in 0 1 2 3
+for fold_id in 4 5 6 7  #6 7 #0 1 2 3
     do
     for lr in 1e-4
         do
