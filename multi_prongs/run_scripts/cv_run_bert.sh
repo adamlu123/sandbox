@@ -5,17 +5,17 @@ source activate pytorch
 
 # hyperparemeters
 model_type='bert'
-epochs=1000
+epochs=5000
 stage='train' # [eval, train]
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
 exp_path='/baldig/physicsprojects2/N_tagger/exp/cross_valid'
 #exp_name='20200412_correct_etacenter_search_large_bert'
 #exp_name='20200403_search_tiny_bert'
-exp_name='placehold'
+exp_name='pl'
 exp_dir=${exp_path}/${exp_name}
 
 count=0
-for fold_id in 4 5 6 7  #6 7 #0 1 2 3
+for fold_id in 8 9 # 4 5 6 7  #6 7 #0 1 2 3
     do
     for lr in 1e-4
         do

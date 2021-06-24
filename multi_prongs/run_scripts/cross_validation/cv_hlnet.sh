@@ -5,7 +5,7 @@ source activate pytorch
 
 # hyperparemeters
 epochs=1000
-stage='train' # [train, eval]
+stage='eval' # [train, eval]
 model_type='HLNet'
 multip_fldr='/extra/yadongl10/git_project/sandbox/multi_prongs'
 exp_path='/baldig/physicsprojects2/N_tagger/exp/cross_valid'
@@ -16,7 +16,7 @@ mkdir -p ${exp_dir}
 cp ${multip_fldr}/run_scripts/cross_validation/cv_hlnet.sh ${exp_dir}
 
 # start running
-count=0
+count=1
 for del in 'pt' # 'mass_pt' #'None' #'pt' #
     do
     for fold_id in 0 #8 9 #0 1 2 3 # 4 5 6 7 #

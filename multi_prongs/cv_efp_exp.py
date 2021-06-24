@@ -88,6 +88,7 @@ with h5py.File(filename, 'r') as f:
     HL_unnorm = np.array(f['HL'])[:, :-4]
     # HL = np.array(f['HL_normalized'])[:, :-4]
     HL = np.array(f['HL3_normalized']) # (, 3*8 + 2)
+
     if args.delete == 'pt':
         HL = np.delete(HL, -2, 1) # delete pt TODO  mass: -1: mass, -2: pt
     elif args.delete == 'mass_pt':
@@ -103,6 +104,7 @@ with h5py.File(filename, 'r') as f:
 with h5py.File(fn_efps, 'r') as f:
     efp = np.array(f['efp_merge_normalized'])
 
+efp = np.zeros_like(Y)
 data_train, data_val, data_test = split_data_HL_efp(efp, Y, HL, HL_unnorm, fold_id=args.fold_id, num_folds=10)
 
 generator = {}
@@ -218,7 +220,8 @@ if stage == 'eval':
     args.load_pretrained = True
 if args.load_pretrained:
     print('load model from', result_dir)
-    cp = torch.load(result_dir + '/best_{}_merged_b_u.pt'.format(model_type)) # '/{}_merged_b_u_ep99.pt'.format(model_type))
+    cp = torch.load(result_dir + '/best_{}_merged_b_u.pt'.format(model_type)) #
+    # cp = torch.load(result_dir + '/{}_merged_b_u_ep299.pt'.format(model_type))
     model.load_state_dict(cp, strict=True)
 
 ################### training
@@ -357,7 +360,7 @@ def main(model):
     if args.stage == 'eval':
     # evaluate individual efps
         save_dict = {}
-        individual_analysis = True
+        individual_analysis = False #True
         if individual_analysis:
             if args.model_type == 'GatedHLefpNet':
                 gates = model.module.gates.detach().cpu().numpy()
@@ -426,19 +429,18 @@ def main(model):
         combined_pred = torch.cat(pred_mass_list, dim=1).numpy()
         pred_original_list = torch.cat(pred_original_list, dim=0).numpy()
         print('acc', combined_pred[2,:].sum()/combined_pred.shape[1], 'cliped acc', combined_pred[3,:].sum()/combined_pred.shape[1])
-        print('total#', count_parameters(model), 'num of param in hl', len(hl_param), 'num of param in other',
-          len(other_param))
+        print('total#', count_parameters(model), 'num of param in hl', len(hl_param), 'num of param in other', len(other_param))
         if not individual_analysis:
             if model_type == 'HLNet':
                 with h5py.File(
-                        '/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_all_cv_correctetacenter.h5',
+                        '/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/cross_valid/combined_pred_hl3.h5',
                         'a') as f:
-                    # del f['fold{}_{}_{}_best'.format(args.fold_id, args.delete, model_type)]
-                    # del f['fold{}_{}_{}_best_original'.format(args.fold_id, args.delete, model_type)]
-                    f.create_dataset('fold{}_{}_{}_{}_best'.format(args.fold_id, args.inter_dim, args.num_hidden, model_type), data=combined_pred)
-                    f.create_dataset('fold{}_{}_{}_{}_best_original'.format(args.fold_id, args.inter_dim, args.num_hidden,  model_type), data=pred_original_list)
-                    # f.create_dataset('fold{}_{}_{}_best'.format(args.fold_id, args.delete, model_type), data=combined_pred)
-                    # f.create_dataset('fold{}_{}_{}_best_original'.format(args.fold_id, args.delete, model_type), data=pred_original_list)
+                    del f['fold{}_{}_{}_best'.format(args.fold_id, args.delete, model_type)]
+                    del f['fold{}_{}_{}_best_original'.format(args.fold_id, args.delete, model_type)]
+                    # f.create_dataset('fold{}_{}_{}_{}_best'.format(args.fold_id, args.inter_dim, args.num_hidden, model_type), data=combined_pred)
+                    # f.create_dataset('fold{}_{}_{}_{}_best_original'.format(args.fold_id, args.inter_dim, args.num_hidden,  model_type), data=pred_original_list)
+                    f.create_dataset('fold{}_{}_{}_best'.format(args.fold_id, args.delete, model_type), data=combined_pred)
+                    f.create_dataset('fold{}_{}_{}_best_original'.format(args.fold_id, args.delete, model_type), data=pred_original_list)
             elif model_type == 'GatedHLefpNet':
                 with h5py.File('/baldig/physicsprojects2/N_tagger/exp/exp_ptcut/pred/combined_pred_efps567_inter_dim800_num_hidden5_do3e_1_corrected.h5', 'a') as f:
                     f.create_dataset('circularcenter_savewoclip_{}_strength{}_best'.format(model_type, strength), data=combined_pred)
